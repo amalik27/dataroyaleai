@@ -1,0 +1,91 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+}
+
+.navbar {
+    display: flex;
+    position: sticky;
+    align-items: center;
+    justify-content: space-between;
+    top: 0;
+    padding: 5px;
+    text-decoration: none;
+    color: #398b8e;
+    font-size: 18px;
+}
+
+.navbar-logo{
+    text-decoration: none;
+    font-weight: 600;
+    color: #398b8e;
+    font-size: 18px;
+}
+
+.nav-list {
+    display: flex;
+    list-style: none;
+}
+
+.nav-list li {
+    margin-right: 20px;
+}
+
+.nav-list li a {
+    text-decoration: none;
+    color: #398b8e;
+    font-size: 18px;
+}
+
+.nav-list li a:hover {
+    color: #24404b;
+}
+
+.rightNav {
+    text-align: left;
+}
+
+.login-button {
+    background-color: #398b8e;
+    color: #fff;
+    border: none;
+    padding: 10px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.login-button:hover {
+    background-color: #24404b;
+}
+
+.nav-bar-div {
+    width: 100%;
+    height: 60px;
+    background-color: #b7ccca;
+}
+
+.page_headers{
+    font-size: 30px;
+    color: #24404b;
+    text-align: left;
+    padding: 15px;
+}
+
+.page_subheadings{
+    font-size: 20px;
+    color: #398b8e;
+    text-align: left;
+    padding: 15px;
+}
+
+.page_content {
+    font-size: 16px;
+    color: #000000;
+    text-align: left;
+    padding: 15px;
+}
