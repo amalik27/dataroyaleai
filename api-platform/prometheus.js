@@ -7,16 +7,20 @@ const rl = require('readline-sync');
 const portsAllowed = 101; // Define max number of ports from 5000
 const ports = new Array(portsAllowed);
 const defaultMemory = 50;//mb of memory.
-const defaultCPU = .0001;//cpus stat. More info read here: https://docs.docker.com/config/containers/resource_constraints/#cpu
+const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com/config/containers/resource_constraints/#cpu
+const _ = undefined;
 
 //TESTING
 
+//TODO: Create new function using "docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}" -a" to return true or false if a given port is taken.
+
+
 let userIDs = ["7295434","34554466","6857458"]//Can be replaced with a command to search results of docker ps and filtering by pattern user*
-var q1 =  rl.question('Start Containers? (Y/n) ')
+var q1 =  rl.question(chalk.yellowBright('Start Containers? (Y/n) '));
 if(q1.toLowerCase()==='y'){
   initializeContainers(userIDs);
 } 
-var q2 =  rl.question('Kill Containers? (Y/n) ')
+var q2 =  rl.question(chalk.yellowBright('Kill Containers? (Y/n) '))
 if(q2.toLowerCase()==='y'){
   killContainers(userIDs);
 } 
@@ -52,14 +56,14 @@ function addToHashSet(number,portsAllowed) {
  * @param {number} maxMemory -1 means 500mb memory max.
  * @param {number} [cpus=defaultCPU] determines how much processing power we give it. Numbers <4 are safe. Beyond that it COULD slow down your machine.(no promises)
  */
-function initializeContainers(userIDs, maxMemory = defaultMemory, cpus = defaultCPU){
+function initializeContainers(userIDs, maxMemory = defaultMemory, cpus = defaultCPU, silent = true){
   console.log(chalk.green("[Prometheus] Starting Containers..."));
   userIDs.forEach((user)=>{
-    shell.exec(`docker build -t ${user} ./dockercontainer`, {silent: true})
+    shell.exec(`docker build -t ${user} ./dockercontainer`, {silent: silent})
   })
   userIDs.forEach((user)=>{ 
       port = 5000 + addToHashSet(parseInt(user),portsAllowed);//We only use ports from 5000-5100
-      shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:5000 ${user}`, {silent: true}) 
+      shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:5000 ${user}`, {silent: silent}) 
       console.log(`${user} is listening on port ${port} with memory cap ${maxMemory}m  with cpu availability ${cpus}`)
   })
 }
@@ -68,17 +72,19 @@ function initializeContainers(userIDs, maxMemory = defaultMemory, cpus = default
  * 
  * @param {Array<number>} containers Array of container IDs we generate
  */
-function killContainers(containers){
+function killContainers(containers, silent = true){
   console.log(chalk.red("[Prometheus] Killing Containers..."));
   containers.forEach((user)=>{
-      let containerID = shell.exec(`docker ps | grep ${user} | cut -f 1 -d ' ' `, {silent: true})
-
+      let containerID = shell.exec(`docker ps | grep ${user} | cut -f 1 -d ' ' `, {silent: silent})
+      //console.log(containerID);
       //Operations
-      var containerStopped = shell.exec(`docker stop ${containerID}`, {silent: true}) == containerID; 
-      var containerRemoved = shell.exec(`docker container rm ${containerID}`, {silent: true}) == containerID; 
-      var imageRemoved = shell.exec(`docker rmi ${user} -f`, {silent: true}) == containerID;
-      var sucess = containerStopped && containerRemoved && imageRemoved;
-
+      var containerStopped = shell.exec(`docker stop ${containerID}`, {silent: silent}); 
+      var containerRemoved = shell.exec(`docker container rm ${containerID}`, {silent: silent}); 
+      var imageRemoved = shell.exec(`docker rmi ${user} -f`, {silent: silent});
+      var sucess = true;
+      // console.log(containerStopped);
+      // console.log(containerRemoved);
+      // console.log(imageRemoved);
       //Console Feedback
       if(sucess){
         console.log(chalk.grey(`${user} was killed`));
@@ -88,5 +94,5 @@ function killContainers(containers){
       }
   })
 }
-console.log(chalk.red("[Prometheus] process.exit() reached while debugging"));
+console.log(chalk.red("[Prometheus] process.exit() reached"));
 process.exit()
