@@ -35,12 +35,12 @@ class PrometheusDaemon{
       this.interval = setInterval(() => {
         if (!this.containerQueue.isEmpty()) {
           //Call HW-Limit-Aware-Start-System
-          const container = this.containerQueue.dequeue();
+          let container = this.containerQueue.dequeue();//TODO: Pass in anonymous function to handle the queue and dequeue based on success of function via try catch error handling.
           //this.#initializeContainers([containerID]);
           try{
             this.containerStack.push(container.containerID,container.parameters);
           }catch(e){
-            console.log(chalk.yellow("[Prometheus] Reached hardware limit when attempting to initialize new container on queue..."));
+            console.log(chalk.yellow(`[Prometheus] Reached hardware limit when attempting to initialize new container ${container.toString()} on queue...`));
           }
           
         }
@@ -58,7 +58,7 @@ class PrometheusDaemon{
     /**
    * Function to add a number to the ports using linear probing 
    */ 
-  #addToHashSet(number,portsAllowed) {
+  addToHashSet(number,portsAllowed) {
     /// Function to calculate the hash value for a given number
 
     let index = number % portsAllowed;
@@ -80,13 +80,13 @@ class PrometheusDaemon{
    * @param {number} maxMemory -1 means 500mb memory max.
    * @param {number} [cpus=defaultCPU] determines how much processing power we give it. Numbers <4 are safe. Beyond that it COULD slow down your machine.(no promises)
    */
-  #initializeContainers(userIDs, maxMemory = defaultMemory, cpus = defaultCPU, silent = true){
+  initializeContainers(userIDs, maxMemory = defaultMemory, cpus = defaultCPU, silent = true){
     console.log(chalk.green("[Prometheus] Starting Containers..."));
     userIDs.forEach((user)=>{
       shell.exec(`docker build -t ${user} ./dockercontainer`, {silent: silent})
     })
     userIDs.forEach((user)=>{ 
-        let port = 5000 + this.#addToHashSet(parseInt(user),portsAllowed);//We only use ports from 5000-5100
+        let port = 5000 + this.addToHashSet(parseInt(user),portsAllowed);//We only use ports from 5000-5100
         shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:5000 ${user}`, {silent: silent}) 
         console.log(`${user} is listening on port ${port} with memory cap ${maxMemory}m  with cpu availability ${cpus}`)
     })
@@ -171,8 +171,9 @@ class ContainerQueue {
    * @param {number} containerID 
    */
   enqueue(parameters,priority=1, containerID) {
+    console.log(`Enqueue: ${containerID}}`)
     if (!this.itemMap.has(containerID)) {
-      this.queue.push({priority, containerID });
+      this.queue.push({containerID: containerID, priority: priority});
       this.queue.sort((a, b) => a.priority - b.priority);
       this.itemMap.set(containerID, parameters);
     }
@@ -180,10 +181,12 @@ class ContainerQueue {
 
   dequeue() {
     if (!this.isEmpty()) {
-      const containerID  = this.queue.shift();
+      const containerID  = this.queue.shift().containerID;
       const parameters = this.itemMap.get(containerID);
       this.itemMap.delete(containerID);
-      return {containerID:containerID,parameters:parameters};
+
+      console.log(`Dequeue: ${containerID}`)
+      return {containerID:containerID,parameters:parameters, toString: () => console.log(`{containerID:${containerID}, parameters: ${parameters} }`)};
     }
     return null;
   }
@@ -211,7 +214,7 @@ daemon = new PrometheusDaemon()
 daemon.startMonitoring(500)
 containerIDs.forEach((id)=>{
   console.log(chalk.gray("Enqueuing " + id.toString()))
-  daemon.containerQueue.enqueue({cpus:.2, memory:100},1,id)
+  daemon.containerQueue.enqueue({cpus:.2, memory:100, toString: ()=>console.log(`{cpu: ${this.cpu}, memory: ${this.memory}}`)},1,id)
 })
 
 
