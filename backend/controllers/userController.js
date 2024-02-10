@@ -1,29 +1,14 @@
 const db = require('../db');
 
-function registerUser(username, password) {
-    const sql = `INSERT INTO users (username, password) VALUES (?, ?)`;
-    db.query(sql, [username, password], (err, result) => {
+async function addUser(username, email, salt, password_encrypted, role, tier, credits, reports, reg_date) {
+    const sql = `INSERT INTO users (username, email, salt, password_encrypted, role, tier, credits, reports, reg_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reports, reg_date], (err, result) => {
         if (err) {
             console.error('Error registering user: ' + err.stack);
             return;
         }
         console.log('User registered successfully');
     });
-}
-
-function authenticateUser(username, password, callback) {
-    const sql = `SELECT * FROM users WHERE username = ? AND password = ?`;
-    db.query(sql, [username, password], (err, results) => {
-        if (err) {
-            console.error('Error authenticating user: ' + err.stack);
-            return;
-        }
-        callback(results.length > 0);
-    });
-}
-
-async function addUser(username, password) {
-    registerUser(username, password);
 }
 
 async function getUserByUsername(username) {
@@ -72,8 +57,6 @@ async function deleteUserByUsername(username) {
 }
 
 module.exports = {
-    registerUser,
-    authenticateUser,
     addUser,
     getUserByUsername,
     getAllUsers,

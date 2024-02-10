@@ -17,30 +17,17 @@ function processRequest(req, res){
             res.end('Not Found');
         }
     } else if (req.method === 'POST') {
-        if (pathname === '/register') {
+        if (pathname === '/users') {
             // Handle user registration
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
             req.on('end', () => {
-                const { username, password } = JSON.parse(body);
-                userController.registerUser(username, password);
+                const { username, email, salt, password_encrypted, role, tier, credits, reports, reg_date } = JSON.parse(body);
+                userController.addUser(username, email, salt, password_encrypted, role, tier, credits, reports, reg_date);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
-            });
-        } else if (pathname === '/login') {
-            // Handle user login
-            let body = '';
-            req.on('data', (chunk) => {
-                body += chunk.toString();
-            });
-            req.on('end', () => {
-                const { username, password } = JSON.parse(body);
-                userController.authenticateUser(username, password, (authenticated) => {
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: authenticated }));
-                });
             });
         }
     } else if (req.method === 'DELETE') {
