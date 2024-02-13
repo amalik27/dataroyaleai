@@ -1,55 +1,65 @@
 const db = require('../db');
 
-async function addUser(username, email, salt, password_encrypted, role, tier, credits, reports, reg_date) {
-    const sql = `INSERT INTO users (username, email, salt, password_encrypted, role, tier, credits, reports, reg_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reports, reg_date], (err, result) => {
-        if (err) {
-            console.error('Error registering user: ' + err.stack);
-            return;
-        }
-        console.log('User registered successfully');
-    });
+async function createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date) {
+    try {
+        const sql = `INSERT INTO users (username, email, salt, password_encrypted, role, tier, credits, reg_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+        const result = await db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reg_date]);
+        console.log(result);
+    } catch (error) {
+        console.error('Error creating user:', error);
+        throw error;
+    }
 }
 
-async function getUserByUsername(username) {
+async function readUserById(id) {
     try {
-        const sql = 'SELECT * FROM users WHERE username = ?';
-        const [user] = await db.query(sql, [username]);
+        const sql = 'SELECT * FROM users WHERE id = ?';
+        const result = await db.query(sql, id);
+        console.log(id);
+        console.log(result);
+        if (!Array.isArray(result) || result.length === 0) {
+            return null;
+        }
+
+        const user = {
+            id: result[0].id,
+            username: result[0].username,
+            email: result[0].email,
+            salt: result[0].salt,
+            password_encrypted: result[0].password_encrypted,
+            role: result[0].role,
+            tier: result[0].tier,
+            credits: result[0].credits,
+            reg_date: result[0].reg_date
+        };
+
         return user;
     } catch (error) {
-        console.error('Error getting user by username:', error);
+        console.error('Error getting user by id:', error);
         throw error;
     }
 }
 
-async function getAllUsers() {
+async function updateUserById(id, username, email, salt, password_encrypted, role, tier, credits, reg_date) {
     try {
-        const sql = 'SELECT * FROM users';
-        const users = await db.query(sql);
-        return users;
-    } catch (error) {
-        console.error('Error getting all users:', error);
-        throw error;
-    }
-}
-
-
-async function updateUserByUsername(username, newPassword) {
-    try {
-        const sql = 'UPDATE users SET password = ? WHERE username = ?';
-        await db.query(sql, [newPassword, username]);
-        return { success: true };
+        const sql = `UPDATE users
+                     SET username = ?, email = ?, salt = ?, password_encrypted = ?,
+                         role = ?, tier = ?, credits = ?, reg_date = ?
+                     WHERE id = ?`;
+        await db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reg_date, id]);
+        return { success: true, message: 'User updated successfully' };
     } catch (error) {
         console.error('Error updating user:', error);
         throw error;
     }
 }
 
-async function deleteUserByUsername(username) {
+
+async function deleteUserById(id) {
     try {
-        const sql = 'DELETE FROM users WHERE username = ?';
-        await db.query(sql, [username]);
-        return { success: true };
+        const sql = 'DELETE FROM users WHERE id = ?';
+        await db.query(sql, [id]);
+        return { success: true, message: 'User deleted successfully' };
     } catch (error) {
         console.error('Error deleting user:', error);
         throw error;
@@ -57,9 +67,8 @@ async function deleteUserByUsername(username) {
 }
 
 module.exports = {
-    addUser,
-    getUserByUsername,
-    getAllUsers,
-    updateUserByUsername,
-    deleteUserByUsername
+    createUser,
+    readUserById,
+    updateUserById,
+    deleteUserById
 };

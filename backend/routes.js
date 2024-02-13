@@ -6,31 +6,62 @@ function processRequest(req, res){
     const pathname = parsedUrl.pathname;
 
     if (req.method === 'GET') {
-        // Handle GET requests for querying the database
         if (pathname === '/users') {
-            userController.getUsers((users) => {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const { id } = JSON.parse(body);
+                if (!id) {
+                    res.writeHead(400, { 'Content-Type': 'text/plain' });
+                    res.end('Bad Request: Missing user ID in JSON body');
+                    return;
+                }
+                const user = await userController.readUserById(id);
+                console.log(user);
+                if (!user) {
+                    res.writeHead(404, { 'Content-Type': 'text/plain' });
+                    res.end('User not found');
+                    return;
+                }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(users));
+                res.end(JSON.stringify(user));
             });
         } else {
             res.writeHead(404, { 'Content-Type': 'text/plain' });
             res.end('Not Found');
         }
-    } else if (req.method === 'POST') {
+    } 
+    else if (req.method === 'POST') {
         if (pathname === '/users') {
-            // Handle user registration
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
             req.on('end', () => {
-                const { username, email, salt, password_encrypted, role, tier, credits, reports, reg_date } = JSON.parse(body);
-                userController.addUser(username, email, salt, password_encrypted, role, tier, credits, reports, reg_date);
+                const { username, email, salt, password_encrypted, role, tier, credits, reg_date } = JSON.parse(body);
+                userController.createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
             });
         }
-    } else if (req.method === 'DELETE') {
+    } 
+    else if (req.method === 'PATCH') {
+        if (pathname === '/users') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', () => {
+                const { id, username, email, salt, password_encrypted, role, tier, credits, reg_date } = JSON.parse(body);
+                userController.updateUserById(id, username, email, salt, password_encrypted, role, tier, credits, reg_date);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            });
+        }
+    } 
+    else if (req.method === 'DELETE') {
         // Handle DELETE requests for deleting users
         if (pathname === '/users') {
             let body = '';
@@ -38,8 +69,8 @@ function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', () => {
-                const username = JSON.parse(body).username;
-                userController.deleteUserByUsername(username);
+                const id = JSON.parse(body).id;
+                userController.deleteUserById(id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
             });
@@ -47,7 +78,8 @@ function processRequest(req, res){
             res.writeHead(404, { 'Content-Type': 'text/plain' });
             res.end('Not Found');
         }
-    } else {
+    } 
+    else {
         res.writeHead(405, { 'Content-Type': 'text/plain' });
         res.end('Method Not Allowed');
     }
