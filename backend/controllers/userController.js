@@ -3,8 +3,7 @@ const db = require('../db');
 async function createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date) {
     try {
         const sql = `INSERT INTO users (username, email, salt, password_encrypted, role, tier, credits, reg_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-        const result = await db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reg_date]);
-        console.log(result);
+        await db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reg_date]);
     } catch (error) {
         console.error('Error creating user:', error);
         throw error;
@@ -14,26 +13,32 @@ async function createUser(username, email, salt, password_encrypted, role, tier,
 async function readUserById(id) {
     try {
         const sql = 'SELECT * FROM users WHERE id = ?';
-        const result = await db.query(sql, id);
-        console.log(id);
-        console.log(result);
-        if (!Array.isArray(result) || result.length === 0) {
-            return null;
-        }
-
-        const user = {
-            id: result[0].id,
-            username: result[0].username,
-            email: result[0].email,
-            salt: result[0].salt,
-            password_encrypted: result[0].password_encrypted,
-            role: result[0].role,
-            tier: result[0].tier,
-            credits: result[0].credits,
-            reg_date: result[0].reg_date
-        };
-
-        return user;
+        return new Promise((resolve, reject) => {
+            db.query(sql, id, function (err, result, fields) {
+                if (err) {
+                    console.error('Error getting user by id:', err);
+                    return reject(err);
+                }
+                if (!result || result.length === 0) {
+                    const error = new Error('User not found');
+                    console.error(error.message);
+                    return reject(error);
+                }
+                const output = Object.values(JSON.parse(JSON.stringify(result[0])));
+                const user = {
+                    id: output[0],
+                    username: output[1],
+                    email: output[2],
+                    salt: output[3],
+                    password_encrypted: output[4],
+                    role: output[5],
+                    tier: output[6],
+                    credits: output[7],
+                    reg_date: output[8]
+                };
+                resolve(user);
+            });
+        });
     } catch (error) {
         console.error('Error getting user by id:', error);
         throw error;

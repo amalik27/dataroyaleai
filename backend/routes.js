@@ -19,7 +19,6 @@ function processRequest(req, res){
                     return;
                 }
                 const user = await userController.readUserById(id);
-                console.log(user);
                 if (!user) {
                     res.writeHead(404, { 'Content-Type': 'text/plain' });
                     res.end('User not found');
@@ -62,7 +61,6 @@ function processRequest(req, res){
         }
     } 
     else if (req.method === 'DELETE') {
-        // Handle DELETE requests for deleting users
         if (pathname === '/users') {
             let body = '';
             req.on('data', (chunk) => {
