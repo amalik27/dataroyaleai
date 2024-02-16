@@ -26,6 +26,7 @@ function processRequest(req, res){
                 }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(user));
+                res.end(JSON.stringify(user));
             });
         } else if (req.method === 'POST') {
             let body = '';
@@ -55,6 +56,8 @@ function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', () => {
+                const id = JSON.parse(body).id;
+                userController.deleteUserById(id);
                 const id = JSON.parse(body).id;
                 userController.deleteUserById(id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
