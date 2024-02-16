@@ -1,9 +1,9 @@
 const db = require('../db');
 
-async function createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date) {
+async function createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) {
     try {
-        const sql = `INSERT INTO users (username, email, salt, password_encrypted, role, tier, credits, reg_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-        await db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reg_date]);
+        const sql = `INSERT INTO users (username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        await db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token]);
     } catch (error) {
         console.error('Error creating user:', error);
         throw error;
@@ -34,7 +34,8 @@ async function readUserById(id) {
                     role: output[5],
                     tier: output[6],
                     credits: output[7],
-                    reg_date: output[8]
+                    reg_date: output[8],
+                    api_token: output[9]
                 };
                 resolve(user);
             });
@@ -45,13 +46,13 @@ async function readUserById(id) {
     }
 }
 
-async function updateUserById(id, username, email, salt, password_encrypted, role, tier, credits, reg_date) {
+async function updateUserById(id, username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) {
     try {
         const sql = `UPDATE users
                      SET username = ?, email = ?, salt = ?, password_encrypted = ?,
-                         role = ?, tier = ?, credits = ?, reg_date = ?
+                         role = ?, tier = ?, credits = ?, reg_date = ?, api_token = ?
                      WHERE id = ?`;
-        await db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reg_date, id]);
+        await db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token, id]);
         return { success: true, message: 'User updated successfully' };
     } catch (error) {
         console.error('Error updating user:', error);
