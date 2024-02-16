@@ -4,6 +4,7 @@
   "description": "Group Project for SWE",
   "main": "server.js",
   "scripts": {
+    "server": "node backend/server.js",
     "test": "jasmine"
   },
   "devDependencies": {
