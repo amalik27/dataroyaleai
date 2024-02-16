@@ -4,7 +4,6 @@ const userController = require('./controllers/userController');
 function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
-    //console.log(parsedUrl, pathname)
 
     if (req.method === 'GET') {
         if (pathname === '/users') {
