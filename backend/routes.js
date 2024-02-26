@@ -5,7 +5,20 @@ function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
 
-    if (pathname === '/users') {
+    if (pathname === '/') { //Test Endpoint
+        if (req.method === 'GET') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, message: "Hi \ud83d\ude00" }));
+        } else {
+            res.writeHead(405, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
+        }
+    
+    /** 
+    YOUR ENDPOINT HERE
+    **/
+
+    } else if (pathname === '/users') { //Users Endpoint
         if (req.method === 'GET') {
             let body = '';
             req.on('data', (chunk) => {
