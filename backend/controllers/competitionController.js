@@ -1,5 +1,7 @@
 const db = require('../db');
 
+
+
 /**
  * Create a competition. 
  * @param {*} id Generated unique competition ID. 
@@ -97,4 +99,52 @@ async function updateCompetition (id, userid, deadline, prize){
     } catch (error) {
 
     }
+}
+
+
+
+/**
+ * 
+ * @param {*} id 
+ * @param {*} userid 
+ * @param {*} newPrize 
+ * @param {*} newDeadline 
+ */
+async function updateEligibility(id, userid, newPrize, newDeadline){
+    // Assumptions: deadline is a Date. newPrize is an int. newDeadline is a Date. 
+    // Changes may only be made if there is > 1 week (7 days) left to the deadline of a competition. 
+    // Competition deadline may only be extended. 
+    // Prize money may only be increased.
+
+    const existingCompetition = await findCompetitionByID(id, userid); 
+    if (!existingCompetition){
+        return false; 
+    }
+    
+    let allowableExtension = false; 
+    let allowableTimeFrame = false; 
+    
+
+    let allowablePrize = false;
+    
+    prizeQuery = 'SELECT prize FROM competitions WHERE id = ? AND userid = ?'; 
+    prizeParams = [id, userid]; 
+
+    db.query(prizeQuery, prizeParams, (err, results) => {
+        if (err){
+            console.error("Error retrieving prize credits."); 
+        } else {
+            if (results.length > 0){
+                originalPrize = results[0].prize; 
+            } else {
+                originalPrize = -1; 
+            }
+        }
+    }); 
+    
+
+    if (newPrize > originalPrize && originalPrize != -1){
+        allowablePrize = true; 
+    }
+    
 }
