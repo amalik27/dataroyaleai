@@ -18,6 +18,9 @@ function processRequest(req, res){
     YOUR ENDPOINT HERE
     **/
 
+    } else if (pathname === '/competitions'){
+        
+
     } else if (pathname === '/users') { //Users Endpoint
         if (req.method === 'GET') {
             let body = '';
