@@ -1,4 +1,5 @@
 const db = require('../db');
+const { encrypt } = require('../utils/passwordUtils');
 
 async function createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) {
     try {
@@ -8,6 +9,13 @@ async function createUser(username, email, salt, password_encrypted, role, tier,
         console.error('Error creating user:', error);
         throw error;
     }
+}
+
+
+// WIP
+async function registerUser(username, email, password, role){
+    const [salt, password_encrypted] = encrypt(password, salt);
+    createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token);
 }
 
 async function readUserById(id) {
@@ -59,7 +67,6 @@ async function updateUserById(id, username, email, salt, password_encrypted, rol
         throw error;
     }
 }
-
 
 async function deleteUserById(id) {
     try {
