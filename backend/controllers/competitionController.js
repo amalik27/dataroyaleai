@@ -4,6 +4,7 @@ const db = require('../db');
 
 /**
  * Create a competition. 
+ * @author @deshnadoshi
  * @param {*} id Generated unique competition ID. 
  * @param {*} userid User ID of the organizer. 
  * @param {*} title Title of the competition. 
@@ -27,6 +28,7 @@ async function createCompetition (id, userid, title, deadline, prize, desc, cap,
 
 /**
  * Find a competition based on the compeititon ID and user ID. 
+ * @author @deshnadoshi
  * @param {*} id competition ID. 
  * @param {*} userid user ID. 
  */
@@ -61,6 +63,7 @@ async function findCompetitionByID(id, userid){
 
 /**
  * Update competition information.
+ * @author @deshnadoshi
  * @param {*} id competition ID. 
  * @param {*} userid user ID. 
  * @param {*} deadline Competition submission due date. 
@@ -102,16 +105,18 @@ async function updateCompetition (id, userid, deadline, prize){
 }
 
 
-
+// Note: Might need to split these into 2 separate functions (one for deadline and one for prize money). 
 /**
- * 
- * @param {*} id 
- * @param {*} userid 
- * @param {*} newPrize 
- * @param {*} newDeadline 
+ * Determines if a certain competition is eligible for updates and if competition parameters are valid. 
+ * @author @deshnadoshi
+ * @param {*} id competition ID. 
+ * @param {*} userid user ID. 
+ * @param {*} newPrize New prize credits. 
+ * @param {*} newDeadline New competition deadline. 
  */
 async function updateEligibility(id, userid, newPrize, newDeadline){
     // Assumptions: deadline is a Date. newPrize is an int. newDeadline is a Date. 
+    // Date Assumptions: all dates are 0-indexed. 
     // Changes may only be made if there is > 1 week (7 days) left to the deadline of a competition. 
     // Competition deadline may only be extended. 
     // Prize money may only be increased.
@@ -121,9 +126,35 @@ async function updateEligibility(id, userid, newPrize, newDeadline){
         return false; 
     }
     
+    let today = new Date(); 
+
     let allowableExtension = false; 
     let allowableTimeFrame = false; 
     
+    deadlineQuery = 'SELECT deadline FROM competitions WHERE id = ? AND userid = ?'; 
+    deadlineParams = [id, userid]; 
+
+    db.query(deadlineQuery, deadlineParams, (err, results) => {
+        if (err){
+            console.error("Error retrieving deadline."); 
+        } else {
+            if (results.length > 0){
+                originalDeadline = results[0].deadline; 
+            } else {
+                originalDeadline = -1; 
+            }
+        }
+    }); 
+
+    if (originalDeadline != -1){
+        // Determine if there is more than 1 week left to the competition deadline.
+        allowableTimeFrame = overOneWeek(today, originalDeadline); 
+
+        if (newDeadline > originalDeadline){
+            allowableExtension = true; 
+        }
+    }
+
 
     let allowablePrize = false;
     
@@ -146,5 +177,24 @@ async function updateEligibility(id, userid, newPrize, newDeadline){
     if (newPrize > originalPrize && originalPrize != -1){
         allowablePrize = true; 
     }
+
+    return (allowableExtension && allowableTimeFrame && allowablePrize); 
     
+}
+
+/**
+ * Determine if the deadline of a competition is over one week away from today. 
+ * @author @deshnadoshi
+ * @param {*} today Today's date. 
+ * @param {*} deadline Competition deadline.
+ */
+function overOneWeek(today, deadline){
+    let todayTimestamp = today.getTime();
+    let deadlineTimestamp = deadline.getTime(); 
+
+    let timeDifference = Math.abs(todayTimestamp - deadlineTimestamp);
+    let daysDifference = timeDifference / (1000 * 3600 * 24);
+  
+    return daysDifference >= 7;
+  
 }
