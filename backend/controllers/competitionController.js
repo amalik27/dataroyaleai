@@ -1,5 +1,5 @@
 /**
- * @author @deshnadoshi, @aartirao419, @Emboar02
+ * @authors @deshnadoshi @aartirao419 @Emboar02
  * Competition Management Controller
  * This file contains all the required methods necessary to join, create, and manage competitions in Data Royale.
  */
@@ -245,6 +245,19 @@ function overOneWeek(today, deadline){
   
 }
 
+/**
+ * Generate a randomized 11-digit competition ID. 
+ * @author @deshnadoshi
+ */
+function generateCompetitionID(){
+    const timestamp = new Date().getTime(); 
+    const randomized = Math.floor(Math.random() * 10000000000); 
+
+    const compID = parseInt(timestamp.toString() + randomized.toString().padStart(10, '0'));
+
+    return compID;
+
+}
 
 // Join Competition (Main Functions)
 
