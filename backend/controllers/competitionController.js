@@ -72,7 +72,6 @@ async function findCompetitionByID(id, userid){
 async function updateCompetition (id, userid, deadline, prize){
     const competitionExists = await findCompetitionByID(id, userid); 
     
-
     try {
         return new Promise((resolve, reject) =>{
             if (competitionExists){
@@ -168,6 +167,8 @@ async function updateDeadlineEligibility(id, userid, newDeadline){
     }
     
     let allowableExtension = false; 
+    let allowableUpdateTimeframe = false;
+    let today = new Date(); 
     
     deadlineQuery = 'SELECT deadline FROM competitions WHERE id = ? AND userid = ?'; 
     deadlineParams = [id, userid]; 
@@ -185,12 +186,15 @@ async function updateDeadlineEligibility(id, userid, newDeadline){
     }); 
 
     if (originalDeadline != -1){
+
+        allowableUpdateTimeframe = overOneWeek(today, originalDeadline); 
+
         if (newDeadline > originalDeadline){
             allowableExtension = true; 
         }
     }
 
-    return allowableExtension; 
+    return allowableExtension && allowableUpdateTimeframe; 
 }
 
 /**
