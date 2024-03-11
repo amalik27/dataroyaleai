@@ -40,7 +40,7 @@ async function createCompetition (id, userid, title, deadline, prize, desc, cap,
  */
 async function findCompetitionByID(id, userid){
     try {
-        const query = 'SELECT * from `competitions` where `id` = ? AND `userid` = ?'; 
+        const query = 'SELECT * from `competitions` WHERE `id` = ? AND `userid` = ?'; 
         const params = [id, userid]; 
         return new Promise((resolve, reject) => {
             db.query(query, params, function(err, result){
@@ -263,7 +263,7 @@ function overOneWeek(today, deadline){
  * @param {*} role 
  * @param {*} userid 
  */
-async function authorizeAccess(role, userid){
+async function authenticateAccess(role, userid){
     
     return new Promise((resolve, reject) => {
         try {
@@ -303,7 +303,7 @@ async function pairCompetitionToID(userid, compid){
             query = 'SELECT * FROM competitions WHERE id = ? AND userid = ?'; 
             params = [compid, userid]; 
         
-            db.query(query, values, function (err, result, fields) {
+            db.query(query, params, function (err, result, fields) {
                 if (err) {
                     return reject('Error executing query:', err);
                 } else {
@@ -319,6 +319,26 @@ async function pairCompetitionToID(userid, compid){
     });
 }
 
+/**
+ * View all open and running competitions. 
+ * @author @deshnadoshi
+ */
+async function viewAllCompetitions(){
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        let query = `SELECT * FROM competitions WHERE deadline > '${today}'`;
+        
+        const competitions = await db.query(query); 
+
+        return competitions; 
+
+    } catch (error){
+        return reject("User ID does not own the given Competition ID."); 
+    }
+    
+}
+
+
 
 
 // Exports
@@ -326,5 +346,6 @@ async function pairCompetitionToID(userid, compid){
 module.exports = {
     createCompetition,
     findCompetitionByID,
-    updateCompetition
+    updateCompetition, 
+    viewAllCompetitions
 };
