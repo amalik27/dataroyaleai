@@ -1,5 +1,12 @@
+/**
+ * @author @deshnadoshi, @aartirao419, @Emboar02
+ * Competition Management Controller
+ * This file contains all the required methods necessary to join, create, and manage competitions in Data Royale.
+ */
 const db = require('../db');
+const { readUserById } = require('./userController');
 
+// Create Competition (Main Functions)
 
 /**
  * Create a competition. 
@@ -26,7 +33,7 @@ async function createCompetition (id, userid, title, deadline, prize, desc, cap,
 }
 
 /**
- * Find a competition based on the compeititon ID and user ID. 
+ * Determine if a competition exists based on the compeititon ID and user ID. 
  * @author @deshnadoshi
  * @param {*} id competition ID. 
  * @param {*} userid user ID. 
@@ -113,8 +120,6 @@ async function updateCompetition (id, userid, deadline, prize){
     }
 }
 
-
-
 /**
  * Determine if the new prize credits are acceptable.
  * @author @deshnadoshi
@@ -197,6 +202,32 @@ async function updateDeadlineEligibility(id, userid, newDeadline){
     return allowableExtension && allowableUpdateTimeframe; 
 }
 
+// Create Competition (Validation Functions)
+
+
+function validateTitle(title){
+
+}
+
+function validateDescription(desc){
+
+}
+
+function validatePrize(prize){
+
+}
+
+function validatePlayerCap(cap){
+
+}
+
+function validateDeadline(deadline){
+
+}
+
+
+// Create Competition (Helper Functions)
+
 /**
  * Determine if the deadline of a competition is over one week away from today. 
  * @author @deshnadoshi
@@ -213,3 +244,87 @@ function overOneWeek(today, deadline){
     return daysDifference >= 7;
   
 }
+
+
+// Join Competition (Main Functions)
+
+
+// Join Competition (Validation Functions)
+
+
+// Join Competition (Helper Functions)
+
+
+// Manage Competition (Main Functions)
+
+/**
+ * Determine if a given competition can be created/joined by a given userid's role.  
+ * @author @deshnadoshi
+ * @param {*} role 
+ * @param {*} userid 
+ */
+async function authorizeAccess(role, userid){
+    
+    return new Promise((resolve, reject) => {
+        try {
+            const user = readUserById(userid); 
+            const userRole = user.role; 
+            
+            if (role.toLowerCase() === 'competitor'){
+                if (userRole.toLowerCase() === 'competitor'){
+                    return resolve(true); 
+                }
+        
+            } else if (role.toLowerCase() === 'organizer'){
+                if (userRole.toLowerCase() === 'organizer'){
+                    return resolve(true); 
+                }
+            }
+
+        } catch (error){
+            return reject('Error in authorizing user:', error); // Might need to change this to simply returning false. No need for an error message.
+            
+        }
+
+    });
+
+}
+
+/**
+ * Determine if a given competition ID belongs to a given user ID. 
+ * @author @deshnadoshi
+ * @param {*} userid user ID. 
+ * @param {*} compid competition ID. 
+ */
+async function pairCompetitionToID(userid, compid){
+    
+    return new Promise((resolve, reject) => {
+        try {
+            query = 'SELECT * FROM competitions WHERE id = ? AND userid = ?'; 
+            params = [compid, userid]; 
+        
+            db.query(query, values, function (err, result, fields) {
+                if (err) {
+                    return reject('Error executing query:', err);
+                } else {
+                    return resolve(true); 
+                }
+            });
+            
+
+        } catch (error){
+            return reject("User ID does not own the given Competition ID."); 
+        }
+
+    });
+}
+
+
+
+// Exports
+
+module.exports = {
+    createCompetition,
+    findCompetitionByID,
+    updateCompetition
+};
