@@ -2,6 +2,7 @@ var shell = require('shelljs');
 var chalk = require("chalk");
 const rl = require('readline-sync');
 const EventEmitter = require('events');
+const { default: image } = require('node-docker-api/lib/image');
 
 
 //Program-level constants
@@ -12,7 +13,7 @@ const _ = undefined;
 
 //TESTING
 
-//TODO: Create new function using `docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}" -a` to return true or false if a given port is taken.
+//TODO: Create new function using ls to return true or false if a given port is taken.
 
 
 let containerIDs = ["7295434","34554466","6857458"]
@@ -80,17 +81,28 @@ class PrometheusDaemon{
    * @param {number} maxMemory -1 means 500mb memory max.
    * @param {number} [cpus=defaultCPU] determines how much processing power we give it. Numbers <4 are safe. Beyond that it COULD slow down your machine.(no promises)
    */
-  initializeContainers(userIDs, maxMemory = defaultMemory, cpus = defaultCPU, silent = true){
+  initializeContainers(containerIDs, maxMemory = defaultMemory, cpus = defaultCPU, silent = true){
     console.log(chalk.green("[Prometheus] Starting Containers..."));
-    userIDs.forEach((user)=>{
-      shell.exec(`docker build -t ${user} ./dockercontainer`, {silent: silent})
-    })
-    userIDs.forEach((user)=>{ 
-        let port = 5000 + this.addToHashSet(parseInt(user),portsAllowed);//We only use ports from 5000-5100
-        shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:5000 ${user}`, {silent: silent}) 
-        console.log(`${user} is listening on port ${port} with memory cap ${maxMemory}m  with cpu availability ${cpus}`)
-    })
-  }
+    containerIDs.forEach((containerID) => {
+        shell.exec(`docker build -t ${containerID} ./dockercontainer`, {silent: silent});
+    });
+    containerIDs.forEach((containerID) => { 
+        let port = 5000 + this.addToHashSet(parseInt(containerID), portsAllowed); // Use ports from 5000-5100
+        shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:5000 ${containerID}`, {silent: silent}); 
+        console.log(`${containerID} is listening on port ${port} with memory cap ${maxMemory}m with cpu availability ${cpus}`);
+
+        // Update resource usage.
+        try {
+            this.containerStack.push(containerID, {cpu: cpus, memory: maxMemory});
+        } catch (e) {
+            console.error(chalk.red(`Error starting container ${containerID}: ${e.message}`));
+        }
+        
+        // Log remaining resources.
+        console.log(chalk.green(`Remaining Resources - CPU: ${(this.containerStack.maxCPU - this.containerStack.currentCPU).toFixed(2)}, Memory: ${(this.containerStack.maxMemory - this.containerStack.currentMemory).toFixed(2)} MB`));
+    });
+}
+
 
   /**
    * 
@@ -105,10 +117,10 @@ class PrometheusDaemon{
         var containerStopped = shell.exec(`docker stop ${containerID}`, {silent: silent}); 
         var containerRemoved = shell.exec(`docker container rm ${containerID}`, {silent: silent}); 
         var imageRemoved = shell.exec(`docker rmi ${user} -f`, {silent: silent});
-        var sucess = true;
-        // console.log(containerStopped);
-        // console.log(containerRemoved);
-        // console.log(imageRemoved);
+        var sucess = containerStopped && containerRemoved && imageRemoved;
+        console.log(containerStopped);
+        console.log(containerRemoved);
+        console.log(imageRemoved);
         //Console Feedback
         if(sucess){
           console.log(chalk.grey(`${user} was killed`));

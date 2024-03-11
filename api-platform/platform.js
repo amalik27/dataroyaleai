@@ -29,13 +29,3 @@ process.on('SIGINT', () => {
   daemon.killContainers(daemon.getRunningContainers());
   // Exit with status code 0 (success)
 });
-
-
-
-
-
-
-
-
-
-
