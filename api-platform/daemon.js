@@ -176,9 +176,9 @@ class PrometheusDaemon{
   killContainers(containers, silent = true){
     console.log(chalk.red("[Prometheus] Killing Containers..."));
     containers.forEach((container) => {
-        let containerID = container.containerID
-        let dockerPsOutput = shell.exec(`docker ps | grep ${containerID} | cut -f 1 -d ' '`, {silent: silent});
-        if (dockerPsOutput.code !== 0) {
+        let containerTag = container.containerID//I know this is terrible
+        let containerID = shell.exec(`docker ps | grep ${containerTag} | cut -f 1 -d ' '`, {silent: silent});
+        if (containerID.code !== 0) {
             console.log(chalk.red(`Error finding running container for ID: ${containerID}`));
             return; // Exit this iteration of the loop and continue with the next
         }
@@ -195,9 +195,9 @@ class PrometheusDaemon{
             return; // Exit this iteration of the loop and continue with the next
         }
 
-        let imageRemoved = shell.exec(`docker rmi ${containerID} -f`, {silent: silent});
+        let imageRemoved = shell.exec(`docker rmi ${containerTag}:latest -f`, {silent: silent});
         if (imageRemoved.code !== 0) {
-            console.log(chalk.red(`Error removing image ${containerID}| exit code: ${imageRemoved.code}`));
+            console.log(chalk.red(`Error removing image ${containerTag}:latest| exit code: ${imageRemoved.code}`));
             return; // Exit this iteration of the loop and continue with the next
         }
 
