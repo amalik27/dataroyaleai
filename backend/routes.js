@@ -45,8 +45,34 @@ function processRequest(req, res){
         } else if (req.method === 'POST'){
             // Create Competition
 
+            let body = '';
+            
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+
+            req.on('end', async () => {
+                
+                const {userid, title, deadline, prize, desc, cap, created} = JSON.parse(body);
+
+
+                if (!userid || !title || !deadline || !prize || !desc || !cap) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing competition fields in JSON body' }));
+                    return;
+                }
+
+                await competitionController.createCompetition(userid, title, deadline, prize, desc, cap, created); 
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: "Competition created!" }));
+            });
+
+
+
         } else if (req.method === 'PATCH'){
             // Update Competition Details
+
+            
         }
 
     } else if (pathname === '/users') { //Users Endpoint

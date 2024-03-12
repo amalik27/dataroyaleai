@@ -11,7 +11,6 @@ const { readUserById } = require('./userController');
 /**
  * Create a competition. 
  * @author @deshnadoshi
- * @param {*} id Generated unique competition ID. 
  * @param {*} userid User ID of the organizer. 
  * @param {*} title Title of the competition. 
  * @param {*} deadline Due date of the competition. 
@@ -23,7 +22,7 @@ async function createCompetition (userid, title, deadline, prize, desc, cap, dat
     if (authenticateAccess('organizer', userid)){
         let id = generateCompetitionID(); 
         try {
-            const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, description, player_cap, date_created) VALUES (?, ?, ?, ?, ?, ?)'; 
+            const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, description, player_cap, date_created) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'; 
             const params = [id, userid, title, deadline, prize, desc, cap, datecreated]; 
             await db.query(query, params); 
         } catch (error) {
@@ -257,12 +256,11 @@ function overOneWeek(today, deadline){
  * @author @deshnadoshi
  */
 function generateCompetitionID(){
-    const timestamp = new Date().getTime(); 
-    const randomized = Math.floor(Math.random() * 10000000000); 
+    const min = 1; 
+    const max = 2147483647; 
+    const uniqueRandomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
 
-    const compID = parseInt(timestamp.toString() + randomized.toString().padStart(10, '0'));
-
-    return compID;
+    return uniqueRandomNumber;
 
 }
 
@@ -284,29 +282,22 @@ function generateCompetitionID(){
  * @param {*} userid 
  */
 async function authenticateAccess(role, userid){
-    
-    return new Promise((resolve, reject) => {
-        try {
-            const user = readUserById(userid); 
-            const userRole = user.role; 
-            
-            if (role.toLowerCase() === 'competitor'){
-                if (userRole.toLowerCase() === 'competitor'){
-                    return resolve(true); 
-                }
-        
-            } else if (role.toLowerCase() === 'organizer'){
-                if (userRole.toLowerCase() === 'organizer'){
-                    return resolve(true); 
-                }
-            }
 
-        } catch (error){
-            return reject('Error in authorizing user:', error); // Might need to change this to simply returning false. No need for an error message.
-            
+    try {
+        const user = await readUserById(userid);
+        const userRole = user.role;
+
+        if (role.toLowerCase() === 'competitor' && userRole.toLowerCase() === 'competitor') {
+            return true;
+        } else if (role.toLowerCase() === 'organizer' && userRole.toLowerCase() === 'organizer') {
+            return true;
+        } else {
+            return false;
         }
-
-    });
+    } catch (error) {
+        console.error('Error in authorizing user:', error);
+        throw error; 
+    }
 
 }
 
