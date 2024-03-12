@@ -195,9 +195,9 @@ class PrometheusDaemon{
             return; // Exit this iteration of the loop and continue with the next
         }
 
-        let imageRemoved = shell.exec(`docker rmi ${containerID} -f`, {silent: silent});
+        let imageRemoved = shell.exec(`docker rmi ${containerTag}:latest -f`, {silent: silent});
         if (imageRemoved.code !== 0) {
-            console.log(chalk.red(`Error removing image ${containerID}| exit code: ${imageRemoved.code}`));
+            console.log(chalk.red(`Error removing image ${containerTag}:latest| exit code: ${imageRemoved.code}`));
             return; // Exit this iteration of the loop and continue with the next
         }
 
