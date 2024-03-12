@@ -176,7 +176,7 @@ class PrometheusDaemon{
   killContainers(containers, silent = true){
     console.log(chalk.red("[Prometheus] Killing Containers..."));
     containers.forEach((container) => {
-        let containerTag = container.containerID//I know this is terrible
+        let containerTag = container.containerID//I know this is terrible basically our system has its own ID format which is technically docker's tag format. Don't yell at me ok.
         let containerID = shell.exec(`docker ps | grep ${containerTag} | cut -f 1 -d ' '`, {silent: silent});
         if (containerID.code !== 0) {
             console.log(chalk.red(`Error finding running container for ID: ${containerID}`));
