@@ -163,7 +163,6 @@ class PrometheusDaemon{
    */
   initializeContainers(containerID, maxMemory = defaultMemory, cpus = defaultCPU, silent = true){
     console.log(chalk.green(`[Prometheus] Starting Containers... `));
-
     shell.exec(`docker build -t ${containerID} ./dockercontainer`, {silent: silent})
     let port = 5000 + this.addToHashSet(parseInt(containerID),portsAllowed);//We only use ports from 5000-5100
     shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:5000 ${containerID}`, {silent: silent}) 
@@ -176,24 +175,37 @@ class PrometheusDaemon{
    */
   killContainers(containers, silent = true){
     console.log(chalk.red("[Prometheus] Killing Containers..."));
-    containers.forEach((user)=>{
-        let containerID = shell.exec(`docker ps | grep ${user} | cut -f 1 -d ' ' `, {silent: silent})
-        //console.log(containerID);
-        //Operations
-        var containerStopped = shell.exec(`docker stop ${containerID}`, {silent: silent}); 
-        var containerRemoved = shell.exec(`docker container rm ${containerID}`, {silent: silent}); 
-        var imageRemoved = shell.exec(`docker rmi ${user} -f`, {silent: silent});
-        var sucess = true;
-
-        //Console Feedback
-        if(sucess){
-          console.log(chalk.grey(`${user} was killed`));
-        } else{  
-          console.log(chalk.red(`Error - ${user} failed following operations: ${containerStopped ? '' : 'STOP_CONTAINER '} ${containerRemoved ? '' : 'REMOVE_CONTAINER '} ${imageRemoved ? '' : 'REMOVE_IMAGE '}`));
-
+    containers.forEach((container) => {
+        let containerID = container.containerID
+        let dockerPsOutput = shell.exec(`docker ps | grep ${containerID} | cut -f 1 -d ' '`, {silent: silent});
+        if (dockerPsOutput.code !== 0) {
+            console.log(chalk.red(`Error finding running container for ID: ${containerID}`));
+            return; // Exit this iteration of the loop and continue with the next
         }
+
+        let containerStopped = shell.exec(`docker stop ${containerID}`, {silent: silent});
+        if (containerStopped.code !== 0) {
+            console.log(chalk.red(`Error stopping container ${containerID} | exit code: ${containerStopped.code}`));
+            return; // Exit this iteration of the loop and continue with the next
+        }
+
+        let containerRemoved = shell.exec(`docker container rm ${containerID}`, {silent: silent});
+        if (containerRemoved.code !== 0) {
+            console.log(chalk.red(`Error removing container ${containerID}| exit code: ${containerRemoved.code}`));
+            return; // Exit this iteration of the loop and continue with the next
+        }
+
+        let imageRemoved = shell.exec(`docker rmi ${containerID} -f`, {silent: silent});
+        if (imageRemoved.code !== 0) {
+            console.log(chalk.red(`Error removing image ${containerID}| exit code: ${imageRemoved.code}`));
+            return; // Exit this iteration of the loop and continue with the next
+        }
+
+        // If all operations are successful
+        console.log(chalk.grey(`${containerID} was successfully stopped, removed, and image deleted.`));
     })
   }
+
 }
 
 class ContainerStack {
