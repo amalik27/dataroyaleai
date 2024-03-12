@@ -34,8 +34,8 @@ CREATE TABLE `competitions` (
   `deadline` date NOT NULL,
   `prize` int(11) NOT NULL,
   `description` varchar(6000) NOT NULL,
-  `player-cap` int(11) NOT NULL,
-  `date-created` date NOT NULL
+  `player_cap` int(11) NOT NULL,
+  `date_created` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

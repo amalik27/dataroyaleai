@@ -23,7 +23,7 @@ async function createCompetition (userid, title, deadline, prize, desc, cap, dat
     if (authenticateAccess('organizer', userid)){
         let id = generateCompetitionID(); 
         try {
-            const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, description, player-cap, date-created) VALUES (?, ?, ?, ?, ?, ?)'; 
+            const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, description, player_cap, date_created) VALUES (?, ?, ?, ?, ?, ?)'; 
             const params = [id, userid, title, deadline, prize, desc, cap, datecreated]; 
             await db.query(query, params); 
         } catch (error) {
@@ -325,15 +325,15 @@ async function pairCompetitionToID(userid, compid){
         
             db.query(query, params, function (err, result, fields) {
                 if (err) {
-                    return reject('Error executing query:', err);
+                    reject('Error executing query:', err);
                 } else {
-                    return resolve(true); 
+                    resolve(true); 
                 }
             });
             
 
         } catch (error){
-            return reject("User ID does not own the given Competition ID."); 
+            reject("User ID does not own the given Competition ID."); 
         }
 
     });
@@ -344,18 +344,42 @@ async function pairCompetitionToID(userid, compid){
  * @author @deshnadoshi
  */
 async function viewAllCompetitions(){
-    try {
-        const today = new Date().toISOString().split('T')[0];
-        let query = `SELECT * FROM competitions WHERE deadline > '${today}'`;
-        
-        const competitions = await db.query(query); 
-
-        return competitions; 
-
-    } catch (error){
-        return reject("User ID does not own the given Competition ID."); 
-    }
     
+    return new Promise((resolve, reject) => {
+
+        try {
+            
+            const today = new Date().toISOString().split('T')[0];
+            const queryStr = `SELECT * FROM competitions WHERE deadline > ?`;
+    
+            db.query(queryStr, [today], (err, competitions) => {
+                if (err) {
+                    console.error("Error executing query:", err);
+                    reject("Error in retrieving all competitions.");
+                } else {
+                    const formattedCompetitions = competitions.map(competition => {
+                        return {
+                            id: competition.id,
+                            userid: competition.userid,
+                            title: competition.title,
+                            deadline: competition.deadline,
+                            prize: competition.prize,
+                            desc: competition.description,
+                            player_cap: competition.player_cap,
+                            date_created: competition.date_created
+                        };
+                    });
+
+                    resolve(formattedCompetitions);
+                }
+            });
+
+        } catch (error){
+            reject("Error in retrieving all competitions."); 
+            throw new Error('Error in retrieving all competitions'); 
+        }
+    
+    });
 }
 
 

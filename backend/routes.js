@@ -1,5 +1,6 @@
 const url = require('url');
 const userController = require('./controllers/userController');
+const competitionController = require('./controllers/competitionController'); 
 
 function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
@@ -18,8 +19,35 @@ function processRequest(req, res){
     YOUR ENDPOINT HERE
     **/
 
-    } else if (pathname === '/competitions'){
-        
+    } else if (pathname === '/competitions'){ // Competitions Endpoint
+        if (req.method === 'GET'){
+            // View All Competitions
+            let body = '';
+            
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+
+            req.on('end', async () => {
+                
+                const allCompetitions = await competitionController.viewAllCompetitions();  
+
+                if (!allCompetitions || allCompetitions.length == 0) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Competitions not found' }));
+                    return;
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: allCompetitions }));
+            });
+
+
+        } else if (req.method === 'POST'){
+            // Create Competition
+
+        } else if (req.method === 'PATCH'){
+            // Update Competition Details
+        }
 
     } else if (pathname === '/users') { //Users Endpoint
         if (req.method === 'GET') {
