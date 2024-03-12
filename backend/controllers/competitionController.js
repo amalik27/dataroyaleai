@@ -19,15 +19,18 @@ const { readUserById } = require('./userController');
  * @param {*} desc Description for the competition. 
  * @param {*} cap Maximum player capacity for the competition. 
  */ 
-async function createCompetition (id, userid, title, deadline, prize, desc, cap, datecreated){
-    try {
-        const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, description, player-cap, date-created) VALUES (?, ?, ?, ?, ?, ?)'; 
-        const params = [id, userid, title, deadline, prize, desc, cap, datecreated]; 
-        await db.query(query, params); 
-    } catch (error) {
-        console.error("Error creating competition:", error); 
-        throw error; 
-
+async function createCompetition (userid, title, deadline, prize, desc, cap, datecreated){
+    if (authenticateAccess('organizer', userid)){
+        let id = generateCompetitionID(); 
+        try {
+            const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, description, player-cap, date-created) VALUES (?, ?, ?, ?, ?, ?)'; 
+            const params = [id, userid, title, deadline, prize, desc, cap, datecreated]; 
+            await db.query(query, params); 
+        } catch (error) {
+            console.error("Error creating competition:", error); 
+            throw error; 
+    
+        }
     }
     
 }
@@ -77,43 +80,47 @@ async function findCompetitionByID(id, userid){
  * @returns 
  */
 async function updateCompetition (id, userid, deadline, prize){
+
     const competitionExists = await findCompetitionByID(id, userid); 
     
     try {
         return new Promise((resolve, reject) =>{
             if (competitionExists){
-                let allowedPrizeUpdate = updatePrizeEligibility(id, userid, prize); 
-                let allowedDeadlineUpdate = updateDeadlineEligibility(id, userid, deadline); 
+                
+                if (pairCompetitionToID(userid, id)){
+                    
+                    let allowedPrizeUpdate = updatePrizeEligibility(id, userid, prize); 
+                    let allowedDeadlineUpdate = updateDeadlineEligibility(id, userid, deadline); 
 
-                if (allowedDeadlineUpdate && allowedPrizeUpdate){
-                    const query = 'UPDATE `competitions` SET deadline = ?, prize = ? WHERE id = ? AND userid = ?';
-                    const params = [deadline, prize, id, userid]; 
-                    db.query(query, params, function(err, result){
-                        if (err){
-                            console.error("Error updating competition:", err); 
-                            return resolve(null); 
-                        }
-        
-                        // Selected competition does not exist. 
-                        if (result.length === 0 || !result){
-                            console.error("Competition does not exist."); 
-                            return resolve(null); 
-                        } else {
-                            // Selected competition exists. 
-                            return resolve(true); 
-                        }
-        
-                    }); 
-                } else {
-                    reject("Requirements to update competition parameters are not met (timeframe or value error)."); 
-                }
+                    if (allowedDeadlineUpdate && allowedPrizeUpdate){
+                        const query = 'UPDATE `competitions` SET deadline = ?, prize = ? WHERE id = ? AND userid = ?';
+                        const params = [deadline, prize, id, userid]; 
+                        db.query(query, params, function(err, result){
+                            if (err){
+                                console.error("Error updating competition:", err); 
+                                return resolve(null); 
+                            }
+            
+                            // Selected competition does not exist. 
+                            if (result.length === 0 || !result){
+                                console.error("Competition does not exist."); 
+                                return resolve(null); 
+                            } else {
+                                // Selected competition exists. 
+                                return resolve(true); 
+                            }
+            
+                        }); 
+                    } else {
+                        reject("Requirements to update competition parameters are not met (timeframe or value error)."); 
+                    }
 
-
+            }
     
             } else {
                 reject("Competition does not exist."); 
             }
-
+            
         }); 
     } catch (error) {
 
