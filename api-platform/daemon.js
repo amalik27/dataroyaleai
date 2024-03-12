@@ -12,82 +12,6 @@ const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com
  * We operate under the assumption that the Docker Container is ideal and absolutely cannot go beyond the resource limits given(which to be fair it seems to be able to do)
  */
 
-//TODO: Finish implementing.
-class PrometheusDaemonManager {
-  constructor() {
-    this.daemons = {};
-    this.processQueue = [];
-    this.cpuResourcePool = {
-      G: new Set(), // Guaranteed CPU blocks
-      O: new Set()  // Overload CPU blocks
-    };
-  }
-
-  addProcessToQueue(process) {
-    this.processQueue.push(process);
-    this.processQueue.sort((a, b) => a.priority - b.priority);
-    this.allocateResources();
-  }
-
-  registerDaemon(daemon) {
-    this.daemons[daemon.processID] = daemon;
-  }
-
-  unregisterDaemon(processID) {
-    const daemon = this.daemons[processID];
-    if (daemon) {
-      daemon.killContainers(daemon.getRunningContainers());
-      delete this.daemons[processID];
-    }
-  }
-
-  allocateResources() {
-    while (this.processQueue.length > 0 && (this.cpuResourcePool.G.size > 0 || this.cpuResourcePool.O.size > 0)) {
-      const process = this.processQueue.shift();
-      if (this.cpuResourcePool.G.has(process.requestedBlock)) {
-        this.cpuResourcePool.G.delete(process.requestedBlock);
-      } else if (this.cpuResourcePool.O.has(process.requestedBlock)) {
-        this.cpuResourcePool.O.delete(process.requestedBlock);
-      } else {
-        // No resources available, push the process back to the queue
-        this.processQueue.unshift(process);
-        break;
-      }
-      this.startProcess(process);
-    }
-  }
-
-  startProcess(process) {
-    const daemon = this.daemons[process.processID];
-    if (daemon) {
-      daemon.initializeContainers(process.containerID, process.maxMemory, process.cpus);
-    }
-  }
-
-  // Assuming this function is called when a daemon completes a process
-  releaseResources(processID, cpuBlock) {
-    if (this.daemons[processID]) {
-      // Determine if it was a G or O block and release accordingly
-      // Placeholder for logic to determine block type
-      const blockType = 'G'; // or 'O'
-      this.cpuResourcePool[blockType].add(cpuBlock);
-      this.allocateResources(); // Try to allocate resources again
-    }
-  }
-
-  shutdownAllDaemons() {
-    Object.values(this.daemons).forEach(daemon => daemon.stopMonitoring());
-    this.daemons = {};
-  }
-
-  // Additional methods as necessary...
-}
-
-
-
-
-
-
 
 class PrometheusDaemon{
 
@@ -113,15 +37,12 @@ class PrometheusDaemon{
 
           //Call HW-Limit-Aware-Start-System
           const container = this.containerQueue.dequeue();
-
-          
-
           try{
             this.containerStack.push(container);
-            this.initializeContainers(container.containerID, container.memory, container.cpus);
+            this.initializeContainers(container.containerID, container.memory, container.cpu);
           }catch(e){
             //console.log(chalk.yellow(`[Prometheus] Reached hardware limit when attempting to initialize ${container.toString()} from queue...`));
-            this.containerQueue.queue.push(container);
+            this.containerQueue.queue.push(container);//NOTE: PUSH BECAUSE WE WANT IT TO REMAIN #1
           }
           
         }
@@ -161,12 +82,15 @@ class PrometheusDaemon{
    * @param {number} maxMemory -1 means 500mb memory max.
    * @param {number} [cpus=defaultCPU] determines how much processing power we give it. Numbers <4 are safe. Beyond that it COULD slow down your machine.(no promises)
    */
-  initializeContainers(containerID, maxMemory = defaultMemory, cpus = defaultCPU, silent = true){
-    console.log(chalk.green(`[Prometheus] Starting Containers... `));
+  initializeContainers(containerID, maxMemory, cpus, silent = true){
+    console.log(chalk.green(`[Prometheus] Starting Containers... memory cap ${maxMemory}m  with cpu availability ${cpus}.`));
     shell.exec(`docker build -t ${containerID} ./dockercontainer`, {silent: silent})
     let port = 5000 + this.addToHashSet(parseInt(containerID),portsAllowed);//We only use ports from 5000-5100
     shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:5000 ${containerID}`, {silent: silent}) 
-    console.log(`${containerID} is listening on port ${port} with memory cap ${maxMemory}m  with cpu availability ${cpus}`)
+    console.log(`${containerID} is listening on port ${port} with memory cap ${maxMemory}m  with cpu availability ${cpus}. `);
+    console.log(`Remaining Resources - CPU: ${(this.containerStack.maxCPU - this.containerStack.currentCPU).toFixed(2)}, Memory: ${(this.containerStack.maxMemory - this.containerStack.currentMemory).toFixed(2)} MB`);
+
+
   }
 
   /**
@@ -207,7 +131,6 @@ class PrometheusDaemon{
   }
 
 }
-
 class ContainerStack {
   constructor(maxCPU, maxMemory) {
     this.stack = [];
@@ -247,7 +170,6 @@ class ContainerStack {
     return this.stack.length === 0;
   }
 }
-
 class ContainerQueue {
   constructor() {
     this.queue = [];
@@ -299,7 +221,6 @@ class ContainerQueue {
     return this.queue.length === 0;
   }
 }
-
 ///Keeps things clean
 class Container{
   constructor(cpu, memory, containerID,priority){
