@@ -11,7 +11,9 @@
     "jasmine": "5.1.0"
   },
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "http": "^0.0.1-security",
+    "jsdom": "^24.0.0",
     "mysql": "^2.18.1",
     "url": "^0.11.3"
   }

@@ -1,5 +1,6 @@
 const url = require('url');
 const userController = require('./controllers/userController');
+const courseController = require('./controllers/courseController');
 
 function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
@@ -64,7 +65,52 @@ function processRequest(req, res){
             res.writeHead(405, { 'Content-Type': 'text/plain' });
             res.end('Method Not Allowed');
         }
-    } else {
+    }
+    else if (pathname.includes("/courses/")) {
+        const coursesRegex = /\/courses\/(.+)/;
+        const match = pathname.match(coursesRegex);
+        const api_token = match[1];
+        if (req.method === 'GET') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const courseTitles = await courseController.readAllCoursesThatUserCanBuyOrAccessByApiToken(api_token);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(courseTitles));
+            });
+        }
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const course_id = JSON.parse(body).course_id;
+                await courseController.createCourseProgressByApiToken(api_token, course_id);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            });
+        }
+    }
+    else if (pathname.includes("/dashboard/")) {
+        const coursesRegex = /\/dashboard\/(.+)/;
+        const match = pathname.match(coursesRegex);
+        const api_token = match[1];
+        if (req.method === 'GET') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const courseTitles = await courseController.readAllCoursesOfUserByApiToken(api_token);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(courseTitles));
+            });
+        }
+    }
+    else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not Found');
     }    
