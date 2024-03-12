@@ -81,49 +81,51 @@ async function findCompetitionByID(id, userid){
 async function updateCompetition (id, userid, deadline, prize){
 
     const competitionExists = await findCompetitionByID(id, userid); 
-    
-    try {
-        return new Promise((resolve, reject) =>{
-            if (competitionExists){
-                
-                if (pairCompetitionToID(userid, id)){
+    let allowedPrizeUpdate = await updatePrizeEligibility(id, userid, prize); 
+    let allowedDeadlineUpdate = await updateDeadlineEligibility(id, userid, deadline); 
+    return new Promise((resolve, reject) =>{
+
+        try {
+                if (competitionExists){
                     
-                    let allowedPrizeUpdate = updatePrizeEligibility(id, userid, prize); 
-                    let allowedDeadlineUpdate = updateDeadlineEligibility(id, userid, deadline); 
+                    if (pairCompetitionToID(userid, id)){
+                        
 
-                    if (allowedDeadlineUpdate && allowedPrizeUpdate){
-                        const query = 'UPDATE `competitions` SET deadline = ?, prize = ? WHERE id = ? AND userid = ?';
-                        const params = [deadline, prize, id, userid]; 
-                        db.query(query, params, function(err, result){
-                            if (err){
-                                console.error("Error updating competition:", err); 
-                                return resolve(null); 
-                            }
-            
-                            // Selected competition does not exist. 
-                            if (result.length === 0 || !result){
-                                console.error("Competition does not exist."); 
-                                return resolve(null); 
-                            } else {
-                                // Selected competition exists. 
-                                return resolve(true); 
-                            }
-            
-                        }); 
-                    } else {
-                        reject("Requirements to update competition parameters are not met (timeframe or value error)."); 
-                    }
+                        if (allowedDeadlineUpdate && allowedPrizeUpdate){
+                            const query = 'UPDATE `competitions` SET deadline = ?, prize = ? WHERE id = ? AND userid = ?';
+                            const params = [deadline, prize, id, userid]; 
+                            db.query(query, params, function(err, result){
+                                if (err){
+                                    console.error("Error updating competition:", err); 
+                                    return resolve(null); 
+                                }
+                
+                                // Selected competition does not exist. 
+                                if (result.length === 0 || !result){
+                                    console.error("Competition does not exist."); 
+                                    return resolve(null); 
+                                } else {
+                                    // Selected competition exists. 
+                                    return resolve(true); 
+                                }
+                
+                            }); 
+                        } else {
+                            reject("Requirements to update competition parameters are not met (timeframe or value error)."); 
+                        }
 
-            }
-    
-            } else {
-                reject("Competition does not exist."); 
-            }
-            
-        }); 
-    } catch (error) {
+                }
+        
+                } else {
+                    reject("Competition does not exist."); 
+                }
+                
+        } catch (error) {
 
-    }
+        }
+
+}); 
+
 }
 
 /**
@@ -133,36 +135,36 @@ async function updateCompetition (id, userid, deadline, prize){
  * @param {*} userid user ID. 
  * @param {*} newPrize Proposed new prize amount.
  */
-async function updatePrizeEligibility(id, userid, newPrize){
-    const existingCompetition = await findCompetitionByID(id, userid); 
-    if (!existingCompetition){
-        return false; 
+async function updatePrizeEligibility(id, userid, newPrize) {
+    const existingCompetition = await findCompetitionByID(id, userid);
+    if (!existingCompetition) {
+        return false;
     }
 
-    let allowablePrize = false;
-    
-    prizeQuery = 'SELECT prize FROM competitions WHERE id = ? AND userid = ?'; 
-    prizeParams = [id, userid]; 
+    return new Promise((resolve, reject) => {
+        const prizeQuery = 'SELECT prize FROM competitions WHERE id = ? AND userid = ?';
+        const prizeParams = [id, userid];
 
-    db.query(prizeQuery, prizeParams, (err, results) => {
-        if (err){
-            console.error("Error retrieving prize credits."); 
-        } else {
-            if (results.length > 0){
-                originalPrize = results[0].prize; 
+        db.query(prizeQuery, prizeParams, (err, results) => {
+            if (err) {
+                console.error("Error retrieving prize credits.");
+                reject(err);
             } else {
-                originalPrize = -1; 
+                if (results.length > 0) {
+                    const originalPrize = results[0].prize;
+
+                    const allowablePrize = newPrize > originalPrize && originalPrize !== -1;
+
+                    resolve(allowablePrize);
+                } else {
+                    resolve(false);
+                }
             }
-        }
-    }); 
-    
-
-    if (newPrize > originalPrize && originalPrize != -1){
-        allowablePrize = true; 
-    }
-
-    return allowablePrize; 
+        });
+    });
 }
+
+
 
 /**
  * Determine if the new deadline is acceptable.
@@ -171,42 +173,45 @@ async function updatePrizeEligibility(id, userid, newPrize){
  * @param {*} userid user ID. 
  * @param {*} newDeadline Proposed deadline change
  */
-async function updateDeadlineEligibility(id, userid, newDeadline){
-    const existingCompetition = await findCompetitionByID(id, userid); 
-    if (!existingCompetition){
-        return false; 
+async function updateDeadlineEligibility(id, userid, newDeadline) {
+    const existingCompetition = await findCompetitionByID(id, userid);
+    if (!existingCompetition) {
+        return false;
     }
-    
-    let allowableExtension = false; 
-    let allowableUpdateTimeframe = false;
-    let today = new Date(); 
-    
-    deadlineQuery = 'SELECT deadline FROM competitions WHERE id = ? AND userid = ?'; 
-    deadlineParams = [id, userid]; 
 
-    db.query(deadlineQuery, deadlineParams, (err, results) => {
-        if (err){
-            console.error("Error retrieving deadline."); 
-        } else {
-            if (results.length > 0){
-                originalDeadline = results[0].deadline; 
+    return new Promise((resolve, reject) => {
+        const deadlineQuery = 'SELECT deadline FROM competitions WHERE id = ? AND userid = ?';
+        const deadlineParams = [id, userid];
+        const today = new Date();
+        const newDate = new Date(newDeadline);
+
+        db.query(deadlineQuery, deadlineParams, (err, results) => {
+            if (err) {
+                console.error("Error retrieving deadline.");
+                reject(err);
             } else {
-                originalDeadline = -1; 
+                if (results.length > 0) {
+                    const originalDeadline = results[0].deadline;
+                    let allowableExtension = false;
+                    let allowableUpdateTimeframe = false;
+
+                    allowableUpdateTimeframe = overOneWeek(today, originalDeadline);
+
+                    if (newDate.getTime() > originalDeadline.getTime()) {
+                        allowableExtension = true;
+                    }
+
+
+                    resolve(allowableExtension && allowableUpdateTimeframe);
+                } else {
+                    resolve(false);
+                }
             }
-        }
-    }); 
-
-    if (originalDeadline != -1){
-
-        allowableUpdateTimeframe = overOneWeek(today, originalDeadline); 
-
-        if (newDeadline > originalDeadline){
-            allowableExtension = true; 
-        }
-    }
-
-    return allowableExtension && allowableUpdateTimeframe; 
+        });
+    });
 }
+
+
 
 // Create Competition (Validation Functions)
 

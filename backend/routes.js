@@ -56,7 +56,7 @@ function processRequest(req, res){
                 const {userid, title, deadline, prize, desc, cap, created} = JSON.parse(body);
 
 
-                if (!userid || !title || !deadline || !prize || !desc || !cap) {
+                if (!userid || !title || !deadline || !prize || !desc || !cap || !created) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing competition fields in JSON body' }));
                     return;
@@ -64,7 +64,7 @@ function processRequest(req, res){
 
                 await competitionController.createCompetition(userid, title, deadline, prize, desc, cap, created); 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: "Competition created!" }));
+                res.end(JSON.stringify({ success: true, message: "Competition created." }));
             });
 
 
@@ -72,7 +72,33 @@ function processRequest(req, res){
         } else if (req.method === 'PATCH'){
             // Update Competition Details
 
+            let body = '';
             
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+
+            req.on('end', async () => {
+                
+                const {prize, deadline} = JSON.parse(body);
+
+                if (!prize || !deadline) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing competition update fields in JSON body' }));
+                    return;
+                }
+
+                try {
+                    await competitionController.updateCompetition(505748451, 1, deadline, prize); 
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: true, message: "Competition updated." }));
+                } catch (error) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: error }));
+
+                }
+            });
+
         }
 
     } else if (pathname === '/users') { //Users Endpoint
