@@ -287,7 +287,6 @@ function generateCompetitionID(){
  * @param {*} userid 
  */
 async function authenticateAccess(role, userid){
-
     try {
         const user = await readUserById(userid);
         const userRole = user.role;
@@ -340,7 +339,6 @@ async function pairCompetitionToID(userid, compid){
  * @author @deshnadoshi
  */
 async function viewAllCompetitions(){
-    
     return new Promise((resolve, reject) => {
 
         try {
@@ -377,8 +375,6 @@ async function viewAllCompetitions(){
     
     });
 }
-
-
 
 
 // Exports

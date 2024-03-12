@@ -44,7 +44,6 @@ function processRequest(req, res){
 
         } else if (req.method === 'POST'){
             // Create Competition
-
             let body = '';
             
             req.on('data', (chunk) => {
@@ -62,16 +61,20 @@ function processRequest(req, res){
                     return;
                 }
 
-                await competitionController.createCompetition(userid, title, deadline, prize, desc, cap, created); 
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: "Competition created." }));
+                try {
+                    await competitionController.createCompetition(userid, title, deadline, prize, desc, cap, created); 
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: true, message: "Competition created." }));
+                } catch (error){
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: error }));
+                }
             });
 
 
 
         } else if (req.method === 'PATCH'){
             // Update Competition Details
-
             let body = '';
             
             req.on('data', (chunk) => {
