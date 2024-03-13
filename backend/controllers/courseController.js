@@ -6,7 +6,7 @@ const userController = require('./userController');
 async function createCourseProgressByApiToken(api_token, course_id) {
     try {
         const sql = `INSERT INTO course_progress (user_id, api_token, course_id, progress) VALUES (?, ?, ?, ?)`;
-        const progress = 0;
+        const progress = 1;
         user = await userController.readUserByApiToken(api_token);
         user_id = user.id;
         await db.query(sql, [user_id, api_token, course_id, progress]);
@@ -35,7 +35,6 @@ async function readAllCoursesThatUserCanBuyOrAccessByApiToken(api_token) {
     }
 }
 
-
 async function readAllCoursesOfUserByApiToken(api_token) {
     try {
         const sql = 'SELECT * FROM course_progress WHERE api_token = ?';
@@ -44,11 +43,6 @@ async function readAllCoursesOfUserByApiToken(api_token) {
                 if (err) {
                     console.error('Error getting course progress by API token:', err);
                     return reject(err);
-                }
-                if (!results || results.length === 0) {
-                    const error = new Error('No course progress found for the user');
-                    console.error(error.message);
-                    return reject(error);
                 }
                 const courseProgressList = results.map(result => {
                     return {
@@ -67,12 +61,38 @@ async function readAllCoursesOfUserByApiToken(api_token) {
     }
 }
 
+async function openCourse(course_id, api_token) {
+    try {
+        const sql = 'SELECT * FROM course_progress WHERE api_token = ? AND course_id = ?';
+        return new Promise((resolve, reject) => {
+            db.query(sql, [api_token, parseInt(course_id)], function (err, results, fields) {
+                if (err) {
+                    console.error('Error getting course progress by API token and course ID:', err);
+                    return reject(err);
+                }
+                if (!results || results.length === 0) {
+                    const error = new Error('No course progress found for the user');
+                    console.error(error.message);
+                    return reject(error);
+                }
+                const courseProgress = results[0].progress;
+                const filePath = '/frontend/public/courses/' + course_id + '/' + courseProgress + '.html';
+                resolve(filePath);
+            });
+        });
+    } catch (error) {
+        console.error('Error reading courses for the user:', error);
+        throw error;
+    }
+}
+
 async function retrieveCourseMetadata() {
     const courseMetadata = [];
-    const courseFiles = ['test-course1.html', 'test-course2.html', 'test-course3.html']; // List of course HTML files
+    const courseFiles = ['1.html', '1.html', '1.html']; // List of course HTML files WITH METADATA
+    let i = 1;
     for (const file of courseFiles) {
         try {
-            const filePath = './frontend/public/courses/' + file; // Construct file path
+            const filePath = './frontend/public/courses/' + i + '/' + file; // Construct file path
             const htmlText = await fs.readFile(filePath, 'utf-8'); // Read file contents
             // Parse HTML using jsdom
             const dom = new JSDOM(htmlText);
@@ -81,6 +101,7 @@ async function retrieveCourseMetadata() {
             const courseName = document.querySelector('meta[name="course-name"]').getAttribute('content');
             const courseDescription = document.querySelector('meta[name="course-description"]').getAttribute('content');
             courseMetadata.push({ id: courseId, name: courseName, description: courseDescription });
+            i++;
         } catch (error) {
             console.error('Error fetching course file:', error);
         }
@@ -88,12 +109,9 @@ async function retrieveCourseMetadata() {
     return courseMetadata;
 }
 
-function filterCourses(userBoughtCourses, allCourses) {
-    return allCourses.filter(course => !userBoughtCourses.includes(course.id));
-}
-
 module.exports = {
     readAllCoursesThatUserCanBuyOrAccessByApiToken,
     readAllCoursesOfUserByApiToken,
-    createCourseProgressByApiToken
+    createCourseProgressByApiToken,
+    openCourse
 };

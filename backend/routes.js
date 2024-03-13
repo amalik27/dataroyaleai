@@ -1,4 +1,6 @@
 const url = require('url');
+const fs = require('fs');
+const path = require('path');
 const userController = require('./controllers/userController');
 const courseController = require('./controllers/courseController');
 
@@ -94,7 +96,7 @@ function processRequest(req, res){
             });
         }
     }
-    else if (pathname.includes("/dashboard/")) {
+    else if (pathname.includes("/dashboard/") && !pathname.includes("/course/")) {
         const coursesRegex = /\/dashboard\/(.+)/;
         const match = pathname.match(coursesRegex);
         const api_token = match[1];
@@ -107,6 +109,31 @@ function processRequest(req, res){
                 const courseTitles = await courseController.readAllCoursesOfUserByApiToken(api_token);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(courseTitles));
+            });
+        }
+    }
+    else if (pathname.includes("/dashboard/") && pathname.includes("/course/")) {
+        const coursesRegex = /\/dashboard\/(\w+)\/course\/(\d+)/;
+        const match = pathname.match(coursesRegex);
+        const api_token = match[1];
+        const course_id = match[2];
+        if (req.method === 'GET') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const filePath = await courseController.openCourse(course_id, api_token);
+                let curDir = __dirname;
+                fs.readFile(curDir.replace('/backend', "") + filePath, (err, data) => {
+                    if (err) {
+                        res.writeHead(500, { 'Content-Type': 'text/plain' });
+                        res.end('500 Internal Server Error: ', err);
+                        return;
+                    }
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
+                });
             });
         }
     }
