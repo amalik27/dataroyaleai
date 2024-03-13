@@ -104,38 +104,38 @@ class PrometheusDaemonManager {
       console.log(`Resources released for process ${process.processID}: CPU block ${process.allocatedBlock.id}`);
       // Attempt to reallocate resources to queued processes
       this.allocateResources();
-  }
-
-  rerouteAPICall(processID, apiEndpoint) {
-    // Logic to reroute API calls to specific processes
-    const daemon = this.daemons[processID];
-    if (daemon) {
-        // This function assumes an API routing system is in place
-        // The system should be set up to handle API endpoint redirection
-        daemon.rerouteAPICall(processID, apiEndpoint);
-        console.log(`API calls for process ${processID} are now being routed to ${apiEndpoint}`);
-    } else {
-        throw new Error(`No daemon found with process ID ${processID} for rerouting API calls`);
     }
-}
 
-registerDaemon(processID, daemon) {
-  if (!this.daemons[processID]) {
-      this.daemons[processID] = daemon;
-      console.log(`Daemon registered with process ID ${processID}`);
-  } else {
-      throw new Error(`Daemon with process ID ${processID} is already registered`);
-  }
-}
+    rerouteAPICall(processID, apiEndpoint) {
+      // Logic to reroute API calls to specific processes
+      const daemon = this.daemons[processID];
+      if (daemon) {
+          // This function assumes an API routing system is in place
+          // The system should be set up to handle API endpoint redirection
+          daemon.forward(processID, apiEndpoint);
+          console.log(`API calls for process ${processID} are now being routed to ${apiEndpoint}`);
+      } else {
+          throw new Error(`No daemon found with process ID ${processID} for rerouting API calls`);
+      }
+    }
 
-unregisterDaemon(processID) {
-  if (this.daemons[processID]) {
-      delete this.daemons[processID];
-      console.log(`Daemon with process ID ${processID} has been unregistered`);
-  } else {
-      throw new Error(`No daemon found with process ID ${processID} to unregister`);
-  }
-}
+    registerDaemon(processID, daemon) {
+      if (!this.daemons[processID]) {
+          this.daemons[processID] = daemon;
+          console.log(`Daemon registered with process ID ${processID}`);
+      } else {
+          throw new Error(`Daemon with process ID ${processID} is already registered`);
+      }
+    }
+
+    unregisterDaemon(processID) {
+      if (this.daemons[processID]) {
+          delete this.daemons[processID];
+          console.log(`Daemon with process ID ${processID} has been unregistered`);
+      } else {
+          throw new Error(`No daemon found with process ID ${processID} to unregister`);
+      }
+    }
 
 }
 
