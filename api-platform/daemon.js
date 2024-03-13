@@ -15,6 +15,7 @@ const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com
 
 class PrometheusDaemon{
 
+
   /**
    * The PrometheusDaemon constructor initializes a new instance of the class with parameters for port allocation, CPU and memory limits, process identification, and maximum uptime. It sets up an array to track port usage, a queue for container management, and a stack for actively monitoring container resources. It logs initialization messages to indicate the system's operational parameters. The  maxUptime parameter specifies the duration the daemon should run before automatically shutting down, ensuring resource usage does not exceed predetermined limits. This setup prepares the daemon for monitoring and managing Docker containers within specified hardware constraints.
    * @param portsAllowed is the number of ports we permit this particular instance.
@@ -23,7 +24,8 @@ class PrometheusDaemon{
    * @param STARTING_PORT is where we begin counting our ports from. The default value is there for testing but PLEASE assign it. Port conflicts are the absolute last thing we want on our mind. 
    * 
    */
-  constructor(STARTING_PORT = 5000, portsAllowed, maxCPU = .05, maxMemory = 300, processID,maxUptime){
+  constructor(manager,STARTING_PORT = 5000, portsAllowed, maxCPU = .05, maxMemory = 300, processID,maxUptime){
+    this.manager=manager;
     this.ports = new Array(portsAllowed);
     this.containerQueue = new ContainerQueue()
     console.log(`[Prometheus] Process Stack initialized with maxCPU:${maxCPU} and maxMemory:${maxMemory}`);

@@ -10,7 +10,7 @@ const _ = undefined;
 
 
 //Create new daemon
-let daemon = new Prometheus.PrometheusDaemon(5000,101,.5,500,"user123",10);
+let daemon = new Prometheus.PrometheusDaemon(_,5000,101,.5,500,"user123",10);
 //Define shutdown sequence
 process.on('SIGINT', () => {
   console.log(chalk.red("[Prometheus] Shutdown signal recieved, performing cleanup."));
@@ -18,6 +18,7 @@ process.on('SIGINT', () => {
   daemon.stopMonitoring();
   daemon.killContainers(daemon.getRunningContainers());
   // Exit with status code 0 (success)
+  process.exit(0);
 });
 
 
