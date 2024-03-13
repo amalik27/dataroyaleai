@@ -30,7 +30,8 @@ daemon.startMonitoring(500)
 containerIDs.forEach((id)=>{
   console.log(chalk.gray("Enqueuing " + id.toString()))
   daemon.containerQueue.enqueue({cpus:.2, memory:100},1,id)
-})
+});
+
 sleep(5000).then(()=>{
   daemon.forward({ containerID: '7295434' })
   .then(data => {
