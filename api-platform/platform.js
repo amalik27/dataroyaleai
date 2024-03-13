@@ -31,12 +31,14 @@ containerIDs.forEach((id)=>{
   console.log(chalk.gray("Enqueuing " + id.toString()))
   daemon.containerQueue.enqueue({cpus:.2, memory:100},1,id)
 })
-await sleep(5000)
-daemon.forward({ containerID: '7295434' })
+sleep(5000).then(()=>{
+  daemon.forward({ containerID: '7295434' })
   .then(data => {
     console.log(data); // Handle the data from the request
   })
   .catch(error => {
     console.error(error); // Handle any errors
   });
+})
+
 

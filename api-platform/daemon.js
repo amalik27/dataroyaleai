@@ -95,12 +95,25 @@ class PrometheusDaemon{
    * @param {number} [cpus=defaultCPU] determines how much processing power we give it. Numbers <4 are safe. Beyond that it COULD slow down your machine.(no promises)
    * @returns {number} id 
    */
-  initializeContainers(containerID, maxMemory, cpus, silent = true){
-    console.log(chalk.green(`[Prometheus] Starting Containers... memory cap ${maxMemory}m  with cpu availability ${cpus}.`));
-    shell.exec(`docker build -t ${containerID} ./dockercontainer`, {silent: silent})
-    let port = STARTING_PORT + this.addToHashSet(parseInt(containerID),portsAllowed);//We only use ports from STARTING_PORT to STARTING_PORT + 100
-    shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:STARTING_PORT ${containerID}`, {silent: silent}) 
-    console.log(`${containerID} is listening on port ${port} with memory cap ${maxMemory}m  with cpu availability ${cpus}. `);
+  initializeContainers(containerID, maxMemory, cpus, silent = true) {
+    console.log(chalk.green(`[Prometheus] Starting Containers... memory cap ${maxMemory}m with cpu availability ${cpus}.`));
+  
+    // Building the Docker container
+    let buildResult = shell.exec(`docker build -t ${containerID} ./dockercontainer`, { silent: silent });
+    if (buildResult.code !== 0) {
+      console.error(chalk.red(`Failed to build container ${containerID}: ${buildResult.stderr}`));
+      return; // Exit if build fails
+    }
+  
+    let port = STARTING_PORT + this.addToHashSet(parseInt(containerID), this.portsAllowed); 
+    // Running the Docker container
+    let runResult = shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:${STARTING_PORT} ${containerID}`, { silent: silent });
+    if (runResult.code !== 0) {
+      console.error(chalk.red(`Failed to start container ${containerID}: ${runResult.stderr}`));
+      return; // Exit if run fails
+    }
+  
+    console.log(`${containerID} is listening on port ${port} with memory cap ${maxMemory}m with cpu availability ${cpus}.`);
     console.log(`Remaining Resources - CPU: ${(this.containerStack.maxCPU - this.containerStack.currentCPU).toFixed(2)}, Memory: ${(this.containerStack.maxMemory - this.containerStack.currentMemory).toFixed(2)} MB`);
   }
 
