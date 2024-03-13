@@ -3,7 +3,7 @@ const fs = require('fs').promises;
 const { JSDOM } = require('jsdom');
 const userController = require('./userController');
 
-async function createCourseProgressByApiToken(api_token, course_id) {
+async function createCourseProgress(api_token, course_id) {
     try {
         const sql = `INSERT INTO course_progress (user_id, api_token, course_id, progress) VALUES (?, ?, ?, ?)`;
         const progress = 1;
@@ -12,6 +12,17 @@ async function createCourseProgressByApiToken(api_token, course_id) {
         await db.query(sql, [user_id, api_token, course_id, progress]);
     } catch (error) {
         console.error('Error creating user:', error);
+        throw error;
+    }
+}
+
+async function updateCourseProgress(progress, api_token, course_id) {
+    try {
+        console.log(progress + '-----' + api_token  + '-----' + course_id);
+        const sql = `UPDATE course_progress SET progress = ? WHERE api_token = ? AND course_id = ?`;
+        await db.query(sql, [progress, api_token, course_id]);
+    } catch (error) {
+        console.error('Error updating user:', error);
         throw error;
     }
 }
@@ -112,6 +123,7 @@ async function retrieveCourseMetadata() {
 module.exports = {
     readAllCoursesThatUserCanBuyOrAccessByApiToken,
     readAllCoursesOfUserByApiToken,
-    createCourseProgressByApiToken,
+    createCourseProgress,
+    updateCourseProgress,
     openCourse
 };

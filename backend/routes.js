@@ -90,7 +90,7 @@ function processRequest(req, res){
             });
             req.on('end', async () => {
                 const course_id = JSON.parse(body).course_id;
-                await courseController.createCourseProgressByApiToken(api_token, course_id);
+                await courseController.createCourseProgress(api_token, course_id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
             });
@@ -134,6 +134,18 @@ function processRequest(req, res){
                     res.writeHead(200, { 'Content-Type': 'text/html' });
                     res.end(data);
                 });
+            });
+        }
+        else if (req.method === 'PATCH') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const progress = JSON.parse(body).progress;
+                await courseController.updateCourseProgress(progress, api_token, course_id);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
             });
         }
     }
