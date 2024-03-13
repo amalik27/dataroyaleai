@@ -1,10 +1,18 @@
-from flask import Flask
 import time
+from flask import Flask, request, jsonify
+import math
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.route('/', methods=['POST'])
+def calculate_hypotenuse():
+    time.sleep(5) #Pretend it is a long calculation
+    data = request.get_json()
+    a = data['a']
+    b = data['b']
+    hypotenuse = math.sqrt(a**2 + b**2)
+    return jsonify({"hypotenuse": hypotenuse})
 
-def hello_world():
-        time.sleep(5);#Imagine this as the system taking some time to do work.
-        return "Hello World!"
+if __name__ == '__main__':
+    app.run(debug=True)
+

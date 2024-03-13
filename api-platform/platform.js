@@ -32,10 +32,13 @@ containerIDs.forEach((id)=>{
   daemon.containerQueue.enqueue({cpus:.2, memory:100},1,id)
 });
 
+req = { containerID: '7295434', body:{ a: 3, b: 4,}};
+
 sleep(5000).then(()=>{
-  daemon.forward({ containerID: '7295434' })
+  console.log(chalk.yellow(`[Client] Requesting: ${JSON.stringify(req)}`))
+  daemon.forward(req)
   .then(data => {
-    console.log(data); // Handle the data from the request
+    console.log(chalk.yellow(`Result: ${data}`))
   })
   .catch(error => {
     console.error(error); // Handle any errors

@@ -114,7 +114,7 @@ class PrometheusDaemon{
       return; // Exit if run fails
     }
   
-    console.log(`${containerID} is listening on port ${port} with memory cap ${maxMemory}m with cpu availability ${cpus}.`);
+    console.log(`${containerID} is listening on port ${port} with memory cap ${maxMemory}m with cpu availability ${cpus}. | Build and run exit codes were ${buildResult.code} and ${runResult.code}.`);
     console.log(`Remaining Resources - CPU: ${(this.containerStack.maxCPU - this.containerStack.currentCPU).toFixed(2)}, Memory: ${(this.containerStack.maxMemory - this.containerStack.currentMemory).toFixed(2)} MB`);
   }
 
@@ -176,7 +176,10 @@ class PrometheusDaemon{
         hostname: address,
         port: port,
         path: '/',
-        method: 'GET',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       };
 
       const forwardReq = http.request(options, (res) => {
@@ -191,7 +194,7 @@ class PrometheusDaemon{
           resolve(data);
         });
       });
-
+      forwardReq.write(JSON.stringify(req.body));
       forwardReq.on('error', (e) => {
         // Reject the promise on request error
         reject(`problem with request: ${e.message}`);
