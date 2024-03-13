@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
 def calculate_hypotenuse():
-    time.sleep(5) #Pretend it is a long calculation
+    time.sleep(2) #Pretend it is a long calculation
     data = request.get_json()
     a = data['a']
     b = data['b']
