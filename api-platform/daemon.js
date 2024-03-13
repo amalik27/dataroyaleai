@@ -1,11 +1,10 @@
 var shell = require('shelljs');
 var chalk = require("chalk");
 var http = require('http');
-const { default: container } = require('node-docker-api/lib/container');
 const portsAllowed = 101; // Define max number of ports from STARTING_PORT 
 const defaultMemory = 50;//mb of memory.
 const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com/config/containers/resource_constraints/#cpu
-const STARTING_PORT = 5000;
+
 //TODO: Create new function using `docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}" -a` to return true or false if a given port is taken.
 
 
@@ -16,12 +15,23 @@ const STARTING_PORT = 5000;
 
 class PrometheusDaemon{
 
-  constructor(portsAllowed, maxCPU = .05, maxMemory = 300, processID){
+  /**
+   * The PrometheusDaemon constructor initializes a new instance of the class with parameters for port allocation, CPU and memory limits, process identification, and maximum uptime. It sets up an array to track port usage, a queue for container management, and a stack for actively monitoring container resources. It logs initialization messages to indicate the system's operational parameters. The  maxUptime parameter specifies the duration the daemon should run before automatically shutting down, ensuring resource usage does not exceed predetermined limits. This setup prepares the daemon for monitoring and managing Docker containers within specified hardware constraints.
+   * @param portsAllowed is the number of ports we permit this particular instance.
+   * @param processID would be a unique identifier for the particular daemon
+   * @param maxUptime is the time allotted for the Daemon to be alive for in SECONDS. Be aware that the units are SECONDS. This is very IMPORTANT.
+   * @param STARTING_PORT is where we begin counting our ports from. The default value is there for testing but PLEASE assign it. Port conflicts are the absolute last thing we want on our mind. 
+   * 
+   */
+  constructor(STARTING_PORT = 5000, portsAllowed, maxCPU = .05, maxMemory = 300, processID,maxUptime){
     this.ports = new Array(portsAllowed);
     this.containerQueue = new ContainerQueue()
-    this.containerStack = new ContainerStack(maxCPU,maxMemory)
+    console.log(`[Prometheus] Process Stack initialized with maxCPU:${maxCPU} and maxMemory:${maxMemory}`);
+    this.containerStack = new ContainerStack(maxCPU,maxMemory);
     this.interval = null
     this.processID = processID;
+    this.maxUptime = maxUptime;
+    this.STARTING_PORT = STARTING_PORT;
 
     console.log(chalk.green("[Prometheus] Initialized Daemon. Prometheus is watching for updates..."));
   }
@@ -31,18 +41,37 @@ class PrometheusDaemon{
     return this.containerStack.stack.slice(0);//used to change reference
   }
 
+  /*
+  * Causes the internal timer to start as well as listens for updates on the queue.
+  */
   startMonitoring(intervalTime) {
+    const startTime = Date.now(); // Capture the start time of the daemon
     if (!this.interval) {
       this.interval = setInterval(() => {
+        const currentTime = Date.now();
+        const elapsedTime = (currentTime - startTime) / 1000; // Convert to seconds
+
+        if (elapsedTime >= this.maxUptime) {
+          console.log(chalk.red("[Prometheus] Max uptime reached. Stopping daemon and cleaning up..."));
+          this.stopMonitoring();
+          this.killContainers(this.getRunningContainers());
+          // Additional cleanup logic here if necessary
+          process.exit(0); // Exit the process
+        }
+
         if (!this.containerQueue.isEmpty()) {
 
           //Call HW-Limit-Aware-Start-System
           const container = this.containerQueue.dequeue();
           try{
             this.containerStack.push(container);
-            this.initializeContainers(container.containerID, container.memory, container.cpu);
+            this.initializeContainer(container);
           }catch(e){
-            //console.log(chalk.yellow(`[Prometheus] Reached hardware limit when attempting to initialize ${container.toString()} from queue...`));
+            if(e.name==="HardwareLimitError"){
+              return;
+            }
+            console.log(chalk.red(e.toString()));
+            console.log(chalk.gray(e.stack.toString()));
             this.containerQueue.queue.push(container);//NOTE: PUSH BECAUSE WE WANT IT TO REMAIN #1
           }
           
@@ -51,6 +80,9 @@ class PrometheusDaemon{
     }
   }
 
+  /** 
+   * To pause the monitoring system. Note, this will NOT reset the timer. This is a good way to make a particular process not accept any more containers, while keeping it alive. The downside is that the timer is currently not running.
+  */
   stopMonitoring() {
     if (this.interval) {
       clearInterval(this.interval);
@@ -77,10 +109,14 @@ class PrometheusDaemon{
     return index;
   }
 
-  getPortByID(containerID) {    for (let index = parseInt(containerID)%portsAllowed; index < this.ports.length; index++) {
+  /**
+   * As the name implies, it gets the port that a particular container operates on when given its unique ID
+   */
+  getPortByID(containerID) {    
+    for (let index = parseInt(containerID)%portsAllowed; index < this.ports.length; index++) {
       const element = this.ports[index];
       if(element==containerID){
-        return STARTING_PORT + index;
+        return this.STARTING_PORT + index;
       }
     }
     // if (index === -1) {
@@ -90,37 +126,54 @@ class PrometheusDaemon{
   }
 
   /**
-   * 
-   * @param {Array<number>} userIDs 
-   * @param {number} maxMemory -1 means 500mb memory max.
-   * @param {number} [cpus=defaultCPU] determines how much processing power we give it. Numbers <4 are safe. Beyond that it COULD slow down your machine.(no promises)
-   * @returns {number} id 
+   * As the name implies, removes container from port mapping
    */
-  initializeContainers(containerID, maxMemory, cpus, silent = true) {
-    console.log(chalk.green(`[Prometheus] Starting Containers... memory cap ${maxMemory}m with cpu availability ${cpus}.`));
-  
+  removeContainerFromPortMap(containerID) {    
+    for (let index = parseInt(containerID)%portsAllowed; index < this.ports.length; index++) {
+      const element = this.ports[index];
+      if(element==containerID){
+        this.ports[index]=undefined;
+        return;
+      }
+    }
+    // if (index === -1) {
+    //   throw new Error(`Container ID ${containerID} not found.`);
+    // }
+    throw new Error(chalk.red(`Container ID ${containerID} not found in containerID-Port set.`));
+  }
+
+
+
+  /**
+   * Used to intialize a container.
+   * 
+   * @param {Container} container
+   * 
+   */
+  initializeContainer(container, silent = true) {
+    console.log(chalk.green(`[Prometheus] Starting Container...`));
     // Building the Docker container
-    let buildResult = shell.exec(`docker build -t ${containerID} ./dockercontainer`, { silent: silent });
+    let buildResult = shell.exec(`docker build -t ${container.containerID} ./${container.model}`, { silent: silent });
     if (buildResult.code !== 0) {
-      console.error(chalk.red(`Failed to build container ${containerID}: ${buildResult.stderr}`));
+      console.error(chalk.red(`Failed to build container ${container.containerID} with exit code ${buildResult.code}: ${buildResult.stderr}`));
       return; // Exit if build fails
     }
   
-    let port = STARTING_PORT + this.addToHashSet(parseInt(containerID), this.portsAllowed); 
+    let port = this.STARTING_PORT + this.addToHashSet(parseInt(container.containerID), this.portsAllowed); 
     // Running the Docker container
-    let runResult = shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:${STARTING_PORT} ${containerID}`, { silent: silent });
+    let runResult = shell.exec(`docker run -d --memory=${container.memory}m --cpus=${container.cpu} -p ${port}:${this.STARTING_PORT} ${container.containerID}`, { silent: silent });
     if (runResult.code !== 0) {
-      console.error(chalk.red(`Failed to start container ${containerID}: ${runResult.stderr}`));
+      console.error(chalk.red(`Failed to start container ${container.containerID} with exit code ${buildResult.code}: ${runResult.stderr}`));
       return; // Exit if run fails
     }
   
-    console.log(`${containerID} is listening on port ${port} with memory cap ${maxMemory}m with cpu availability ${cpus}. | Build and run exit codes were ${buildResult.code} and ${runResult.code}.`);
+    console.log(`${container.containerID} running image ${container.model} is listening on port ${port} with memory cap ${container.memory}m with cpu availability ${container.cpu}. | Build and run exit codes were ${buildResult.code} and ${runResult.code}.`);
     console.log(`Remaining Resources - CPU: ${(this.containerStack.maxCPU - this.containerStack.currentCPU).toFixed(2)}, Memory: ${(this.containerStack.maxMemory - this.containerStack.currentMemory).toFixed(2)} MB`);
   }
 
   /**
    * 
-   * @param {Array<number>} containers Array of container IDs we generate
+   * @param {Array<Container>} containers
    */
   killContainers(containers, silent = true){
     console.log(chalk.red("[Prometheus] Killing Containers..."));
@@ -137,6 +190,12 @@ class PrometheusDaemon{
             console.log(chalk.red(`Error stopping container ${containerID} | exit code: ${containerStopped.code}`));
             return; // Exit this iteration of the loop and continue with the next
         }
+        //At this point, container is stopped, so we will remove it from the port mapping now.
+        try{
+          this.removeContainerFromPortMap(containerTag);
+        } catch (e){
+          console.log(e)
+        }
 
         let containerRemoved = shell.exec(`docker container rm ${containerID}`, {silent: silent});
         if (containerRemoved.code !== 0) {
@@ -151,7 +210,7 @@ class PrometheusDaemon{
         }
 
         // If all operations are successful
-        console.log(chalk.grey(`${containerID} was successfully stopped, removed, and image deleted.`));
+        console.log(chalk.grey(`${containerTag}:${containerID} was successfully stopped, removed, and image deleted.`));
     })
   }
 
@@ -224,7 +283,7 @@ class ContainerStack {
       this.currentCPU += container.cpu;
       this.currentMemory += container.memory;
     } else {
-      throw new Error(`Push failed. Exceeds CPU or memory limits. Container: ${container.toString()} `);
+      throw new HardwareLimitError(chalk.yellow(`[Prometheus] Reached hardware limit when attempting to initialize ${container.toString()} from queue...`));
     }
   }
 
@@ -258,15 +317,15 @@ class ContainerQueue {
    * @param {number} priority 
    * @param {number} containerID 
    */
-  enqueue(parameters,priority=1, containerID) {
+  enqueue(parameters,priority=1, containerID,model) {
     if (this.queue.find(container=>{
         container.containerID ==containerID
     }) == undefined) {
-      this.queue.push(new Container(parameters.cpus, parameters.memory,containerID,priority));
+      this.queue.push(new Container(parameters.cpus, parameters.memory,containerID,priority,model));
       this.queue.sort((a, b) => a.priority - b.priority);
-      //this.itemMap.set(containerID, parameters);
+      //console.log(chalk.gray("[Success] Container Enqueued: " + containerID.toString()))
     } else{
-      console.log(chalk.gray("[Failure] Duplicate ContainerID When Enqueueing " + containerID.toString()))
+      console.log(chalk.red("[ContainerQueue Failure] Duplicate ContainerID When Enqueueing " + containerID.toString()))
     }
   }
 
@@ -300,12 +359,20 @@ class ContainerQueue {
 }
 ///Keeps things clean
 class Container{
-  constructor(cpu, memory, containerID,priority){
+  constructor(cpu, memory, containerID,priority,model){
     this.cpu = cpu;
     this.memory = memory;
     this.containerID = containerID;
     this.priority = priority;
+    this.model = model;
     this.toString = () => `{containerID: ${containerID},cpu: ${cpu}, memory: ${memory}, priority: ${priority}}`
+  }
+}
+
+class HardwareLimitError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "HardwareLimitError";
   }
 }
 
