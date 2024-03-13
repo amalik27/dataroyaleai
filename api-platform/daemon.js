@@ -1,10 +1,10 @@
 var shell = require('shelljs');
 var chalk = require("chalk");
-
-const portsAllowed = 101; // Define max number of ports from 5000 
+var http = require('http');
+const portsAllowed = 101; // Define max number of ports from STARTING_PORT 
 const defaultMemory = 50;//mb of memory.
 const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com/config/containers/resource_constraints/#cpu
-
+const STARTING_PORT = 5000;
 //TODO: Create new function using `docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}" -a` to return true or false if a given port is taken.
 
 
@@ -60,10 +60,10 @@ class PrometheusDaemon{
     /**
    * Function to add a number to the ports using linear probing 
    */ 
-  addToHashSet(number) {
+  addToHashSet(containerID) {
     /// Function to calculate the hash value for a given number
 
-    let index = number % portsAllowed;
+    let index = containerID % portsAllowed;
     
     // Check if the slot is empty, if not, probe linearly until an empty slot is found
     while (this.ports[index] !== undefined) {
@@ -72,8 +72,19 @@ class PrometheusDaemon{
     }
 
     // Insert the number into the empty slot
-    this.ports[index] = number;
+    this.ports[index] = containerID;
     return index;
+  }
+
+  getPortByID(containerID){
+    let hash = parseInt(containerID) % portsAllowed; // Simple hash function
+    let port = hash; // Calculate port number based on hash
+    // Check if port is already in use (you would implement the checkPortAvailability function)
+    while (this.ports[port]!=containerID) {
+      hash = (hash + 1) % portsAllowed;
+      port = STARTING_PORT + hash;
+    }
+    return STARTING_PORT+port; 
   }
 
   /**
@@ -81,16 +92,15 @@ class PrometheusDaemon{
    * @param {Array<number>} userIDs 
    * @param {number} maxMemory -1 means 500mb memory max.
    * @param {number} [cpus=defaultCPU] determines how much processing power we give it. Numbers <4 are safe. Beyond that it COULD slow down your machine.(no promises)
+   * @returns {number} id 
    */
   initializeContainers(containerID, maxMemory, cpus, silent = true){
     console.log(chalk.green(`[Prometheus] Starting Containers... memory cap ${maxMemory}m  with cpu availability ${cpus}.`));
     shell.exec(`docker build -t ${containerID} ./dockercontainer`, {silent: silent})
-    let port = 5000 + this.addToHashSet(parseInt(containerID),portsAllowed);//We only use ports from 5000-5100
-    shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:5000 ${containerID}`, {silent: silent}) 
+    let port = STARTING_PORT + this.addToHashSet(parseInt(containerID),portsAllowed);//We only use ports from STARTING_PORT to STARTING_PORT + 100
+    shell.exec(`docker run -d --memory=${maxMemory}m --cpus=${cpus} -p ${port}:STARTING_PORT ${containerID}`, {silent: silent}) 
     console.log(`${containerID} is listening on port ${port} with memory cap ${maxMemory}m  with cpu availability ${cpus}. `);
     console.log(`Remaining Resources - CPU: ${(this.containerStack.maxCPU - this.containerStack.currentCPU).toFixed(2)}, Memory: ${(this.containerStack.maxMemory - this.containerStack.currentMemory).toFixed(2)} MB`);
-
-
   }
 
   /**
@@ -128,6 +138,47 @@ class PrometheusDaemon{
         // If all operations are successful
         console.log(chalk.grey(`${containerID} was successfully stopped, removed, and image deleted.`));
     })
+  }
+
+  /**
+   * @param {JSON} req is the JSON data of the request as we recieve it.
+   * @param {String} address is the address we are considering sending this to. To improve modularity, I added an address field. Hypothetically in future implementations, one could have these daemons running on one machine with the containers on another.
+   */
+  async forward(req, address = '127.0.0.1') {
+    // Wrap the request in a promise to handle it asynchronously
+    return new Promise((resolve, reject) => {
+      // Extract the container ID from the request.
+      const containerID = req.containerID;
+      const port = this.getPortByID(containerID); // Assumes containerID is an integer.
+
+      const options = {
+        hostname: address,
+        port: port,
+        path: '/',
+        method: 'GET',
+      };
+
+      const forwardReq = http.request(options, (res) => {
+        let data = '';
+
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => {
+          data += chunk; // Append data chunk to data variable
+        });
+        res.on('end', () => {
+          // Resolve the promise with the received data
+          resolve(data);
+        });
+      });
+
+      forwardReq.on('error', (e) => {
+        // Reject the promise on request error
+        reject(`problem with request: ${e.message}`);
+      });
+
+      // End the request
+      forwardReq.end();
+    });
   }
 
 }

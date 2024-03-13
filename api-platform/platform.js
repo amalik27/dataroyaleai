@@ -10,9 +10,6 @@ const containerIDs = ["7295434","34554466","6857458"]
 
 
 
-
-
- 
 let daemon = new Prometheus.PrometheusDaemon(_,.5,500,"user123");
 process.on('SIGINT', () => {
   console.log(chalk.red("[Prometheus] Shutdown signal recieved, performing cleanup."));
@@ -29,6 +26,11 @@ containerIDs.forEach((id)=>{
   console.log(chalk.gray("Enqueuing " + id.toString()))
   daemon.containerQueue.enqueue({cpus:.2, memory:100},1,id)
 })
-
-
+daemon.forward({ containerID: '7295434' })
+  .then(data => {
+    console.log(data); // Handle the data from the request
+  })
+  .catch(error => {
+    console.error(error); // Handle any errors
+  });
 
