@@ -80,10 +80,11 @@ class PrometheusDaemon{
     let hash = parseInt(containerID) % portsAllowed; // Simple hash function
     let port = hash; // Calculate port number based on hash
     // Check if port is already in use (you would implement the checkPortAvailability function)
-    while (this.ports[port]!=containerID) {
-      hash = (hash + 1) % portsAllowed;
-      port = STARTING_PORT + hash;
-    }
+    console.log(this.ports.toString());
+    // while (this.ports[port]!=containerID) {
+    //   hash = (hash + 1) % portsAllowed;
+    //   port = STARTING_PORT + hash;
+    // }
     return STARTING_PORT+port; 
   }
 
