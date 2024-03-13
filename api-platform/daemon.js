@@ -9,7 +9,7 @@ const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com
 
 
 /**
- * We operate under the assumption that the Docker Container is ideal and absolutely cannot go beyond the resource limits given(which to be fair it seems to be able to do)
+ * We operate under the assumption that the Docker Container is ideal and absolutely cannot go beyond the resource limits given(which to be fair it seems to be able to do, as it emulates the Operating System).
  */
 
 
@@ -36,11 +36,7 @@ class PrometheusDaemon{
     console.log(chalk.green("[Prometheus] Initialized Daemon. Prometheus is watching for updates..."));
   }
 
-  ///Passes by value, NOT reference
-  getRunningContainers(){
-    return this.containerStack.stack.slice(0);//used to change reference
-  }
-
+  
   /*
   * Causes the internal timer to start as well as listens for updates on the queue.
   */
@@ -90,10 +86,12 @@ class PrometheusDaemon{
     }
     console.log(chalk.gray("[Prometheus] Prometheus has stopped watching for updates..."));
   }
-    /**
-   * Function to add a number to the ports using linear probing 
+
+  //This family of functions deals with port mappings
+  /**
+   * Function to add a number to the ports using hashing with linear probing 
    */ 
-  addToHashSet(containerID) {
+  addToPortMap(containerID) {
     /// Function to calculate the hash value for a given number
 
     let index = containerID % portsAllowed;
@@ -143,9 +141,9 @@ class PrometheusDaemon{
   }
 
 
-
+  //This family of functions deals with container management
   /**
-   * Used to intialize a container.
+   * Used to intialize a container. Does lots of internal error handling.
    * 
    * @param {Container} container
    * 
@@ -159,13 +157,15 @@ class PrometheusDaemon{
       return; // Exit if build fails
     }
   
-    let port = this.STARTING_PORT + this.addToHashSet(parseInt(container.containerID), this.portsAllowed); 
+    let port = this.STARTING_PORT + this.addToPortMap(parseInt(container.containerID), this.portsAllowed); 
     // Running the Docker container
     let runResult = shell.exec(`docker run -d --memory=${container.memory}m --cpus=${container.cpu} -p ${port}:${this.STARTING_PORT} ${container.containerID}`, { silent: silent });
     if (runResult.code !== 0) {
       console.error(chalk.red(`Failed to start container ${container.containerID} with exit code ${buildResult.code}: ${runResult.stderr}`));
+      this.removeContainerFromPortMap(container.containerID);
       return; // Exit if run fails
     }
+
   
     console.log(`${container.containerID} running image ${container.model} is listening on port ${port} with memory cap ${container.memory}m with cpu availability ${container.cpu}. | Build and run exit codes were ${buildResult.code} and ${runResult.code}.`);
     console.log(`Remaining Resources - CPU: ${(this.containerStack.maxCPU - this.containerStack.currentCPU).toFixed(2)}, Memory: ${(this.containerStack.maxMemory - this.containerStack.currentMemory).toFixed(2)} MB`);
@@ -214,7 +214,18 @@ class PrometheusDaemon{
     })
   }
 
+  ///Passes by value, NOT reference
+  getRunningContainers(){
+    return this.containerStack.stack.slice(0);//used to change reference
+  }
+
+
+
+
+  //This family of functions(or at the time of writing this, this function) is for dealing with queries made to models via the API service. Alternatively this is also used for actually inducing a forward pass in the receiving model.
   /**
+   * This is how we pass on information to a given container
+   * 
    * @param {JSON} req is the JSON data of the request as we recieve it.
    * @param {String} address is the address we are considering sending this to. To improve modularity, I added an address field. Hypothetically in future implementations, one could have these daemons running on one machine with the containers on another.
    */
@@ -266,7 +277,7 @@ class PrometheusDaemon{
 
 }
 
-
+/**This class is a tool for the PrometheusDaemon */
 class ContainerStack {
   constructor(maxCPU, maxMemory) {
     this.stack = [];
@@ -306,6 +317,8 @@ class ContainerStack {
     return this.stack.length === 0;
   }
 }
+
+/**This class is a tool for the PrometheusDaemon */
 class ContainerQueue {
   constructor() {
     this.queue = [];
@@ -357,7 +370,9 @@ class ContainerQueue {
     return this.queue.length === 0;
   }
 }
-///Keeps things clean
+
+
+/**Container abstraction */
 class Container{
   constructor(cpu, memory, containerID,priority,model){
     this.cpu = cpu;
@@ -369,6 +384,7 @@ class Container{
   }
 }
 
+/**Custom error because why not */
 class HardwareLimitError extends Error {
   constructor(message) {
     super(message);
