@@ -64,7 +64,7 @@ class PrometheusDaemon{
     /// Function to calculate the hash value for a given number
 
     let index = number % portsAllowed;
-    
+
     // Check if the slot is empty, if not, probe linearly until an empty slot is found
     while (this.ports[index] !== undefined) {
       console.log(this.ports[index]);
