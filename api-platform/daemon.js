@@ -1,6 +1,7 @@
 var shell = require('shelljs');
 var chalk = require("chalk");
 var http = require('http');
+const { default: container } = require('node-docker-api/lib/container');
 const portsAllowed = 101; // Define max number of ports from STARTING_PORT 
 const defaultMemory = 50;//mb of memory.
 const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com/config/containers/resource_constraints/#cpu
@@ -76,16 +77,16 @@ class PrometheusDaemon{
     return index;
   }
 
-  getPortByID(containerID){
-    let hash = parseInt(containerID) % portsAllowed; // Simple hash function
-    let port = hash; // Calculate port number based on hash
-    // Check if port is already in use (you would implement the checkPortAvailability function)
-    console.log(this.ports.toString());
-    // while (this.ports[port]!=containerID) {
-    //   hash = (hash + 1) % portsAllowed;
-    //   port = STARTING_PORT + hash;
+  getPortByID(containerID) {    for (let index = parseInt(containerID)%portsAllowed; index < this.ports.length; index++) {
+      const element = this.ports[index];
+      if(element==containerID){
+        return STARTING_PORT + index;
+      }
+    }
+    // if (index === -1) {
+    //   throw new Error(`Container ID ${containerID} not found.`);
     // }
-    return STARTING_PORT+port; 
+    throw new Error(`Container ID ${containerID} not found in containerID-Port set.`);
   }
 
   /**
@@ -163,7 +164,13 @@ class PrometheusDaemon{
     return new Promise((resolve, reject) => {
       // Extract the container ID from the request.
       const containerID = req.containerID;
-      const port = this.getPortByID(containerID); // Assumes containerID is an integer.
+      let port = 0;
+      try{
+        port = this.getPortByID(containerID); // Assumes containerID is an integer.
+      } catch (e) {
+        reject(`Problem with request: ${e.message}`);
+      }
+      
 
       const options = {
         hostname: address,
