@@ -217,22 +217,54 @@ async function updateDeadlineEligibility(id, userid, newDeadline) {
 
 
 function validateTitle(title){
+    if(typeof title != 'string'){
+        return "Please Enter A Title With The Correct Format";
+    } //title must have 60 character limit and be a string
+    if (title.length > 60){
+        return "Title Exceeds Character Limit";
+    }
+    return title;
 
 }
 
-function validateDescription(desc){
-
+function validateDescription(desc){ //description has a 1000 word limit cannot exceed 1000
+    let words = desc.trim().split(/\s+/);
+    if (words.length > 1000){
+        desc = words.slice(0,1000);
+    }
+    return desc;
 }
 
 function validatePrize(prize){
+    let mincreds = 100;
+    
 
 }
 
-function validatePlayerCap(cap){
+function validatePlayerCap(cap){ //only a max of 500 players are allowed per competition
+    numPlayers = 0;
+    cap = 500;
+
+    if(numPlayers < 500){
+        numPlayers++;
+        return true;
+        
+    }
+    else{
+        return false;
+    }
 
 }
 
 function validateDeadline(deadline){
+    let compDeadline = new Date(deadline);
+    let currDate = new Date();
+    if(compDeadline < currDate){
+        return "deadline for submission has passed"
+    }
+   else{
+    return true;
+   }
 
 }
 
