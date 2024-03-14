@@ -141,18 +141,24 @@ class PrometheusDaemonManager {
   reapOrphanContainers() {
     console.log(chalk.blue('[PrometheusDaemonManager] Reaping orphan containers...'));
   
-    // Command to list all containers that are not running but still exist
-    let commandListOrphans = `docker ps -a --filter "status=exited" --filter "status=created" --no-trunc -q`;
-    
+    // Get a list of all containers managed by daemons
+    let managedContainers = Object.values(this.daemons).flatMap(daemon => daemon.getRunningContainers());
+  
+    // Command to list all running containers
+    let commandListAll = `docker ps -a --no-trunc -q`;
+  
     // Execute the command
-    shell.exec(commandListOrphans, {silent: true}, (code, stdout, stderr) => {
+    shell.exec(commandListAll, {silent: true}, (code, stdout, stderr) => {
       if (code !== 0) {
-        console.error(chalk.red(`Error while trying to list orphan containers: ${stderr}`));
+        console.error(chalk.red(`Error while trying to list all containers: ${stderr}`));
         return;
       }
   
-      // Split the output by new line to get an array of container IDs
-      let orphanContainerIds = stdout.split('\n').filter(id => id);
+      // Split the output to get an array of container IDs
+      let allContainerIds = stdout.split('\n').filter(id => id);
+  
+      // Identify orphan containers (not managed by any daemon)
+      let orphanContainerIds = allContainerIds.filter(id => !managedContainers.includes(id));
   
       if (orphanContainerIds.length === 0) {
         console.log(chalk.green('No orphan containers found.'));
@@ -161,19 +167,19 @@ class PrometheusDaemonManager {
   
       // Remove each orphan container
       orphanContainerIds.forEach((containerId) => {
-        if (containerId) {
-          console.log(chalk.yellow(`Removing orphan container with ID: ${containerId}`));
-          shell.exec(`docker rm ${containerId}`, {silent: true}, (rmCode, rmStdout, rmStderr) => {
-            if (rmCode !== 0) {
-              console.error(chalk.red(`Error while trying to remove orphan container ${containerId}: ${rmStderr}`));
-            } else {
-              console.log(chalk.green(`Successfully removed orphan container with ID: ${containerId}`));
-            }
-          });
-        }
+        console.log(chalk.yellow(`Removing orphan container with ID: ${containerId}`));
+        shell.exec(`docker rm ${containerId}`, {silent: true}, (rmCode, rmStdout, rmStderr) => {
+          if (rmCode !== 0) {
+            console.error(chalk.red(`Error while trying to remove orphan container ${containerId}: ${rmStderr}`));
+          } else {
+            console.log(chalk.green(`Successfully removed orphan container with ID: ${containerId}`));
+          }
+        });
       });
     });
   }
+  
+  
   
 }
  

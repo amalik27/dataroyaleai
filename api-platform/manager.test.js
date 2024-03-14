@@ -66,85 +66,65 @@ describe('PrometheusDaemonManager', () => {
 });
 
 
+
+
 jest.mock('shelljs', () => ({
   exec: jest.fn(),
 }));
 
-describe('PrometheusDaemonManager', () => {
+describe('PrometheusDaemonManager - reapOrphanContainers', () => {
   let manager;
 
   beforeEach(() => {
-    // Reset the shelljs mock for each test
     jest.clearAllMocks();
     manager = new PrometheusDaemonManager();
+    manager.daemons = {
+      daemon1: { getRunningContainers: () => ['container1', 'container2'] },
+      daemon2: { getRunningContainers: () => ['container3'] },
+    };
   });
 
-  test('reapOrphanContainers should remove orphan containers', () => {
-    // Mock shell.exec to simulate docker commands
+  test('should not remove any containers when there are no orphans', () => {
     shell.exec.mockImplementationOnce((command, options, callback) => {
-      if (command.includes('docker ps -a')) {
-        // Simulate finding orphan containers
-        callback(0, 'container1\ncontainer2', '');
-      } else if (command.includes('docker rm')) {
-        // Simulate successful container removal
-        callback(0, '', '');
-      }
+      callback(0, 'container1\ncontainer2\ncontainer3', '');
     });
 
     manager.reapOrphanContainers();
 
-    // Check if docker ps command was called
     expect(shell.exec).toHaveBeenCalledWith(expect.stringContaining('docker ps -a'), expect.anything(), expect.anything());
-
-    // Check if docker rm command was called for each container
-    expect(shell.exec).toHaveBeenCalledWith(expect.stringContaining('docker rm container1'), expect.anything(), expect.anything());
-    expect(shell.exec).toHaveBeenCalledWith(expect.stringContaining('docker rm container2'), expect.anything(), expect.anything());
-  });
-});
-
-describe('PrometheusDaemonManager error handling', () => {
-  let manager;
-
-  beforeEach(() => {
-    // Reset the shelljs mock for each test
-    jest.clearAllMocks();
-    manager = new PrometheusDaemonManager();
-  });
-
-  test('should handle errors when listing orphan containers', () => {
-    // Simulate an error when trying to list orphan containers
-    shell.exec.mockImplementationOnce((command, options, callback) => {
-      if (command.includes('docker ps -a')) {
-        // Simulate an error
-        callback(1, '', 'Error listing containers');
-      }
-    });
-
-    manager.reapOrphanContainers();
-
-    // Check if docker ps command was called and failed
-    expect(shell.exec).toHaveBeenCalledWith(expect.stringContaining('docker ps -a'), expect.anything(), expect.anything());
-    // Since there's an error, docker rm should not be called
     expect(shell.exec).not.toHaveBeenCalledWith(expect.stringContaining('docker rm'), expect.anything(), expect.anything());
   });
 
-  test('should handle errors when removing orphan containers', () => {
-    // First call simulates finding orphan containers, second call simulates an error during removal
-    shell.exec.mockImplementation((command, options, callback) => {
-      if (command.includes('docker ps -a')) {
-        // Simulate finding one orphan container
-        callback(0, 'container1', '');
-      } else if (command.includes('docker rm container1')) {
-        // Simulate an error during container removal
-        callback(1, '', 'Error removing container');
+  test('should remove orphan containers', () => {
+    shell.exec.mockImplementationOnce((command, options, callback) => {
+      // Simulating docker ps listing extra containers
+      callback(0, 'container1\ncontainer2\ncontainer3\norphan1\norphan2', '');
+    }).mockImplementationOnce((command, options, callback) => {
+      if (command.includes('docker rm')) {
+        callback(0, '', ''); // Simulate successful removal
       }
     });
 
     manager.reapOrphanContainers();
 
-    // Check if docker ps command was called
     expect(shell.exec).toHaveBeenCalledWith(expect.stringContaining('docker ps -a'), expect.anything(), expect.anything());
-    // Check if docker rm command was called and failed
-    expect(shell.exec).toHaveBeenCalledWith(expect.stringContaining('docker rm container1'), expect.anything(), expect.anything());
+    expect(shell.exec).toHaveBeenCalledWith(expect.stringContaining('docker rm orphan1'), expect.anything(), expect.anything());
+    expect(shell.exec).toHaveBeenCalledWith(expect.stringContaining('docker rm orphan2'), expect.anything(), expect.anything());
+  });
+
+  test('should handle errors during orphan container removal', () => {
+    shell.exec.mockImplementationOnce((command, options, callback) => {
+      // Simulating docker ps listing an extra container
+      callback(0, 'container1\ncontainer2\ncontainer3\norphan1', '');
+    }).mockImplementationOnce((command, options, callback) => {
+      if (command.includes('docker rm')) {
+        callback(1, '', 'Error removing container'); // Simulate removal error
+      }
+    });
+
+    manager.reapOrphanContainers();
+
+    expect(shell.exec).toHaveBeenCalledWith(expect.stringContaining('docker ps -a'), expect.anything(), expect.anything());
+    expect(shell.exec).toHaveBeenCalledWith(expect.stringContaining('docker rm orphan1'), expect.anything(), expect.anything());
   });
 });
