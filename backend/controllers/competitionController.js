@@ -254,6 +254,28 @@ async function processCompetitionDatsets(filepath){
 
 }
 
+/**
+ * Filter competitions by given prize amounts.
+ * @param {*} min Minimum prize credits. 
+ * @param {*} max Maximum prize credits. 
+ */
+async function filterByPrize(min, max){
+    // Assumptions: If min or max is -1, then it will be assumed that there is no lower/upper bound on the filtering.
+
+
+}
+
+/**
+ * Filter competitions by given dates. 
+ * @param {} min Minimum date of deadline.
+ * @param {*} max Maximum date of deadline. 
+ */ 
+async function filterByDeadline(min, max){
+    // Assumptions: If min or max is -1, then it will be assumed that there is no lower/upper bound on the filtering.
+
+
+}
+
 // Create Competition (Validation Functions)
 
 /**
