@@ -19,7 +19,7 @@ function processRequest(req, res){
     YOUR ENDPOINT HERE
     **/
 
-    } else if (pathname === '/competitions'){ // Competitions Endpoint
+    } else if (pathname === '/competitions/create'){ // Competitions Endpoint
         if (req.method === 'GET'){
             // View All Competitions
             let body = '';
@@ -52,10 +52,10 @@ function processRequest(req, res){
 
             req.on('end', async () => {
                 
-                const {userid, title, deadline, prize, desc, cap, created} = JSON.parse(body);
+                const {userid, title, deadline, prize, metrics, desc, cap, created} = JSON.parse(body);
 
 
-                if (!userid || !title || !deadline || !prize || !desc || !cap || !created) {
+                if (!userid || !title || !deadline || !prize || !desc || !cap || !created || !metrics) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing competition fields in JSON body' }));
                     return;
@@ -103,6 +103,8 @@ function processRequest(req, res){
             });
 
         }
+
+    } else if (pathname === '/competitions/join'){
 
     } else if (pathname === '/users') { //Users Endpoint
         if (req.method === 'GET') {

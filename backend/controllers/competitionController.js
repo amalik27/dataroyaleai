@@ -4,6 +4,9 @@
  * This file contains all the required methods necessary to join, create, and manage competitions in Data Royale.
  */
 const db = require('../db');
+const fs = require('fs');
+const unzipper = require('unzipper');
+const csv = require('csv-parser');
 const { readUserById } = require('./userController');
 
 // Create Competition (Main Functions)
@@ -18,17 +21,30 @@ const { readUserById } = require('./userController');
  * @param {*} desc Description for the competition. 
  * @param {*} cap Maximum player capacity for the competition. 
  */ 
-async function createCompetition (userid, title, deadline, prize, desc, cap, datecreated){
+async function createCompetition (userid, title, deadline, prize, metrics, desc, cap, datecreated, filepath){
     if (authenticateAccess('organizer', userid)){
         let id = generateCompetitionID(); 
-        try {
-            const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, description, player_cap, date_created) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'; 
-            const params = [id, userid, title, deadline, prize, desc, cap, datecreated]; 
-            await db.query(query, params); 
-        } catch (error) {
-            console.error("Error creating competition:", error); 
-            throw error; 
-    
+
+        let isValidCompetition = true; 
+
+        // Insert validation functions here: 
+        if (!processCompetitionDatsets(filepath)){
+            isValidCompetition = false; 
+        }
+
+
+        if (isValidCompetition){
+            try {
+                const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, metrics, description, player_cap, date_created, filepath) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'; 
+                const params = [id, userid, title, deadline, prize, metrics, desc, cap, datecreated, filepath]; 
+                await db.query(query, params); 
+            } catch (error) {
+                console.error("Error creating competition:", error); 
+                throw error; 
+        
+            }
+        } else {
+            throw new Error("Invalid entries for competition creation."); 
         }
     }
     
@@ -164,8 +180,6 @@ async function updatePrizeEligibility(id, userid, newPrize) {
     });
 }
 
-
-
 /**
  * Determine if the new deadline is acceptable.
  * @author @deshnadoshi
@@ -211,7 +225,34 @@ async function updateDeadlineEligibility(id, userid, newDeadline) {
     });
 }
 
+/**
+ * Determine if the competition datasets are appropriate, as per requirements.
+ * @author @deshnadoshi
+ * @param {*} filepath .zip File's path
+ */
+async function processCompetitionDatsets(filepath){
+    await fs.createReadStream(filepath)
+    .pipe(unzipper.Extract({ path: 'tempCompDatasetExtracts' }))
+    .promise();
 
+    const files = fs.readdirSync('temp_extracted_files');
+
+    if (files.length !== 2) {
+        return false;
+    }
+
+    for (const file of files) {
+        const inidivdualFilePath = `tempCompDatasetExtracts/${file}`;
+        const rowCount = await countRows(inidivdualFilePath);
+
+        if (rowCount < 500) {
+            return false; 
+        } else {
+            return true; 
+        }
+    }
+
+}
 
 // Create Competition (Validation Functions)
 
@@ -254,8 +295,6 @@ function validateDescription(desc){
  */
 function validatePrize(prize){
     
-
-    
 }
 
 /**
@@ -293,7 +332,6 @@ function validateDeadline(deadline) {
 }
 
 
-
 // Create Competition (Helper Functions)
 
 /**
@@ -325,6 +363,23 @@ function generateCompetitionID(){
     return uniqueRandomNumber;
 
 }
+
+/**
+ * Determine if a given file is a .csv file or not.
+ * @author @deshnadoshi
+ * @param {} filepath .csv file path.
+ */
+function countRows(filepath) {
+    return new Promise((resolve, reject) => {
+        let count = 0;
+        fs.createReadStream(filepath)
+            .pipe(csv())
+            .on('data', () => count++)
+            .on('end', () => resolve(count))
+            .on('error', reject);
+    });
+}
+
 
 // Join Competition (Main Functions)
 
@@ -415,9 +470,11 @@ async function viewAllCompetitions(){
                             title: competition.title,
                             deadline: competition.deadline,
                             prize: competition.prize,
+                            metrics: competition.metrics,
                             desc: competition.description,
                             player_cap: competition.player_cap,
-                            date_created: competition.date_created
+                            date_created: competition.date_created,
+                            file_path: competition.filepath
                         };
                     });
 
@@ -433,6 +490,43 @@ async function viewAllCompetitions(){
     });
 }
 
+/**
+ * View all the user scores for a given competition.  
+ * @author @deshnadoshi 
+ * @param {*} compid competition ID.
+ */
+async function viewLeaderboard(compid){
+
+    return new Promise((resolve, reject) => {
+
+        try {
+            
+            const queryStr = `SELECT * FROM leaderboard WHERE comp_id = ?`;
+    
+            db.query(queryStr, [compid], (err, leaderboard) => {
+                if (err) {
+                    console.error("Error executing query:", err);
+                    reject("Error in retrieving leaderboard.");
+                } else {
+                    const formattedLeaderboard = leaderboard.map(stats => {
+                        return {
+                            user_id: stats.user_id,
+                            score: stats.score
+                        };
+                    });
+
+                    resolve(formattedLeaderboard);
+                }
+            });
+
+        } catch (error){
+            reject("Error in retrieving leaderboard."); 
+            throw new Error('Error in retrieving leaderboard'); 
+        }
+    
+    });
+
+}
 
 // Exports
 
