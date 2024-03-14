@@ -215,19 +215,31 @@ async function updateDeadlineEligibility(id, userid, newDeadline) {
 
 // Create Competition (Validation Functions)
 
-
+/**
+ * Determines if the competition title is of the correct type and within 60 characters.
+ * @author @aartirao419
+ * @param {*} title Competition title. 
+ */
 function validateTitle(title){
-    if(typeof title != 'string'){
-        return "Please Enter A Title With The Correct Format";
-    } //title must have 60 character limit and be a string
+    if (typeof title != 'string'){
+        return false;
+    } 
+    // title must have 60 character limit and be a string
     if (title.length > 60){
-        return "Title Exceeds Character Limit";
+        return false;
     }
-    return title;
+
+    return true;
 
 }
 
-function validateDescription(desc){ //description has a 1000 word limit cannot exceed 1000
+/**
+ * Determines if the description is within the 1000 word limit.
+ * @author @aartirao419
+ * @param {} desc Competition description. 
+ */
+function validateDescription(desc){ 
+    //description has a 1000 word limit cannot exceed 1000
     let words = desc.trim().split(/\s+/);
     if (words.length > 1000){
         desc = words.slice(0,1000);
@@ -235,38 +247,51 @@ function validateDescription(desc){ //description has a 1000 word limit cannot e
     return desc;
 }
 
+/**
+ * Determine if the prize credits selected is of a valid amount. 
+ * @author @aartirao419
+ * @param {*} prize Competition prize credits.
+ */
 function validatePrize(prize){
-    let mincreds = 100;
     
 
+    
 }
 
-function validatePlayerCap(cap){ //only a max of 500 players are allowed per competition
-    numPlayers = 0;
-    cap = 500;
+/**
+ * Determine if the player capacity is within 500 people.
+ * @author @aartirao419 @deshnadoshi
+ * @param {} cap Competition player capacity. 
+ */
+function validatePlayerCap(cap){ 
+    //only a max of 500 players are allowed per competition
+    if (cap > 500){
+        return false; 
+    }
 
-    if(numPlayers < 500){
-        numPlayers++;
-        return true;
-        
-    }
-    else{
-        return false;
-    }
+    return true; 
 
 }
 
-function validateDeadline(deadline){
+/**
+ * Determine if the competition deadline is at least one month away from the date of creation.
+ * @author @aartirao419
+ * @param {*} deadline Competition deadline. 
+ */
+function validateDeadline(deadline) {
     let compDeadline = new Date(deadline);
     let currDate = new Date();
-    if(compDeadline < currDate){
-        return "deadline for submission has passed"
-    }
-   else{
-    return true;
-   }
 
+    let oneMonthFromNow = new Date(currDate);
+    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+    if (compDeadline < oneMonthFromNow) {
+        return false; 
+    } else {
+        return true; 
+    }
 }
+
 
 
 // Create Competition (Helper Functions)
