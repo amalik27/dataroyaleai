@@ -20,7 +20,7 @@ class PrometheusDaemon extends EventEmitter{
 
 
 
-  constructor( portsAllowed, maxCPU = .05, maxMemory = 300, processID, maxUptime) {
+  constructor( portsAllowed, maxCPU = .05, maxMemory = 300, processID, maxUptime,maxOverloadTime) {
         super();
         this.ports = new Set(portsAllowed);
         this.portMap = new Map();
@@ -29,9 +29,10 @@ class PrometheusDaemon extends EventEmitter{
         this.interval = null;
         this.processID = processID;
         this.maxUptime = maxUptime;
+        this.isOverload = false;
 
         console.log("[Prometheus] Initialized Daemon. Prometheus is watching for updates...");
-    }
+  }
 
   
   /*
@@ -92,8 +93,12 @@ class PrometheusDaemon extends EventEmitter{
         console.error(chalk.red('[PrometheusDaemon] Error during shutdown:', error));
         this.emit('exit', 1);
     });
-}
+  }
 
+  //Get usage metrics
+  getUsage(){
+    return {cpu: this.containerStack.getCurrentCPU(), memory: this.containerStack.getCurrentMemory()};
+  }
 
 
 

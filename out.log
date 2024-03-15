@@ -26,3 +26,9 @@ Remaining Resources - CPU: 0.00, Memory: 0.00 MB. ContainerStack length: 1
 [32mAll specified containers have been processed.[39m
 [32m[PrometheusDaemon] Successfully shut down.[39m
 Daemon child testProcess died with status 0
+ReferenceError: Cannot access 'daemon' before initialization
+ReferenceError: Cannot access 'daemon' before initialization
+ReferenceError: Cannot access 'daemon' before initialization
+[36mTier 1 usage:[39m
+[36mTier 2 usage:[39m
+[36mTier 3 usage:[39m

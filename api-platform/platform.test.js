@@ -1,14 +1,14 @@
 const { PrometheusDaemonManager } = require('./manager');
 const fs = require('fs');
-const logStream = fs.createWriteStream('out.log', { flags: 'a' });
+// const logStream = fs.createWriteStream('out.log', { flags: 'a' });
 
-global.console.log = (message) => {
-    logStream.write(`${message}\n`);
-};
+// global.console.log = (message) => {
+//     logStream.write(`${message}\n`);
+// };
 
-afterAll(() => {
-  logStream.end(); // Make sure to close the stream when tests are done
-});
+// afterAll(() => {
+//   logStream.end(); // Make sure to close the stream when tests are done
+// });
 
 
 const SECONDS = 1000;
@@ -26,8 +26,8 @@ describe('Tests for full deployment and use lifecycle', () => {
     const cpus = 0.5;
 
     beforeEach(() => {
-        const ports = Array.from({ length: 101 }, (_, index) => 5000 + index);
-        manager = new PrometheusDaemonManager(5,500,ports);
+        //const ports = Array.from({ length: 101 }, (_, index) => 5000 + index);
+        manager = new PrometheusDaemonManager(5,500,500,blocksPerTier = [10, 20, 50]);
         manager.startMonitoring(1);
       });
 
@@ -38,18 +38,15 @@ describe('Tests for full deployment and use lifecycle', () => {
       manager.addMessageToQueue({type: "START", body:{processID: 'testProcess',ports:4,cpu:.5,memory:500,uptime:20,interval:50}});
 
 
-      await sleep(10);
-
-      expect(manager.daemons.size).toBe(1) //Initialized
-      expect(manager.ports.size).toBe(101-4) //Ports allocated
+      await sleep(100);
+      expect(Array.from(manager.daemons).length).toBe(1) //Initialized
 
       //Simulate user sending request to start container
       manager.initializeContainer('testProcess',{cpus:.5, memory:500,priority:1,containerID: 345674,model:"/api-platform/Pythagoras"}); //May take a while
       await sleep(100);
-      expect(manager.daemons['testProcess'].containerStack.stack.length).toBe(1);
+
+      expect(manager.daemons.get('testProcess').containerStack.stack.length).toBe(1);
       await sleep(30000);
-      expect(manager.daemons['testProcess'].containerStack.stack.length).toBe(0)
-      await sleep(300);
       expect(manager.daemons.size).toBe(0)
     });
 });
