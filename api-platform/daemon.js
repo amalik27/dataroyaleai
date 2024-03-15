@@ -62,7 +62,6 @@ class PrometheusDaemon{
           //Call HW-Limit-Aware-Start-System
           const container = this.containerQueue.dequeue();
           try{
-            this.containerStack.push(container);
             this.initializeContainer(container);
           }catch(e){
             if(e.name==="HardwareLimitError"){
@@ -152,6 +151,13 @@ class PrometheusDaemon{
    */
   initializeContainer(container, silent = true) {
     console.log(chalk.green(`[Prometheus] Starting Container...`));
+
+    if (this.containerStack.exists(container.containerID)) {
+      console.log(chalk.yellow(`Container ${container.containerID} already exists in the stack. Skipping initialization.`));
+      return; // Skip initialization if container is already in the stack
+    }
+
+    this.containerStack.push(container);
     // Building the Docker container
     let buildResult = shell.exec(`docker build -t ${container.containerID} ./${container.model}`, { silent: silent });
     if (buildResult.code !== 0) {
@@ -170,7 +176,7 @@ class PrometheusDaemon{
 
   
     console.log(`${container.containerID} running image ${container.model} is listening on port ${port} with memory cap ${container.memory}m with cpu availability ${container.cpu}. | Build and run exit codes were ${buildResult.code} and ${runResult.code}.`);
-    console.log(`Remaining Resources - CPU: ${(this.containerStack.maxCPU - this.containerStack.currentCPU).toFixed(2)}, Memory: ${(this.containerStack.maxMemory - this.containerStack.currentMemory).toFixed(2)} MB`);
+    console.log(`Remaining Resources - CPU: ${(this.containerStack.maxCPU - this.containerStack.currentCPU).toFixed(2)}, Memory: ${(this.containerStack.maxMemory - this.containerStack.currentMemory).toFixed(2)} MB. ContainerStack length: ${this.containerStack.stack.length.toString()}`);
   }
 
   /**
@@ -180,6 +186,10 @@ class PrometheusDaemon{
   killContainers(containers, silent = true){
     console.log(chalk.red("[Prometheus] Killing Containers..."));
     containers.forEach((container) => {
+        if (!this.containerStack.exists(container.containerID)) {
+          console.log(chalk.yellow(`Container ${container.containerID} not found in stack. Skipping kill sequence.`));
+          return; // Skip this container if it's not in the stack
+      }
         let containerTag = container.containerID//I know this is terrible basically our system has its own ID format which is technically docker's tag format. Don't yell at me ok.
         let containerID = shell.exec(`docker ps | grep ${containerTag} | cut -f 1 -d ' '`, {silent: silent});
         if (containerID.code !== 0) {
@@ -189,8 +199,12 @@ class PrometheusDaemon{
 
         let containerStopped = shell.exec(`docker stop ${containerID}`, {silent: silent});
         if (containerStopped.code !== 0) {
-            console.log(chalk.red(`Error stopping container ${containerID} | exit code: ${containerStopped.code}`));
-            return; // Exit this iteration of the loop and continue with the next
+            if(containerStopped.code == 1){
+              console.log(chalk.yellow(`Container was stopped due to application error or incorrect reference in the image specification`));
+              this.containerStack.remove(containerTag);
+            } else {
+              console.log(chalk.red(`Error stopping container ${containerID} | exit code: ${containerStopped.code}`));
+            } 
         }
         //At this point, container is stopped, so we will remove it from the port mapping now.
         try{
@@ -202,17 +216,15 @@ class PrometheusDaemon{
         let containerRemoved = shell.exec(`docker container rm ${containerID}`, {silent: silent});
         if (containerRemoved.code !== 0) {
             console.log(chalk.red(`Error removing container ${containerID}| exit code: ${containerRemoved.code}`));
-            return; // Exit this iteration of the loop and continue with the next
         }
 
         let imageRemoved = shell.exec(`docker rmi ${containerTag}:latest -f`, {silent: silent});
         if (imageRemoved.code !== 0) {
             console.log(chalk.red(`Error removing image ${containerTag}:latest| exit code: ${imageRemoved.code}`));
-            return; // Exit this iteration of the loop and continue with the next
         }
-
+        this.containerStack.remove(containerTag); // Adjust if container ID or tag is used for identification within the stack
         // If all operations are successful
-        console.log(chalk.grey(`${containerTag}:${containerID} was successfully stopped, removed, and image deleted.`));
+        console.log(chalk.grey(`${containerTag}:${containerID} kill sequence ended with codes:[${containerStopped.code},${containerRemoved.code},${imageRemoved.code}]. ContainerStack length: ${this.containerStack.stack.length.toString()}`));
     })
   }
 
@@ -289,6 +301,10 @@ class ContainerStack {
     this.currentMemory = 0;
   }
 
+  exists(containerID) {
+    return this.stack.some(item => item.containerID === containerID);
+  }
+
   push(container) {
     // Check if pushing this container exceeds CPU or memory limits. Only add if so.
     if (this.currentCPU + container.cpu <= this.maxCPU && this.currentMemory + container.memory <= this.maxMemory) {
@@ -307,11 +323,15 @@ class ContainerStack {
     const indexToRemove = this.stack.findIndex((item) => item.containerID === containerID);
 
     if (indexToRemove !== -1) {
-      const { parameters } = this.stack.splice(indexToRemove, 1)[0];
-      this.currentCPU -= parameters.cpu;
-      this.currentMemory -= parameters.memory;
+      // Corrected to access the first element of the array returned by splice
+      const [container] = this.stack.splice(indexToRemove, 1);
+      if (container) {
+        console.log(container.toString());
+        this.currentCPU -= container.cpu;
+        this.currentMemory -= container.memory;
+      }
     } else {
-      console.log(`Container with ID '${containerID}' not found.`);
+      console.log(chalk.red(`Container with ID '${containerID}' not found.`));
     }
   }
 
