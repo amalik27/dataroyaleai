@@ -25,12 +25,15 @@ class PrometheusDaemonManager {
       };
     }
 
-    //Needed for realtime behavior
+    //Needed for continuous monitoring of the queue asynchronously, allowing for reshuffles.
     startMonitoring(intervalTime) {
         if (!this.interval) {
           this.interval = setInterval(() => {
             if (this.messageQueue.length!=0) {
+                //MAKE SURE TO DQ MESSAGE IF WE ACT ON IT
                 let message = this.messageQueue[0];//Peek
+
+
                 //Check message type, do stuff
                 //System Message Stuff Here...
 
@@ -43,7 +46,7 @@ class PrometheusDaemonManager {
                     } catch (e){
                         console.log(e);
                     }
-                    this.messageQueue.shift()
+                    this.messageQueue.shift() //Dequeue
                 }
             }
           }, intervalTime);
@@ -100,6 +103,7 @@ class PrometheusDaemonManager {
         //Callback functions for various needs. We use event emitters for asynchronous work rather than function calls which force the program counter to move.
         daemon.on('exit', (code) => {
             console.log(chalk.gray(`[Prometheus] Daemon child ${parameters.processID} died with status ${code}`));
+            //TODO: Replace this line with a more thorough this.cleanUp() function that deals with all aspects of removing a process.
             this.daemons.delete(parameters.processID);
           });
 
@@ -113,8 +117,7 @@ class PrometheusDaemonManager {
         // Implement the logic to kill a specific process daemon
         const daemon = this.daemons[processID];
         if (daemon) {
-            daemon.stopMonitoring();
-            daemon.killContainers(daemon.getRunningContainers());
+            daemon.shutDown();
             this.unregisterDaemon(processID);
         }
     }
