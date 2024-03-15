@@ -20,9 +20,8 @@ class PrometheusDaemon extends EventEmitter{
 
 
 
-  constructor(manager = 5000, portsAllowed, maxCPU = .05, maxMemory = 300, processID, maxUptime) {
+  constructor( portsAllowed, maxCPU = .05, maxMemory = 300, processID, maxUptime) {
         super();
-        this.manager = manager;
         this.ports = new Set(portsAllowed);
         this.portMap = new Map();
         this.containerQueue = new ContainerQueue();
@@ -207,7 +206,7 @@ class PrometheusDaemon extends EventEmitter{
 
   
     console.log(`${container.containerID} running image ${container.model} is listening on port ${port} with memory cap ${container.memory}m with cpu availability ${container.cpu}. | Build and run exit codes were ${buildResult.code} and ${runResult.code}.`);
-    console.log(`Remaining Resources - CPU: ${(this.containerStack.maxCPU - this.containerStack.currentCPU).toFixed(2)}, Memory: ${(this.containerStack.maxMemory - this.containerStack.currentMemory).toFixed(2)} MB. ContainerStack length: ${this.containerStack.stack.length.toString()}`);
+    console.log(`Remaining Resources - CPU: ${(this.containerStack.getMaxCPU() - this.containerStack.getCurrentCPU()).toFixed(2)}, Memory: ${(this.containerStack.getMaxMemory() - this.containerStack.getCurrentMemory()).toFixed(2)} MB. ContainerStack length: ${this.containerStack.stack.length.toString()}`);
   }
 
   /**
@@ -264,7 +263,7 @@ class PrometheusDaemon extends EventEmitter{
     return Promise.all(promises)
         .then(() => console.log(chalk.green("All specified containers have been processed.")))
         .catch(error => console.log(chalk.red(error.message)));
-};
+  };
 
   ///Passes by value, NOT reference
   getRunningContainers(){
@@ -332,15 +331,30 @@ class PrometheusDaemon extends EventEmitter{
 
 /**This class is a tool for the PrometheusDaemon */
 class ContainerStack {
+  //Private Fields, use getters and setters
+  #maxCPU;
+  getMaxCPU = () => this.#maxCPU;
+  setMaxCPU = (cpu) => this.#maxCPU=cpu;
+  
+  #maxMemory;
+  getMaxMemory = () => this.#maxMemory;
+  setMaxMemory = (memory) => this.#maxMemory=memory;
 
+  #currentCPU
+  getCurrentCPU = () => this.#currentCPU;
 
+  #currentMemory
+  getCurrentMemory = () => this.#currentMemory;
+
+  
   constructor(maxCPU, maxMemory) {
     this.stack = [];
-    this.maxCPU = maxCPU;
-    this.maxMemory = maxMemory;
-    this.currentCPU = 0;
-    this.currentMemory = 0;
+    this.#maxCPU = maxCPU;
+    this.#maxMemory = maxMemory;
+    this.#currentCPU = 0;
+    this.#currentMemory = 0;
   }
+
 
   exists(containerID) {
     return this.stack.some(item => item.containerID === containerID);
@@ -348,17 +362,17 @@ class ContainerStack {
 
   push(container) {
     // Check if pushing this container exceeds CPU or memory limits. Only add if so.
-    if (this.currentCPU + container.cpu <= this.maxCPU && this.currentMemory + container.memory <= this.maxMemory) {
+    if (this.#currentCPU + container.cpu <= this.#maxCPU && this.#currentMemory + container.memory <= this.#maxMemory) {
       this.stack.push(container);
-      this.currentCPU += container.cpu;
-      this.currentMemory += container.memory;
+      this.#currentCPU += container.cpu;
+      this.#currentMemory += container.memory;
     } else {
       throw new HardwareLimitError(chalk.yellow(`[Prometheus] Reached hardware limit when attempting to initialize ${container.toString()} from queue...`));
     }
   }
 
   ///For debugging.
-  printAvail = () => console.log(`[Container Stack] Availability is now ${(this.maxCPU - this.currentCPU).toPrecision(4)} CPU and ${(this.maxMemory - this.currentMemory).toPrecision(4)} RAM`);
+  printAvail = () => console.log(`[Container Stack] Availability is now ${(this.#maxCPU - this.#currentCPU).toPrecision(4)} CPU and ${(this.#maxMemory - this.#currentMemory).toPrecision(4)} RAM`);
 
   remove(containerID) {
     const indexToRemove = this.stack.findIndex((item) => item.containerID === containerID);
@@ -368,8 +382,8 @@ class ContainerStack {
       const [container] = this.stack.splice(indexToRemove, 1);
       if (container) {
         console.log(container.toString());
-        this.currentCPU -= container.cpu;
-        this.currentMemory -= container.memory;
+        this.#currentCPU -= container.cpu;
+        this.#currentMemory -= container.memory;
       }
     } else {
       console.log(chalk.red(`Container with ID '${containerID}' not found.`));

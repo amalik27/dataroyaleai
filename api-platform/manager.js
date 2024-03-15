@@ -48,10 +48,7 @@ class PrometheusDaemonManager {
             }
           }, intervalTime);
         }
-      }
-
-
-
+    }
 
     //Port allocation functions
     allocatePorts(N, processID) {
@@ -95,16 +92,21 @@ class PrometheusDaemonManager {
         // Implement the logic to spawn a new daemon
         let ports = this.allocatePorts(parameters.ports,parameters.processID);
 
-        const daemon = new PrometheusDaemon(this,ports,parameters.cpu,parameters.memory,parameters.processID,parameters.uptime);
+        const daemon = new PrometheusDaemon(ports,parameters.cpu,parameters.memory,parameters.processID,parameters.uptime);
         this.#registerDaemon(parameters.processID, daemon);
         daemon.startMonitoring(parameters.interval);
 
 
-        //Callback function for exit event emitted
+        //Callback functions for various needs. We use event emitters for asynchronous work rather than function calls which force the program counter to move.
         daemon.on('exit', (code) => {
-            console.log(`Daemon child ${parameters.processID} died with status ${code}`);
+            console.log(chalk.gray(`[Prometheus] Daemon child ${parameters.processID} died with status ${code}`));
             this.daemons.delete(parameters.processID);
           });
+
+        // daemon.on('request', (cpu,memory) => {
+        // console.log(`Daemon child ${parameters.processID} requested ${cpu} cpu and ${memory} memory`);
+        // this.daemons.delete(parameters.processID);
+        // });
     }
 
     #killProcessDaemon(processID) {

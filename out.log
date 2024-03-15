@@ -1,0 +1,28 @@
+[Prometheus] Initialized Daemon. Prometheus is watching for updates...
+Daemon registered with process ID testProcess
+[32m[Prometheus] Starting Container...[39m
+345674 running image /api-platform/Pythagoras is listening on port 5002 with memory cap 500m with cpu availability 0.5. | Build and run exit codes were 0 and 0.
+Remaining Resources - CPU: 0.00, Memory: 0.00 MB. ContainerStack length: 1
+[31m[Prometheus] Max uptime reached. Stopping daemon and cleaning up...[39m
+[32m[PrometheusDaemon] Shutting down...[39m
+[90m[Prometheus] Prometheus has stopped watching for updates...[39m
+[31m[Prometheus] Killing Containers...[39m
+{containerID: 345674,cpu: 0.5, memory: 500, priority: 1}
+[90m345674:4b6406f009ac kill sequence completed.[39m
+[32mAll specified containers have been processed.[39m
+[32m[PrometheusDaemon] Successfully shut down.[39m
+Daemon child testProcess died with status 0
+[Prometheus] Initialized Daemon. Prometheus is watching for updates...
+Daemon registered with process ID testProcess
+[32m[Prometheus] Starting Container...[39m
+345674 running image /api-platform/Pythagoras is listening on port 5002 with memory cap 500m with cpu availability 0.5. | Build and run exit codes were 0 and 0.
+Remaining Resources - CPU: 0.00, Memory: 0.00 MB. ContainerStack length: 1
+[31m[Prometheus] Max uptime reached. Stopping daemon and cleaning up...[39m
+[32m[PrometheusDaemon] Shutting down...[39m
+[90m[Prometheus] Prometheus has stopped watching for updates...[39m
+[31m[Prometheus] Killing Containers...[39m
+{containerID: 345674,cpu: 0.5, memory: 500, priority: 1}
+[90m345674:07e936b96e68 kill sequence completed.[39m
+[32mAll specified containers have been processed.[39m
+[32m[PrometheusDaemon] Successfully shut down.[39m
+Daemon child testProcess died with status 0
