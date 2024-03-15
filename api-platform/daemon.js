@@ -94,7 +94,6 @@ class PrometheusDaemon{
    */ 
   addToPortMap(containerID) {
     /// Function to calculate the hash value for a given number
-
     let index = containerID % portsAllowed;
     
     // Check if the slot is empty, if not, probe linearly until an empty slot is found
