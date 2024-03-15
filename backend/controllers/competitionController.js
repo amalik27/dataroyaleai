@@ -261,7 +261,25 @@ async function processCompetitionDatsets(filepath){
  */
 async function filterByPrize(min, max){
     // Assumptions: If min or max is -1, then it will be assumed that there is no lower/upper bound on the filtering.
+    try {
+        let query = 'SELECT * FROM competitions WHERE 1=1';
+        const params = [];
 
+        if (min !== -1) {
+            query += ' AND prize >= ?';
+            params.push(min);
+        }
+
+        if (max !== -1) {
+            query += ' AND prize <= ?';
+            params.push(max);
+        }
+
+        const results = await db.query(query, params);
+        return results; 
+    } catch (error) {
+        throw new Error(`Error filtering competitions by prize: ${error.message}`);
+    }
 
 }
 
@@ -272,7 +290,25 @@ async function filterByPrize(min, max){
  */ 
 async function filterByDeadline(min, max){
     // Assumptions: If min or max is -1, then it will be assumed that there is no lower/upper bound on the filtering.
+    try {
+        let query = 'SELECT * FROM competitions WHERE 1=1';
+        const params = [];
 
+        if (min !== -1) {
+            query += ' AND deadline >= ?';
+            params.push(new Date(min));
+        }
+
+        if (max !== -1) {
+            query += ' AND deadline <= ?';
+            params.push(new Date(max));
+        }
+
+        const results = await db.query(query, params);
+        return results; 
+    } catch (error) {
+        throw new Error(`Error filtering competitions by deadline: ${error.message}`);
+    }
 
 }
 
