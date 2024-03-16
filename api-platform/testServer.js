@@ -1,6 +1,6 @@
 const express = require('express');
-const { PrometheusDaemonManager, getSystemState} = require('./manager');
-const {Container} = require('./daemon');
+const { PrometheusDaemonManager, getSystemState} = require('./prometheusManager');
+const {Container} = require('./prometheusDaemon');
 const app = express();
 
 
