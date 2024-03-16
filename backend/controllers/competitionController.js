@@ -440,10 +440,56 @@ function countRows(filepath) {
 
 
 // Join Competition (Main Functions)
-
+async function joinCompetition(user_id, competition_id) {
+    const validCompetition = checkValidCompetition(competition_id);
+    if (validCompetition) {
+        const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
+        const params = [competition_id, null, null, null, user_id]
+        return new Promise((resolve, reject) => {
+            db.query(query, params, function(err, result) {
+                if (err) {
+                    console.error("Error joining competition:", err);
+                    return resolve(null);
+                }
+                if (result.length === 0 || !result) {
+                    console.error("User_id is invalid"); // checked for valid comp already, so maybe this
+                    return resolve(null);
+                } else {
+                    return resolve(true);
+                }
+            });
+        });
+    } else {
+        console.error("Error finding competition.");
+    }
+}
 
 // Join Competition (Validation Functions)
-
+async function checkValidCompetition(competition_id) {
+    try {
+        const query = `SELECT * FROM competitions WHERE id = ?`
+        const params = [competition_id]
+        return new Promise((resolve, reject) => {
+            db.query(query, params, function(err, result) {
+                if (err) {
+                    console.error("Error finding competition:", err); 
+                    return resolve(null); 
+                }
+                // Selected competition does not exist. 
+                if (result.length === 0 || !result) {
+                    console.error("Competition does not exist."); 
+                    return resolve(null); 
+                } else {
+                    // Selected competition exists. 
+                    return resolve(true); 
+                }
+            }); 
+        }); 
+    } catch (err) {
+        console.error("Error finding competition:", err);
+        return err;
+    }
+}
 
 // Join Competition (Helper Functions)
 
