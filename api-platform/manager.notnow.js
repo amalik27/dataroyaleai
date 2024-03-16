@@ -60,13 +60,14 @@ describe('PrometheusDaemonManager', () => {
     // Ensure that the process has not been started
     expect(daemon.initializeContainers).not.toHaveBeenCalled();
   });
-  
-  
-
-  
-
-
-  
-
+  test('Issue instruction to daemon to initialize a container.', () => {
+    manager.registerDaemon(processID, new PrometheusDaemon());
+    expect(manager.daemons[processID]).toBeDefined();
+    
+    manager.unregisterDaemon(processID);
+    expect(manager.daemons[processID]).toBeUndefined();
+  });
 });
+
+
 
