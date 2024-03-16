@@ -27,7 +27,7 @@ describe('Tests for full deployment and use lifecycle', () => {
 
     beforeEach(() => {
         //const ports = Array.from({ length: 101 }, (_, index) => 5000 + index);
-        manager = new PrometheusDaemonManager(5,500,500,blocksPerTier = [10, 20, 50]);
+        manager = new PrometheusDaemonManager(40,40000,500,blocksPerTier = [20, 30, 50]);
         manager.startMonitoring(1);
       });
 
@@ -35,7 +35,7 @@ describe('Tests for full deployment and use lifecycle', () => {
     test('Queue and Start Process, Initialize a Container, and kill Process.', async () =>  {
 
       //Simulate user sending START request which gets placed on queue.
-      manager.addMessageToQueue({type: "START", body:{processID: 'testProcess',ports:4,cpu:.5,memory:500,uptime:20,interval:50}});
+      manager.addMessageToQueue({type: "START", body:{processID: 'testProcess',ports:4,cpu:.5,memory:500,uptime:50,interval:50}});
 
 
       await sleep(100);
@@ -46,7 +46,10 @@ describe('Tests for full deployment and use lifecycle', () => {
       await sleep(100);
 
       expect(manager.daemons.get('testProcess').containerStack.stack.length).toBe(1);
-      await sleep(30000);
+      await sleep(10000);
+      //Simulate user sending shutdown request
+      manager.killProcessDaemon('testProcess');
+      await sleep(20000);
       expect(manager.daemons.size).toBe(0)
     });
 });

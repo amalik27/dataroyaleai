@@ -6,7 +6,8 @@ const portsAllowed = 101; // Define max number of ports from 5000
 const defaultMemory = 50;//mb of memory.
 const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com/config/containers/resource_constraints/#cpu
 
-const { PrometheusDaemon } = require('./daemon');
+const { PrometheusDaemon , Container } = require('./daemon');
+const { json } = require('express');
 
 class PrometheusDaemonManager {
     constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier = [10, 20, 50]) {
@@ -42,13 +43,13 @@ class PrometheusDaemonManager {
                 if(message.type = "START"){
                     try{
                         this.#spawnNewDaemon(message.body);
+                        
                     } catch (e){
                         console.log(e);
                     }
                     this.messageQueue.shift() //Dequeue
                 }
                 //Display usage:
-                this.resourceMonitor.displayUsage();
             }
           }, intervalTime);
         }
@@ -75,18 +76,20 @@ class PrometheusDaemonManager {
         //Callback functions for various needs. We use event emitters for asynchronous work rather than function calls which force the program counter to move.
         daemon.on('exit', (code) => {
             console.log(chalk.gray(`[Prometheus] Daemon child ${parameters.processID} died with status ${code}`));
-            //TODO: Replace this line with a more thorough this.cleanUp() function that deals with all aspects of removing a process.
-            this.daemons.delete(parameters.processID);
+            //Print daemons
+            
+            console.log(chalk.gray(`[Prometheus] Daemons: ${Array.from(this.daemons.keys())}`));
+            this.#unregisterDaemon(parameters.processID);
+            this.resourceMonitor.processExitCleanup(parameters.processID);
           });
         //TODO:Overload callback function
     }
 
-    #killProcessDaemon(processID) {
-        // Implement the logic to kill a specific process daemon
-        const daemon = this.daemons.get(processID);
-        if (daemon) {
-            daemon.shutDown();
-            this.#unregisterDaemon(processID);
+    killProcessDaemon(processID) {
+        if (this.daemons.get(processID)) {
+            this.daemons.get(processID).shutdown();
+        } else {
+            throw new Error(`No daemon found with process ID ${processID}`);
         }
     }
 
@@ -106,23 +109,25 @@ class PrometheusDaemonManager {
      */
     initializeContainer(processID,container) {
       // Logic to start a process on a daemon
-      const daemon = this.daemons.get(processID);
-      if (daemon) {
-          // Initialize containers with the required resources
-          daemon.containerQueue.enqueue({cpus:container.cpus, memory:container.memory},container.priority,container.containerID,container.model);
+      if (this.daemons.get(processID)) {
+          this.daemons.get(processID).initializeContainer(container);
       } else {
           throw new Error(`No daemon found with process ID ${processID}`);
       }
     }
 
-    forward(processID, apiEndpoint) {
+    async forward(processID, containerID, body) {
       // Logic to reroute API calls to specific processes
-      const daemon = this.daemons[processID];
-      if (daemon) {
+      
+      if (this.daemons.get(processID)) {
           // This function assumes an API routing system is in place
           // The system should be set up to handle API endpoint redirection
-          daemon.forward(processID, apiEndpoint);
-          console.log(`API calls for process ${processID} are now being routed to ${apiEndpoint}`);
+          let ret = "";
+          await this.daemons.get(processID).forward({processID:processID, containerID:containerID, body:body},'127.0.0.1').then(data => {
+                
+                ret =  data;
+            });
+            return ret;
       } else {
           throw new Error(`No daemon found with process ID ${processID} for rerouting API calls`);
       }
@@ -138,12 +143,21 @@ class PrometheusDaemonManager {
     }
 
     #unregisterDaemon(processID) {
-      if (this.daemons[processID]) {
-          delete this.daemons[processID];
+      if (this.daemons.get(processID)) {
+          this.daemons.delete(processID);
           console.log(`Daemon unregistered with process ID ${processID}`);
       } else {
           throw new Error(`No daemon found with process ID ${processID} for unregistering`);
       }
+    }
+
+    //Health check on a container in a process
+    healthCheck(processID, containerID) {
+        if (this.daemons.get(processID)) {
+            return this.daemons.get(processID).checkContainerHealth(containerID);
+        } else {
+            throw new Error(`No daemon found with process ID ${processID} for health check`);
+        }
     }
 }
 
@@ -186,6 +200,25 @@ class PrometheusResourceMonitor extends EventEmitter {
         });
     }
 
+    //display Usage but return everything as a JSON object
+    displayUsageJSON() {
+        const tiers = this.database.getTierIDs();
+        // let usage = {};
+        // tiers.forEach(tier => {
+        //     const users = Array.from(this.usage).filter((id) => {
+        //         this.database.getUserTier(id) === tier;
+        //     });
+        //     usage[tier] = {};
+        //     users.forEach((id) => {
+        //         usage[tier][id] = { blocks: this.usage.get(id).guaranteed + this.usage.get(id).overload };
+        //         if (this.portMap.has(id)) {
+        //             usage[tier][id].ports = this.portMap.get(id);
+        //         }
+        //     });
+        // });
+        console.log(JSON.stringify(Array.from(this.usage)))
+        return Array.from(this.usage);
+    }
 
     allocateProcess(parameters) {
         let ports = [];
@@ -203,6 +236,18 @@ class PrometheusResourceMonitor extends EventEmitter {
         }
         console.log(chalk.green(`[Prometheus Resource Monitor] Process ID ${parameters.processID} allocated ${parameters.ports} ports and ${this.database.getTierResources(this.database.getUserTier(parameters.processID)).guarantee} blocks`));
         return ports;
+    }
+
+    //Remove user from usage map and deallocation queue, and deallocate ports. This is done when a process is finished.
+    processExitCleanup(processID) {
+        if (this.usage.has(processID)) {
+            const { guaranteed, overload } = this.usage.get(processID);
+            this.usage.delete(processID);
+            this.removeProcessFromPortMap(processID);
+            this.overloadDeallocationQueue = this.overloadDeallocationQueue.filter(id => id !== processID);
+            return { guaranteed, overload };
+        }
+        throw new Error(`Process ID ${processID} not found in block usage tracking.`);
     }
 
     //PORT LOGIC
@@ -270,6 +315,7 @@ class PrometheusResourceMonitor extends EventEmitter {
                 }
             } else{
                 this.usage.set(processID, { guaranteed: blocksToAllocate, overload: 0 });
+                console.log(this.usage);
                 return processID;
             }  
         } else { //For Overload. Successful allocation will return processID.
@@ -314,6 +360,7 @@ class PrometheusResourceMonitor extends EventEmitter {
 
     }
 
+    //Used for when we are tight on resources
     deallocateOverloadBlocks(processID,blocks) {
         if (!this.usage.has(processID)) {
             throw new Error(`Process ID ${processID} not found in block usage tracking.`);
@@ -324,18 +371,6 @@ class PrometheusResourceMonitor extends EventEmitter {
             blocks -= removedBlocks;
         }
         return blocks;
-    }
-
-    //Remove user from usage map and deallocation queue, and deallocate ports. This is done when a process is finished.
-    processExitCleanup(processID) {
-        if (this.usage.has(processID)) {
-            const { guaranteed, overload } = this.usage.get(processID);
-            this.usage.delete(processID);
-            this.removeProcessFromPortMap(processID);
-            this.overloadDeallocationQueue = this.overloadDeallocationQueue.filter(id => id !== processID);
-            return { guaranteed, overload };
-        }
-        throw new Error(`Process ID ${processID} not found in block usage tracking.`);
     }
 
     calculateTotalUsedBlocks() {

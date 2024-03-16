@@ -8,6 +8,9 @@ const portsAllowed = 101; // Define max number of ports from STARTING_PORT
 const defaultMemory = 50;//mb of memory.
 const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com/config/containers/resource_constraints/#cpu
 
+//While debugging, we don't want to see the logs. Comment this line to see logs
+//console.log = function() {};
+
 //TODO: Create new function using `docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}" -a` to return true or false if a given port is taken.
 
 
@@ -24,19 +27,19 @@ class PrometheusDaemon extends EventEmitter{
         super();
         this.ports = new Set(portsAllowed);
         this.portMap = new Map();
-        this.containerQueue = new ContainerQueue();
-        this.containerStack = new ContainerStack(maxCPU, maxMemory);
+        // this.containerQueue = new ContainerQueue(this.processID);
+        this.containerStack = new ContainerStack(maxCPU, maxMemory,this.processID);
         this.interval = null;
         this.processID = processID;
         this.maxUptime = maxUptime;
         this.isOverload = false;
 
-        console.log("[Prometheus] Initialized Daemon. Prometheus is watching for updates...");
+        console.log(`[Prometheus Daemon - ${this.processID}] Initialized Daemon. Prometheus is watching for updates...`);
   }
 
   
   /*
-  * Causes the internal timer to start as well as listens for updates on the queue.
+  * Causes the internal timer to start
   */
   startMonitoring(intervalTime) {
     const startTime = Date.now(); // Capture the start time of the daemon
@@ -46,25 +49,8 @@ class PrometheusDaemon extends EventEmitter{
         const elapsedTime = (currentTime - startTime) / 1000; // Convert to seconds
 
         if (elapsedTime >= this.maxUptime) {
-          console.log(chalk.red("[Prometheus] Max uptime reached. Stopping daemon and cleaning up..."))
+          console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Max uptime reached. Stopping daemon and cleaning up...`))
           this.shutdown();
-        }
-
-        if (!this.containerQueue.isEmpty()) {
-
-          //Call HW-Limit-Aware-Start-System
-          const container = this.containerQueue.dequeue();
-          try{
-            this.#initializeContainer(container);
-          }catch(e){
-            if(e.name==="HardwareLimitError"){
-              return;
-            }
-            console.log(chalk.red(e.toString()));
-            console.log(chalk.gray(e.stack.toString()));
-            this.containerQueue.queue.push(container);//NOTE: PUSH BECAUSE WE WANT IT TO REMAIN #1
-          }
-          
         }
       }, intervalTime);
     }
@@ -78,15 +64,15 @@ class PrometheusDaemon extends EventEmitter{
       clearInterval(this.interval);
       this.interval = null;
     }
-    console.log(chalk.gray("[Prometheus] Prometheus has stopped watching for updates..."));
+    console.log(chalk.gray(`[Prometheus Daemon - ${this.processID}] Prometheus has stopped watching for updates...`));
   }
 
 
   shutdown() {
-    console.log(chalk.green('[PrometheusDaemon] Shutting down...'));
+    console.log(chalk.green(`[Prometheus Daemon - ${this.processID}] Shutting down...`));
     this.stopMonitoring();
     this.killContainers(this.getRunningContainers()).then(() => {
-        console.log(chalk.green('[PrometheusDaemon] Successfully shut down.'));
+        console.log(chalk.green(`[Prometheus Daemon - ${this.processID}] Successfully shut down.`));
         this.emit('exit', 0);
         return;
     }).catch((error) => {
@@ -181,11 +167,11 @@ class PrometheusDaemon extends EventEmitter{
    * @param {Container} container
    * 
    */
-  #initializeContainer(container, silent = true) {
-    console.log(chalk.green(`[Prometheus] Starting Container...`));
+  initializeContainer(container, silent = true) {
+    console.log(chalk.green(`[Prometheus Daemon - ${this.processID}] Starting Container...`));
 
     if (this.containerStack.exists(container.containerID)) {
-      console.log(chalk.yellow(`Container ${container.containerID} already exists in the stack. Skipping initialization.`));
+      throw new Error(chalk.yellow(`Container ${container.containerID} already exists in the stack. Skipping initialization.`));
       return; // Skip initialization if container is already in the stack
     }
 
@@ -193,7 +179,7 @@ class PrometheusDaemon extends EventEmitter{
     // Building the Docker container
     let buildResult = shell.exec(`docker build -t ${container.containerID} ./${container.model}`, { silent: silent });
     if (buildResult.code !== 0) {
-      console.error(chalk.red(`Failed to build container ${container.containerID} with exit code ${buildResult.code}: ${buildResult.stderr}`));
+      throw new Error(chalk.red(`Failed to build container ${container.containerID} with exit code ${buildResult.code}: ${buildResult.stderr}`));
       return; // Exit if build fails
     }
 
@@ -204,7 +190,7 @@ class PrometheusDaemon extends EventEmitter{
     // Running the Docker container
     let runResult = shell.exec(`docker run -d --memory=${container.memory}m --cpus=${container.cpu} -p ${port}:${STARTING_PORT} ${container.containerID}`, { silent: silent });
     if (runResult.code !== 0) {
-      console.error(chalk.red(`Failed to start container ${container.containerID} with exit code ${runResult.code}: ${runResult.stderr}`));
+      throw new Error(chalk.red(`Failed to start container ${container.containerID} with exit code ${runResult.code}: ${runResult.stderr}`));
       this.removeContainerFromPortMap(container.containerID);
       return; // Exit if run fails
     }
@@ -212,14 +198,37 @@ class PrometheusDaemon extends EventEmitter{
   
     console.log(`${container.containerID} running image ${container.model} is listening on port ${port} with memory cap ${container.memory}m with cpu availability ${container.cpu}. | Build and run exit codes were ${buildResult.code} and ${runResult.code}.`);
     console.log(`Remaining Resources - CPU: ${(this.containerStack.getMaxCPU() - this.containerStack.getCurrentCPU()).toFixed(2)}, Memory: ${(this.containerStack.getMaxMemory() - this.containerStack.getCurrentMemory()).toFixed(2)} MB. ContainerStack length: ${this.containerStack.stack.length.toString()}`);
+
+  }
+
+  checkContainerHealth(containerTag, silent = true) {
+    return new Promise((resolve, reject) => {
+      let containerTag = container.containerID;
+      shell.exec(`docker ps | grep ${containerTag} | cut -f 1 -d ' '`, { silent: silent }, (code, stdout, stderr) => {
+          if (code !== 0) {
+              return reject(new Error(`Error finding running container for ID: ${containerTag}`));
+          }
+      });         
+      let containerID = stdout.trim();
+      console.log(`docker inspect --format='{{json .State.Health.Status}} ' ${containerId}`);
+      shell.exec(`docker inspect --format='{{json .State.Health.Status}} ' ${containerId}`, { silent: silent }, (code, stdout, stderr) => {
+        if (code !== 0 || stderr) {
+          reject(new Error(`Error inspecting container: ${stderr || 'Unknown error'} stdout: ${stdout}`));
+        } else if (stdout.includes('healthy')) {
+          resolve(true);
+        } else {
+          reject(new Error('Container is not healthy'));
+        }
+      });
+    });
   }
 
   /**
    * 
    * @param {Array<Container>} containers
    */
-  killContainers = (containers, silent = true) => {
-    console.log(chalk.red("[Prometheus] Killing Containers..."));
+  killContainers(containers, silent = true){
+    console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Killing Containers...`));
     let promises = containers.map(container => {
         return new Promise((resolve, reject) => {
             if (!this.containerStack.exists(container.containerID)) {
@@ -230,7 +239,7 @@ class PrometheusDaemon extends EventEmitter{
             let containerTag = container.containerID;
             shell.exec(`docker ps | grep ${containerTag} | cut -f 1 -d ' '`, { silent: silent }, (code, stdout, stderr) => {
                 if (code !== 0) {
-                    return reject(new Error(`Error finding running container for ID: ${containerID}`));
+                    return reject(new Error(`Error finding running container for ID: ${containerTag}`));
                 }
                 
                 let containerID = stdout.trim();
@@ -308,7 +317,6 @@ class PrometheusDaemon extends EventEmitter{
           'Content-Type': 'application/json',
         },
       };
-
       const forwardReq = http.request(options, (res) => {
         let data = '';
 
@@ -329,7 +337,8 @@ class PrometheusDaemon extends EventEmitter{
 
       // End the request
       forwardReq.end();
-    });
+    }).catch((error) => {
+      throw new Error(chalk.red(`[Prometheus Daemon - ${this.processID}] Error during forward pass: ${error}`));});
   }
 
 }
@@ -352,12 +361,13 @@ class ContainerStack {
   getCurrentMemory = () => this.#currentMemory;
 
   
-  constructor(maxCPU, maxMemory) {
+  constructor(maxCPU, maxMemory, processID) {
     this.stack = [];
     this.#maxCPU = maxCPU;
     this.#maxMemory = maxMemory;
     this.#currentCPU = 0;
     this.#currentMemory = 0;
+    this.processID = processID;
   }
 
 
@@ -372,7 +382,7 @@ class ContainerStack {
       this.#currentCPU += container.cpu;
       this.#currentMemory += container.memory;
     } else {
-      throw new HardwareLimitError(chalk.yellow(`[Prometheus] Reached hardware limit when attempting to initialize ${container.toString()} from queue...`));
+      throw new HardwareLimitError(chalk.yellow(`[Prometheus Daemon - ${this.processID}] Reached hardware limit when attempting to initialize ${container.toString()}. CPU: ${this.#currentCPU + container.cpu}/${this.#maxCPU}, Memory: ${this.#currentMemory + container.memory}/${this.#maxMemory}`));
     }
   }
 
@@ -400,69 +410,15 @@ class ContainerStack {
   }
 }
 
-/**This class is a tool for the PrometheusDaemon */
-class ContainerQueue {
-  constructor() {
-    this.queue = [];
-    //this.itemMap = new Map(); // Map to store unique IDs and their items
-  }
-
-  /**
-   * 
-   * @param {number} priority 
-   * @param {number} containerID 
-   */
-  enqueue(parameters,priority=1, containerID,model) {
-    if (this.queue.find(container=>{
-        container.containerID ==containerID
-    }) == undefined) {
-      this.queue.push(new Container(parameters.cpus, parameters.memory,containerID,priority,model));
-      this.queue.sort((a, b) => a.priority - b.priority);
-      //console.log(chalk.gray("[Success] Container Enqueued: " + containerID.toString()))
-    } else{
-      console.log(chalk.red("[ContainerQueue Failure] Duplicate ContainerID When Enqueueing " + containerID.toString()))
-    }
-  }
-
-  dequeue() {
-    if (!this.isEmpty()) {
-      let container  = this.queue.shift();
-      //const parameters = this.itemMap.get(containerID);
-      //this.itemMap.delete(containerID);
-      return container;
-    }
-    return null;
-  }
-
-  /**
-   * 
-   * @param {number} containerID 
-   */
-  remove(containerID) {
-    if (this.itemMap.has(containerID)) {
-      const indexToRemove = this.queue.findIndex((item) => item.containerID === containerID);
-      if (indexToRemove !== -1) {
-        this.queue.splice(indexToRemove, 1);
-        //this.itemMap.delete(containerID);
-      }
-    }
-  }
-
-  isEmpty() {
-    return this.queue.length === 0;
-  }
-}
-
 
 /**Container abstraction */
 class Container{
-  constructor(cpu, memory, containerID,priority,model){
+  constructor(cpu, memory, containerID,model){
     this.cpu = cpu;
     this.memory = memory;
     this.containerID = containerID;
-    this.priority = priority;
     this.model = model;
-    this.toString = () => `{containerID: ${containerID},cpu: ${cpu}, memory: ${memory}, priority: ${priority}}`
+    this.toString = () => `{containerID: ${containerID},cpu: ${cpu}, memory: ${memory},model: ${model}`;
   }
 }
 
