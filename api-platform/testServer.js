@@ -88,10 +88,15 @@ app.post('/manager/kill', (req, res) => {
 
 app.post('/manager/health', async (req, res) => {
     const {processID,containerID} = req.body;
-    health = await manager.healthCheck(processID,containerID);
-    console.log(health);
-    res.json(health);
-    res.status(200).send();
+    try{
+        health = await manager.healthCheck(processID,containerID);
+        console.log(health);
+        res.json(health);
+        res.status(200).send();
+    }catch(error){
+        res.status(500).send(error.message);
+    }
+    
 });
 
 //See manager queue
