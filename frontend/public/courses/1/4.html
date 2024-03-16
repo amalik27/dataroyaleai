@@ -3,35 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lesson 2: Understanding Machine Learning</title>
+    <title>Lesson 4: Introduction to AI Models</title>
     <meta name="course-id" content="1">
     <meta name="course-name" content="Introduction to AI">
     <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
 </head>
 <body>
-    <h1>Lesson 2: Understanding Machine Learning</h1>
-    <p>In this lesson, we'll delve into the concept of machine learning, a subset of artificial intelligence.</p>
-    <p>Machine learning is a field of study that enables computers to learn from data and improve their performance over time without being explicitly programmed.</p>
-    <p>There are several types of machine learning algorithms, including supervised learning, unsupervised learning, and reinforcement learning.</p>
-    <p>Supervised learning algorithms learn from labeled data, where the input-output pairs are provided during the training process.</p>
-    <p>Unsupervised learning algorithms, on the other hand, identify patterns and structures in unlabeled data without explicit guidance.</p>
-    <p>Reinforcement learning algorithms learn by interacting with an environment and receiving feedback in the form of rewards or penalties.</p>
-    <p>Machine learning algorithms are used in various applications, such as image recognition, natural language processing, recommendation systems, and autonomous vehicles.</p>
-    <p>Understanding machine learning is essential for building and deploying AI models in real-world scenarios.</p>
+    <h1>Lesson 4: Introduction to AI Models</h1>
+    <p>Now that we've covered the basics, let's explore various AI models used in different applications.</p>
+    <p>AI models are mathematical representations of real-world processes that enable computers to make predictions or decisions.</p>
+    <p>Decision trees are a type of AI model used for classification and regression tasks. They partition the input space into regions and make predictions based on the majority class or average value within each region.</p>
+    <p>Support vector machines are another type of AI model used for classification and regression. They find the optimal hyperplane that separates the input data into different classes or predicts continuous outcomes.</p>
+    <p>Other popular AI models include k-nearest neighbors, naive Bayes, and random forests, each with its strengths and weaknesses.</p>
+    <p>Understanding AI models is essential for selecting the appropriate model for a given task and optimizing its performance.</p>
     <p>
-        Proceed to <a href="3.html" id="lesson3">Lesson 3</a> |
-        Go back to <a href="1.html" id="lesson1">Lesson 1</a>
+        Proceed to <a href="5.html" id="lesson5">Lesson 5</a> |
+        Go back to <a href="3.html" id="lesson3">Lesson 3</a>
     </p>
     
     <script>
+    // Add event listener for Lesson 5 link
+    document.getElementById("lesson5").addEventListener("click", function(event) {
+        handleLessonLinkClick(event, 5);
+    });
+    
     // Add event listener for Lesson 3 link
     document.getElementById("lesson3").addEventListener("click", function(event) {
         handleLessonLinkClick(event, 3);
-    });
-    
-    // Add event listener for Lesson 1 link
-    document.getElementById("lesson1").addEventListener("click", function(event) {
-        handleLessonLinkClick(event, 1);
     });
     
     function handleLessonLinkClick(event, lessonNumber) {
@@ -64,6 +62,5 @@
     }
     </script>
     
-
 </body>
 </html>

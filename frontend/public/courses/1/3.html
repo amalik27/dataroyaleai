@@ -3,26 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course 1: Control Flow and Loops</title>
+    <title>Lesson 3: Deep Dive into Neural Networks</title>
     <meta name="course-id" content="1">
-    <meta name="course-name" content="Introduction to JavaScript">
-    <meta name="course-description" content="This course will introduce you to the basics of JavaScript programming language.">
+    <meta name="course-name" content="Introduction to AI">
+    <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
 </head>
 <body>
-    <header>
-        <h1>Course 1: Introduction to JavaScript</h1>
-    </header>
-    <main>
-        <section id="lesson2">
-            <h2>Lesson 2: Control Flow and Loops</h2>
-            <p>This lesson covers control flow statements like if-else and loops in JavaScript.</p>
-        </section>
-        <nav>
-            <a href="1.html">Previous: Variables and Data Types</a>
-        </nav>
-    </main>
-    <footer>
-        <p>&copy; 2024 Course 1</p>
-    </footer>
+    <h1>Lesson 3: Deep Dive into Neural Networks</h1>
+    <p>Neural networks are fundamental in AI models. In this lesson, we'll explore the architecture and working principles of neural networks.</p>
+    <p>Neural networks are computational models inspired by the structure and function of the human brain.</p>
+    <p>They consist of interconnected nodes, or neurons, organized into layers. Each neuron receives input signals, processes them, and produces an output signal.</p>
+    <p>Neural networks can be trained using algorithms such as backpropagation and gradient descent to optimize their parameters and improve their performance.</p>
+    <p>Deep learning is a subfield of machine learning that focuses on neural networks with multiple layers (deep neural networks).</p>
+    <p>Deep learning has achieved remarkable success in various tasks, including image recognition, speech recognition, and natural language processing.</p>
+    <p>Key components of neural networks include activation functions, which introduce non-linearity into the model, and loss functions, which measure the model's performance.</p>
+    <p>Understanding neural networks is crucial for designing and implementing advanced AI models.</p>
+    <p>
+        Proceed to <a href="4.html" id="lesson4">Lesson 4</a> |
+        Go back to <a href="2.html" id="lesson2">Lesson 2</a>
+    </p>
+    
+    <script>
+    // Add event listener for Lesson 4 link
+    document.getElementById("lesson4").addEventListener("click", function(event) {
+        handleLessonLinkClick(event, 4);
+    });
+    
+    // Add event listener for Lesson 2 link
+    document.getElementById("lesson2").addEventListener("click", function(event) {
+        handleLessonLinkClick(event, 2);
+    });
+    
+    function handleLessonLinkClick(event, lessonNumber) {
+        // Prevent the default behavior of the anchor element
+        event.preventDefault();
+        
+        // Retrieve the apiToken and courseId values dynamically from the current URL
+        var apiToken = getQueryParamValue("api_token");
+        var courseId = getQueryParamValue("course");
+    
+        // Check if the values are valid
+        if (!apiToken || !courseId) {
+            console.error("API token or course ID not available in the URL.");
+            return; // Stop further execution if the values are not available
+        }
+        
+        // Construct the URL with the retrieved values and the lesson number
+        var pageNumber = lessonNumber;
+        var url = "http://localhost:3000/course?api_token=" + apiToken + "&course=" + courseId + "&page=" + pageNumber;
+        
+        // Navigate to the constructed URL
+        window.location.href = url;
+    }
+    
+    function getQueryParamValue(param) {
+        // Get the query parameters from the current URL
+        var urlParams = new URLSearchParams(window.location.search);
+        // Retrieve the value of the specified parameter
+        return urlParams.get(param);
+    }
+    </script>
+    
 </body>
 </html>

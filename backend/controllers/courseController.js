@@ -72,7 +72,7 @@ async function readAllCoursesOfUserByApiToken(api_token) {
     }
 }
 
-async function openCourse(course_id, api_token) {
+async function openCourse(course_id, courseProgress, api_token) {
     try {
         const sql = 'SELECT * FROM course_progress WHERE api_token = ? AND course_id = ?';
         return new Promise((resolve, reject) => {
@@ -86,9 +86,32 @@ async function openCourse(course_id, api_token) {
                     console.error(error.message);
                     return reject(error);
                 }
-                const courseProgress = results[0].progress;
                 const filePath = '/frontend/public/courses/' + course_id + '/' + courseProgress + '.html';
                 resolve(filePath);
+            });
+        });
+    } catch (error) {
+        console.error('Error reading courses for the user:', error);
+        throw error;
+    }
+}
+
+async function getDefaultPage(course_id, api_token) {
+    try {
+        const sql = 'SELECT * FROM course_progress WHERE api_token = ? AND course_id = ?';
+        return new Promise((resolve, reject) => {
+            db.query(sql, [api_token, course_id], function (err, results, fields) {
+                if (err) {
+                    console.error('Error getting course progress by API token and course ID:', err);
+                    return reject(err);
+                }
+                if (!results || results.length === 0) {
+                    const error = new Error('No course progress found for the user');
+                    console.error(error.message);
+                    return reject(error);
+                }
+                const courseProgress = results[0].progress;
+                resolve(courseProgress);
             });
         });
     } catch (error) {
@@ -125,5 +148,6 @@ module.exports = {
     readAllCoursesOfUserByApiToken,
     createCourseProgress,
     updateCourseProgress,
-    openCourse
+    openCourse,
+    getDefaultPage
 };

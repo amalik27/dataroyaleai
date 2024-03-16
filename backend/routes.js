@@ -7,6 +7,7 @@ const courseController = require('./controllers/courseController');
 function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
+    const path = parsedUrl.path;
 
     if (pathname === '/users') {
         if (req.method === 'GET') {
@@ -96,7 +97,7 @@ function processRequest(req, res){
             });
         }
     }
-    else if (pathname.includes("/dashboard/") && !pathname.includes("/course/")) {
+    else if (pathname.includes("/dashboard/")) {
         const coursesRegex = /\/dashboard\/(.+)/;
         const match = pathname.match(coursesRegex);
         const api_token = match[1];
@@ -112,18 +113,23 @@ function processRequest(req, res){
             });
         }
     }
-    else if (pathname.includes("/dashboard/") && pathname.includes("/course/")) {
-        const coursesRegex = /\/dashboard\/(\w+)\/course\/(\d+)/;
-        const match = pathname.match(coursesRegex);
+    else if (pathname.includes("/course")) {
+        const coursesRegex = /\/course(?:\?.*?api_token=(\w+).*?course=(\d+).*?(?:&page=(\d+))?)?/;
+        const match = path.match(coursesRegex);
         const api_token = match[1];
         const course_id = match[2];
+        const given_page_number = match[3];
         if (req.method === 'GET') {
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const filePath = await courseController.openCourse(course_id, api_token);
+                let page_number = await courseController.getDefaultPage(course_id, api_token);
+                if(given_page_number !== undefined){
+                    page_number = given_page_number;
+                }
+                const filePath = await courseController.openCourse(course_id, page_number, api_token);
                 let curDir = __dirname;
                 fs.readFile(curDir.replace('/backend', "") + filePath, (err, data) => {
                     if (err) {
