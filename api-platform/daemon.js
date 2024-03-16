@@ -3,6 +3,7 @@ var chalk = require("chalk");
 var http = require('http');
 const EventEmitter = require('events');
 const { default: container } = require('node-docker-api/lib/container');
+const { stdout } = require('process');
 const STARTING_PORT=5000;
 const portsAllowed = 101; // Define max number of ports from STARTING_PORT 
 const defaultMemory = 50;//mb of memory.
@@ -21,18 +22,30 @@ const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com
 
 class PrometheusDaemon extends EventEmitter{
 
-
-
+  #isOverload;
+  getOverload = () => this.#isOverload;
+  //enable overload mode
+  enableOverload = () => {
+    this.#isOverload = true; 
+    this.#overloadStartTime = Date.now();
+    console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Overload mode enabled.`));
+    console.log(chalk.gray(`[Prometheus Daemon - ${this.processID}] Overload time limit is ${this.maxOverloadTime} seconds.`));  
+  }
+  #overloadStartTime ;
+  getOverloadUptime = () => (Date.now() - this.#overloadStartTime)/1000;
   constructor( portsAllowed, maxCPU = .05, maxMemory = 300, processID, maxUptime,maxOverloadTime) {
         super();
         this.ports = new Set(portsAllowed);
         this.portMap = new Map();
         // this.containerQueue = new ContainerQueue(this.processID);
+        //console.log memory and cpu
+        console.log(`[Prometheus Daemon - ${this.processID}] Max CPU: ${maxCPU.toFixed(3)}, Max Memory: ${maxMemory.toFixed(3)}`);
         this.containerStack = new ContainerStack(maxCPU, maxMemory,this.processID);
         this.interval = null;
         this.processID = processID;
         this.maxUptime = maxUptime;
-        this.isOverload = false;
+        this.#isOverload = false;
+        this.maxOverloadTime = maxOverloadTime;
 
         console.log(`[Prometheus Daemon - ${this.processID}] Initialized Daemon. Prometheus is watching for updates...`);
   }
@@ -52,6 +65,19 @@ class PrometheusDaemon extends EventEmitter{
           console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Max uptime reached. Stopping daemon and cleaning up...`))
           this.shutdown();
         }
+        //Check if we are in overload mode
+        if(this.#isOverload){
+          const overloadTime = (currentTime - this.#overloadStartTime) / 1000; // Convert to seconds
+          if(overloadTime >= this.maxOverloadTime){
+            this.#isOverload = false;
+            console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Overload time limit reached. Sending out alert...`))
+            //Send out alert 
+            this.emit('overload-exit', 0);
+          }
+        }
+
+
+
       }, intervalTime);
     }
   }
@@ -86,6 +112,30 @@ class PrometheusDaemon extends EventEmitter{
     return {cpu: this.containerStack.getCurrentCPU(), memory: this.containerStack.getCurrentMemory()};
   }
 
+  //Set resource limits
+  setResourceLimits(cpu, memory){
+    this.containerStack.setMaxCPU(cpu);
+    this.containerStack.setMaxMemory(memory);
+    //Call function for container stack to re-evaluate its state.
+    try{
+      this.containerStack.evaluateState();
+    } catch (error){
+      //While evaluateStates throws an error, we want to catch it and pop/kill the container on top of the stack.
+      console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Error during resource limit change: ${error.message}`));
+      //While loop
+      while(this.containerStack.getCurrentCPU() > this.containerStack.getMaxCPU() || this.containerStack.getCurrentMemory() > this.containerStack.getMaxMemory()){
+        //Check what container is on top of stack
+        let container = this.containerStack.stack[this.containerStack.stack.length-1];
+        //Get its ID
+        let containerID = container.containerID;
+        //Kill it
+        this.killContainers([container]);
+        //Remove it from the stack
+        this.containerStack.remove(containerID);
+      }
+    }
+    //After this function completes, the stack should be within the limits.
+  }
 
 
   //This family of functions deals with port mappings
@@ -158,9 +208,7 @@ class PrometheusDaemon extends EventEmitter{
     }
   }
 
-
-
-  //This family of functions deals with container management
+  //This family of functions deals with direct container management
   /**
    * Used to intialize a container. Does lots of internal error handling.
    * 
@@ -203,23 +251,40 @@ class PrometheusDaemon extends EventEmitter{
 
   checkContainerHealth(containerTag, silent = true) {
     return new Promise((resolve, reject) => {
-      let containerTag = container.containerID;
       shell.exec(`docker ps | grep ${containerTag} | cut -f 1 -d ' '`, { silent: silent }, (code, stdout, stderr) => {
-          if (code !== 0) {
-              return reject(new Error(`Error finding running container for ID: ${containerTag}`));
+          if (code !== 0 || stderr.trim()) {
+              return reject(new Error(`Error finding running container for tag: ${containerTag}`));
           }
+          const containerID = stdout.trim();
+          if (!containerID) {
+              return reject(new Error(`Container with tag ${containerTag} not found or not running.`));
+          }
+          shell.exec(`docker inspect --format='{{json .State.Health.Status}}' ${containerID}`, { silent: silent }, (inspectCode, inspectStdout, inspectStderr) => {
+            if (inspectCode !== 0 || inspectStderr) {
+              reject(new Error(`Error inspecting container: ${inspectStderr || 'Unknown error'} stdout: ${inspectStdout}`));
+            } else {
+              // Parse the health status
+              const status = inspectStdout.trim().replace(/^"|"$/g, ''); // Remove surrounding quotes
+              const result = {
+                status: status,
+              };
+
+              // Log based on status
+              switch(status) {
+                case 'healthy':
+                  console.log(chalk.green(`Container ${containerID} is healthy.`));
+                  break;
+                case 'starting':
+                  console.log(chalk.yellow(`Container ${containerID} is still starting.`));
+                  break;
+                default:
+                  console.log(chalk.red(`Container ${containerID} is not healthy.`));
+              }
+
+              resolve(result);
+            }
+          });
       });         
-      let containerID = stdout.trim();
-      console.log(`docker inspect --format='{{json .State.Health.Status}} ' ${containerId}`);
-      shell.exec(`docker inspect --format='{{json .State.Health.Status}} ' ${containerId}`, { silent: silent }, (code, stdout, stderr) => {
-        if (code !== 0 || stderr) {
-          reject(new Error(`Error inspecting container: ${stderr || 'Unknown error'} stdout: ${stdout}`));
-        } else if (stdout.includes('healthy')) {
-          resolve(true);
-        } else {
-          reject(new Error('Container is not healthy'));
-        }
-      });
     });
   }
 
@@ -227,7 +292,7 @@ class PrometheusDaemon extends EventEmitter{
    * 
    * @param {Array<Container>} containers
    */
-  killContainers(containers, silent = true){
+  async killContainers(containers, silent = true){
     console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Killing Containers...`));
     let promises = containers.map(container => {
         return new Promise((resolve, reject) => {
@@ -243,7 +308,7 @@ class PrometheusDaemon extends EventEmitter{
                 }
                 
                 let containerID = stdout.trim();
-                shell.exec(`docker stop ${containerID}`, { silent: silent }, (stopCode) => {
+                shell.exec(`docker kill ${containerID}`, { silent: silent }, (stopCode) => {
                     if (stopCode !== 0) {
                         return reject(new Error(`Error stopping container ${containerID} | exit code: ${stopCode}`));
                     }
@@ -266,7 +331,7 @@ class PrometheusDaemon extends EventEmitter{
 
                             this.containerStack.remove(containerTag); // Ensure this operation is synchronous or properly handled if asynchronous
                             console.log(chalk.grey(`${containerTag}:${containerID} kill sequence completed.`));
-                            resolve();
+                            resolve(containerTag);
                         });
                     });
                 });
@@ -370,6 +435,12 @@ class ContainerStack {
     this.processID = processID;
   }
 
+  //Evaluate state of the stack(see if it is still within limits)
+  evaluateState(){
+    if(this.#currentCPU > this.#maxCPU || this.#currentMemory > this.#maxMemory){
+      throw new HardwareLimitError(chalk.yellow(`[Prometheus Daemon - ${this.processID}] Reached hardware limit. CPU: ${this.#currentCPU}/${this.#maxCPU}, Memory: ${this.#currentMemory}/${this.#maxMemory}`));
+    }
+  }
 
   exists(containerID) {
     return this.stack.some(item => item.containerID === containerID);

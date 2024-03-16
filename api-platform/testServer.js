@@ -1,7 +1,6 @@
 const express = require('express');
-const { PrometheusDaemonManager } = require('./manager');
+const { PrometheusDaemonManager, getSystemState} = require('./manager');
 const {Container} = require('./daemon');
-const { default: container } = require('node-docker-api/lib/container');
 const app = express();
 
 
@@ -10,7 +9,7 @@ let manager;
 // Define routes
 app.get('/manager/displayUsage', (req, res) => {
     // Call the appropriate function from your manager.js file
-    const result = manager.resourceMonitor.displayUsageJSON();
+    const result = getSystemState(manager);
     // Send the result as the response
     res.json(result);
 });
@@ -21,8 +20,21 @@ app.post('/manager/addMessage', (req, res) => {
         return res.status(400).send('Message is required.');
     }
     try {
-        manager.addMessageToQueue(message);
-        res.send('Message added to queue.');
+        let id = manager.addMessageToQueue(message);
+        res.json({ messageID: id });
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+});
+
+app.post('/manager/messageStatus', (req, res) => {
+    const { messageID } = req.body;
+    if (!messageID) {
+        return res.status(400).send('Message is required.');
+    }
+    try {
+        let status = manager.fetchMessageStatus(messageID);
+        res.json(status);
     } catch (error) {
         res.status(500).send(error.message);
     }
@@ -74,17 +86,23 @@ app.post('/manager/kill', (req, res) => {
     }
 });
 
-app.post('/manager/health', (req, res) => {
+app.post('/manager/health', async (req, res) => {
     const {processID,containerID} = req.body;
-    health = manager.healthCheck(processID,containerID);
+    health = await manager.healthCheck(processID,containerID);
+    console.log(health);
     res.json(health);
     res.status(200).send();
+});
+
+//See manager queue
+app.get('/manager/queue', (req, res) => {
+    res.json(manager.queue);
 });
 
 // Start the server
 const port = 3000;
 app.listen(port, () => {
-    manager = new PrometheusDaemonManager(4,4000,500,blocksPerTier = [20, 30, 50]);
-    manager.startMonitoring(1);
+    manager = new PrometheusDaemonManager(4,4000,500,blocksPerTier = [40, 30, 50]);
+    manager.startMonitoring(1000);
     console.log(`Server is running on port ${port}`);
 });
