@@ -2,7 +2,7 @@ var shell = require('shelljs');
 var chalk = require("chalk");
 const EventEmitter = require('events');
 
-const { PrometheusDaemon , Container } = require('./prometheusDaemon');
+const { PrometheusDaemon , Container } = require('./platformDaemon');
 
 //Debug function for getting overall system state and packing it into a JSON object
 function getSystemState(manager) {
@@ -51,7 +51,8 @@ function getSystemState(manager) {
 
 
 class PrometheusDaemonManager {
-    constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier) {
+
+    constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier,name) {
         this.daemons = new Map();
         this.messageQueue = [];
         this.messageHistory = [];

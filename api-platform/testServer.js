@@ -1,8 +1,8 @@
 const express = require('express');
 const { PrometheusDaemonManager, getSystemState} = require('./prometheusManager');
-const {Container} = require('./prometheusDaemon');
+const {Container} = require('./platformDaemon');
 const app = express();
-
+const multer = require('multer');
 
 app.use(express.json());
 let manager;
@@ -103,6 +103,31 @@ app.post('/manager/health', async (req, res) => {
 app.get('/manager/queue', (req, res) => {
     res.json(manager.queue);
 });
+
+//HOW TO DO IMAGES:
+// Set up storage engine with multer for where and how to save files
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+      cb(null, './uploads'); // Set the destination where to save the uploaded files
+    },
+    filename: function(req, file, cb) {
+      cb(null, Date.now() + '-' + file.originalname); // Name the file uniquely
+    }
+  });
+  
+const upload = multer({ storage: storage });
+app.post('/upload-image', upload.single('file'), (req, res) => {
+if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+}
+res.send(`File uploaded successfully. Filename: ${req.file.filename}`);
+});
+
+
+
+
+
+
 
 // Start the server
 const port = 3000;
