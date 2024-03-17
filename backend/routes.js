@@ -8,6 +8,7 @@ function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
     const path = parsedUrl.path;
+    const api_token = req.headers['api_token'];
 
     if (pathname === '/users') {
         if (req.method === 'GET') {
@@ -103,10 +104,7 @@ function processRequest(req, res){
             });
         }
     }    
-    else if (pathname.includes("/courses/")) {
-        const coursesRegex = /\/courses\/(.+)/;
-        const match = pathname.match(coursesRegex);
-        const api_token = match[1];
+    else if (pathname.includes("/courses")) {
         if (req.method === 'GET') {
             let body = '';
             req.on('data', (chunk) => {

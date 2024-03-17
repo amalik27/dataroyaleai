@@ -18,7 +18,6 @@ async function createCourseProgress(api_token, course_id) {
 
 async function updateCourseProgress(progress, api_token, course_id) {
     try {
-        console.log(progress + '-----' + api_token  + '-----' + course_id);
         const sql = `UPDATE course_progress SET progress = ? WHERE api_token = ? AND course_id = ?`;
         await db.query(sql, [progress, api_token, course_id]);
     } catch (error) {

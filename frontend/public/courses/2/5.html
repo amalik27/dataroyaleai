@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 5: Advanced AI Models and Future Trends</title>
+    <meta name="course-id" content="1">
+    <meta name="course-name" content="Introduction to AI">
+    <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
+</head>
+<body>
+    <h1>Lesson 5: Advanced AI Models and Future Trends</h1>
+    <p>In this final lesson, we'll explore advanced AI models such as recurrent neural networks, convolutional neural networks, and discuss future trends in AI.</p>
+    <p>Recurrent neural networks (RNNs) are designed to process sequential data by maintaining a state vector that captures information about previous inputs.</p>
+    <p>They are widely used in natural language processing, time series analysis, and other tasks involving sequential data.</p>
+    <p>Convolutional neural networks (CNNs) are specialized for processing grid-like data, such as images or audio spectrograms.</p>
+    <p>They consist of convolutional layers that extract features from the input data and pooling layers that reduce the dimensionality of the feature maps.</p>
+    <p>Advanced AI models are pushing the boundaries of what is possible in areas such as image generation, language translation, and autonomous decision-making.</p>
+    <p>Future trends in AI include the development of explainable AI, which aims to make AI systems more transparent and interpretable, and the integration of AI with other emerging technologies such as blockchain and the Internet of Things.</p>
+    <p>Thank you for completing our course on AI models!</p>
+    <p>When creating datasets for AI applications, various tools and techniques can be utilized to collect, annotate, and preprocess data:</p>
+    <ul>
+        <li><strong>Data Collection Platforms:</strong> Online platforms like Amazon Mechanical Turk, CrowdFlower, or specialized APIs for collecting labeled data.</li>
+        <li><strong>Data Labeling Tools:</strong> Software tools such as LabelImg, Labelbox, or Supervisely for annotating images, videos, or text data.</li>
+        <li><strong>Data Augmentation Libraries:</strong> Python libraries like Augmentor, imgaug, or TensorFlow Data Augmentation Toolkit for generating additional training data through transformations.</li>
+        <li><strong>Data Preprocessing Software:</strong> Tools like pandas, scikit-learn, or TensorFlow Data Validation for cleaning, transforming, and preparing data for model training.</li>
+    </ul>
+    <p>By leveraging these tools and techniques, AI practitioners can efficiently create high-quality datasets to train and evaluate their AI models.</p>
+    <p>Go back to <a href="4.html" id="lesson4">Lesson 4</a></p>
+
+<script>
+// Add event listener for Lesson 4 link
+document.getElementById("lesson4").addEventListener("click", function(event) {
+    handleLessonLinkClick(event, 4);
+});
+
+function handleLessonLinkClick(event, lessonNumber) {
+    // Prevent the default behavior of the anchor element
+    event.preventDefault();
+    
+    // Retrieve the apiToken and courseId values dynamically from the current URL
+    var apiToken = getQueryParamValue("api_token");
+    var courseId = getQueryParamValue("course");
+
+    // Check if the values are valid
+    if (!apiToken || !courseId) {
+        console.error("API token or course ID not available in the URL.");
+        return; // Stop further execution if the values are not available
+    }
+    
+    // Construct the URL with the retrieved values and the lesson number
+    var pageNumber = lessonNumber;
+    var url = "http://localhost:3000/course?api_token=" + apiToken + "&course=" + courseId + "&page=" + pageNumber;
+    
+    // Navigate to the constructed URL
+    window.location.href = url;
+}
+
+function getQueryParamValue(param) {
+    // Get the query parameters from the current URL
+    var urlParams = new URLSearchParams(window.location.search);
+    // Retrieve the value of the specified parameter
+    return urlParams.get(param);
+}
+</script>
+
+</body>
+</html>
