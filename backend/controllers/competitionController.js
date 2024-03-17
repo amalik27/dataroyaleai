@@ -439,9 +439,15 @@ function countRows(filepath) {
 }
 
 
-// Join Competition (Main Functions)
+// Participate in Competition (Main Functions)
+/**
+ * @author Haejin Song
+ * @param {*} user_id 
+ * @param {*} competition_id 
+ * @returns 
+ */
 async function joinCompetition(user_id, competition_id) {
-    const validCompetition = checkValidCompetition(competition_id);
+    const validCompetition = checkValidCompetition(competition_id, user_id);
     if (validCompetition) {
         const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
         const params = [competition_id, null, null, null, user_id]
@@ -464,11 +470,83 @@ async function joinCompetition(user_id, competition_id) {
     }
 }
 
-// Join Competition (Validation Functions)
-async function checkValidCompetition(competition_id) {
+/**
+ * Remove user from a competition
+ * @author Haejin Song
+ * @param {*} user_id 
+ * @param {*} competition_id 
+ * @returns 
+ */
+async function leaveCompetition(user_id, competition_id) {
+    const query = "DELETE FROM submissions WHERE comp_id = ? AND user_id = ?";
+    const params = [competition_id, user_id]
     try {
-        const query = `SELECT * FROM competitions WHERE id = ?`
-        const params = [competition_id]
+        return new Promise((resolve, reject) => {
+            db.query(query, params, function(err, result) {
+                if (err) {
+                    console.error("Error deleting competition:", err);
+                    return resolve(null);
+                }
+                if (result.length === 0 || !result) {
+                    console.error("There is an invalid id");
+                    return resolve(null);
+                } else {
+                    return resolve(true);
+                }
+            });
+        });
+    } catch (err) {
+        console.error("Error deleting competition:", err);
+    }
+}
+
+/**
+ * Submitting model to submissions database
+ * @author Haejin Song
+ * @param {*} user_id 
+ * @param {*} competition_id 
+ * @param {*} submission_file 
+ */
+async function submitModel(user_id, competition_id, submission_file, current_date) {
+    const query = "UPDATE submissions SET file_path = ? WHERE user_id = ? AND competition_id = ?";
+    const params = [submission_file, user_id, competition_id];
+    // assuming these are valid dates that can be compared, can be changed if not
+    if (checkDeadline(competition_id) > current_date) {
+        console.error("The deadline has passed.");
+        return false;
+    }
+    try {
+        return new Promise((resolve, reject) => {
+            db.query(query, params, function(err, result) {
+                if (err) {
+                    console.error("Error submitting model:", err);
+                    return resolve(null);
+                }
+                if (result.length === 0 || !result) {
+                    console.error("There is an invalid id or file.");
+                    return resolve(null);
+                } else {
+                    return resolve(true);
+                }
+            });
+        });
+    } catch (err) {
+        console.error("Error submitting model:", err);
+    }
+}
+
+// Participate in Competition (Validation Functions)
+/**
+ * Determine if it is a valid competition, checking if user is in it already as well
+ * @author Haejin Song
+ * @param {*} competition_id 
+ * @param {*} competitor_id | id of competitor who wants to join
+ * @returns 
+ */
+async function checkValidCompetition(competition_id, competitor_id) {
+    try {
+        const query = `SELECT * FROM competitions WHERE id = ? AND userid != ?`;
+        const params = [competition_id, competitor_id];
         return new Promise((resolve, reject) => {
             db.query(query, params, function(err, result) {
                 if (err) {
@@ -485,6 +563,37 @@ async function checkValidCompetition(competition_id) {
                 }
             }); 
         }); 
+    } catch (err) {
+        console.error("Error finding competition:", err);
+        return err;
+    }
+}
+
+/**
+ * @author Haejin Song
+ * @param {*} comp_id 
+ * @returns 
+ */
+async function checkDeadline(comp_id) {
+    const query = "SELECT deadline FROM competitions WHERE id = ?";
+    const params = [comp_id];
+    try {
+        return new Promise((resolve, reject) => {
+            db.query(query, params, function(err, result) {
+                if (err) {
+                    console.error("Error finding competition:", err); 
+                    return resolve(null); 
+                }
+                // Selected competition does not exist. 
+                if (result.length === 0 || !result) {
+                    console.error("Competition does not exist."); 
+                    return resolve(null); 
+                } else {
+                    // Selected competition exists. 
+                    return resolve(result);
+                }
+            }); 
+        });
     } catch (err) {
         console.error("Error finding competition:", err);
         return err;

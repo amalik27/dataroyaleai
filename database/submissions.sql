@@ -29,9 +29,9 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `submissions` (
   `comp_id` int(11) NOT NULL,
-  `id` int(11) NOT NULL,
-  `score` decimal(10,0) NOT NULL,
-  `file_path` varchar(512) NOT NULL,
+  `submission_id` int(11) NOT NULL,
+  `score` decimal(10,0),
+  `file_path` varchar(512),
   `user_id` int(30) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -43,7 +43,7 @@ CREATE TABLE `submissions` (
 -- Indexes for table `submissions`
 --
 ALTER TABLE `submissions`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`submission_id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
