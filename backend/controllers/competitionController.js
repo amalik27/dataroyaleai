@@ -36,6 +36,22 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
         if (!processCompetitionDatsets(filepath)){
             isValidCompetition = false; 
         }
+        if(!validateTitle(title)){
+            return false;
+        }
+        if(!validateDescription(desc)){
+            return false;
+        }
+        if(!validatePrize(prize, organizerCredits)){
+            return false;
+        }
+        if(!validatePlayerCap(cap)){
+            return false;
+        }
+        if(!validateDeadline(deadline)){
+            return false;
+        }
+
 
 
         if (isValidCompetition){
@@ -368,9 +384,23 @@ function validateDescription(desc){
  * @author @aartirao419
  * @param {*} prize Competition prize credits.
  */
-function validatePrize(prize){
+function validatePrize(prize, organizerCredits){
+    let mincreds = 100;
     
+    if (prize < mincreds){
+        return false;
+    }
+    else if(prize>organizerCredits){
+        return false;
+    }
+    else{
+        return true;
+    }
+
+
+
 }
+
 
 /**
  * Determine if the player capacity is within 500 people.
