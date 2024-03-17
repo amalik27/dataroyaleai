@@ -2,7 +2,7 @@ var shell = require('shelljs');
 var chalk = require("chalk");
 const EventEmitter = require('events');
 
-const { PrometheusDaemon , Container } = require('./daemon');
+const { PlatformDaemon , Container } = require('./platformDaemon');
 
 //Debug function for getting overall system state and packing it into a JSON object
 function getSystemState(manager) {
@@ -50,8 +50,9 @@ function getSystemState(manager) {
 
 
 
-class PrometheusDaemonManager {
-    constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier) {
+class PlatformDaemonManager {
+    constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier,name = "Prometheus") {
+        this.name = name
         this.daemons = new Map();
         this.messageQueue = [];
         this.messageHistory = [];
@@ -60,7 +61,7 @@ class PrometheusDaemonManager {
         this.interval = null;
         // Initialize resource monitor with blocks and ports range
         this.database = new DatabaseSystem();
-        this.resourceMonitor = new PrometheusResourceMonitor(blocksPerTier, portsAllowed,this.database);
+        this.resourceMonitor = new PlatformResourceMonitor(blocksPerTier, portsAllowed,this.database);
         //Listen for deallocation events
         this.resourceMonitor.on('overloadDeallocated', (processID,blocks) => {
             //We deallocate the blocks from the process
@@ -109,7 +110,7 @@ class PrometheusDaemonManager {
                 }
                 if(message.type === "START"){
                     try{
-                        this.#spawnNewDaemon(message.body);
+                        this.spawnNewDaemon(message.body);
                          //Dequeue if prior succeeeds
                         this.messageQueue.shift();
                         message.status = "SUCCESS";
@@ -127,11 +128,22 @@ class PrometheusDaemonManager {
                     
                 }
                 //message queue length
-                console.log(chalk.blue(`[Prometheus] Message queue length: ${this.messageQueue.length}`));
+                console.log(chalk.blue(`[${this.name}] Message queue length: ${this.messageQueue.length}`));
             }
           }, intervalTime);
         }
     }
+
+    /**
+     * You're probably wondering what this function does. It adds a message to the queue. 
+     * Hilarious, right? But it's not just any message. It's a message that will be processed by the system.
+     * Oh what's that? Do you need me to be more descriptive? Fine.
+     * This function adds a message to the queue. The message is then processed by the system.
+     * @param {Object} message
+     * @returns {String} The unique ID of the message
+     * 
+     * This function will automatically sort the queue by priority when it adds a message.
+     */
     addMessageToQueue(message) {
         //Add unique ID to message, make sure it is somehow unique.
         message.id = Math.random().toString(36).substr(2, 9) 
@@ -163,7 +175,10 @@ class PrometheusDaemonManager {
     }
    
     /**
-     * @param {PrometheusDaemon} process
+     * Initializes a container for a specific process on a daemon.
+     * @param {string} processID - The ID of the process.
+     * @param {string} container - The container to be initialized.
+     * @throws {DaemonNotFoundError} If no daemon is found with the specified process ID.
      */
     initializeContainer(processID,container) {
       // Logic to start a process on a daemon
@@ -187,8 +202,13 @@ class PrometheusDaemonManager {
         }
     }
 
-    //Process management functions
-    #spawnNewDaemon(parameters) {
+    /**
+     * NOT TO BE CALLED DIRECTLY
+     * Any requests to spawn a new daemon should be made through the message queue.
+     * For more information, see addMessageToQueue
+     * @param {Object} parameters
+     */
+    spawnNewDaemon(parameters) {
         //Try allocations. If we fail, we deallocate and throw an error
         if (this.daemons.get(parameters.processID)) {
             throw new AlreadyRegisteredError(chalk.red(`Daemon with process ID ${parameters.processID} is already registered`));
@@ -202,22 +222,22 @@ class PrometheusDaemonManager {
         }
         //Allocations succeed, move on.
         //Create new daemon with the guarantee blocks asssigned to it based on its tier
-        const daemon = new PrometheusDaemon(ports, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockCPU, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockMemory, parameters.processID, parameters.uptime, 3);
+        const daemon = new PlatformDaemon(ports, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockCPU, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockMemory, parameters.processID, parameters.uptime, 3);
         daemon.startMonitoring(parameters.interval);
-        this.#registerDaemon(parameters.processID, daemon);
+        this.registerDaemon(parameters.processID, daemon);
 
         //Callback functions for various needs. We use event emitters for asynchronous work rather than function calls which force the program counter to move.
         daemon.on('exit', (code) => {
-            console.log(chalk.gray(`[Prometheus] Daemon child ${parameters.processID} died with status ${code}`));
+            console.log(chalk.gray(`[${this.name}] Daemon child ${parameters.processID} died with status ${code}`));
             //Print daemons
             
-            console.log(chalk.gray(`[Prometheus] Daemons: ${Array.from(this.daemons.keys())}`));
-            this.#unregisterDaemon(parameters.processID);
+            console.log(chalk.gray(`[${this.name}] Daemons: ${Array.from(this.daemons.keys())}`));
+            this.unregisterDaemon(parameters.processID);
             this.resourceMonitor.processExitCleanup(parameters.processID);
           });
         //TODO:Overload callback function
         daemon.on('overload-exit', () => {
-            console.log(chalk.blue(`[Prometheus] Daemon child ${parameters.processID} has exited overload mode. Awaiting resource reassignment.`));
+            console.log(chalk.blue(`[${this.name}] Daemon child ${parameters.processID} has exited overload mode. Awaiting resource reassignment.`));
             this.resourceMonitor.overloadDeallocationQueue.push(parameters.processID);
           });
     }
@@ -290,16 +310,16 @@ class PrometheusDaemonManager {
     }
 
     //Register and unregister daemons
-    #registerDaemon(processID, daemon) {
+    registerDaemon(processID, daemon) {
       if (!this.daemons[processID]) {
           this.daemons.set(processID, daemon);
-          console.log(chalk.green(`[Prometheus] Daemon registered with process ID ${processID}`));
+          console.log(chalk.green(`[${this.name}] Daemon registered with process ID ${processID}`));
       } else {
-          throw new AlreadyRegisteredError(`[Prometheus] Daemon with process ID ${processID} is already registered`);
+          throw new AlreadyRegisteredError(`[${this.name}] Daemon with process ID ${processID} is already registered`);
       }
     }
 
-    #unregisterDaemon(processID) {
+    unregisterDaemon(processID) {
       if (this.daemons.get(processID)) {
           this.daemons.delete(processID);
           console.log(`Daemon unregistered with process ID ${processID}`);
@@ -312,9 +332,11 @@ class PrometheusDaemonManager {
 }
 
 //Class for tracking compute blocks and their usage. This class should be used to track how many compute blocks are being used by each user, and how many are available.
-class PrometheusResourceMonitor extends EventEmitter {
-    constructor(blocksPerTier, portsRange, database) {
+class PlatformResourceMonitor extends EventEmitter {
+    name
+    constructor(blocksPerTier, portsRange, database,name) {
         super();
+        this.name = name;
         this.blocksPerTier = blocksPerTier;
         this.blocks = blocksPerTier.reduce((a, b) => a + b, 0);
         //After a process has finished its overload period, we place it on the deallocation queue. This happens via event emitters. The process will signal that its overload period finished. Analogous to a garbage collector of sorts.
@@ -351,20 +373,6 @@ class PrometheusResourceMonitor extends EventEmitter {
 
     //display Usage but return everything as a JSON object
     displayUsageJSON() {
-        const tiers = this.database.getTierIDs();
-        // let usage = {};
-        // tiers.forEach(tier => {
-        //     const users = Array.from(this.usage).filter((id) => {
-        //         this.database.getUserTier(id) === tier;
-        //     });
-        //     usage[tier] = {};
-        //     users.forEach((id) => {
-        //         usage[tier][id] = { blocks: this.usage.get(id).guaranteed + this.usage.get(id).overload };
-        //         if (this.portMap.has(id)) {
-        //             usage[tier][id].ports = this.portMap.get(id);
-        //         }
-        //     });
-        // });
         console.log(JSON.stringify(Array.from(this.usage)))
         return Array.from(this.usage);
     }
@@ -383,7 +391,7 @@ class PrometheusResourceMonitor extends EventEmitter {
             }
             throw e;
         }
-        console.log(chalk.green(`[Prometheus Resource Monitor] Process ID ${parameters.processID} allocated ${parameters.ports} ports and ${this.database.getTierResources(this.database.getUserTier(parameters.processID)).guarantee} blocks`));
+        console.log(chalk.green(`[${this.name} Resource Monitor] Process ID ${parameters.processID} allocated ${parameters.ports} ports and ${this.database.getTierResources(this.database.getUserTier(parameters.processID)).guarantee} blocks`));
         return ports;
     }
 
@@ -628,7 +636,7 @@ class OverloadResourceAllocationError extends ResourceAllocationError {
     }
 }
 
-module.exports = { PrometheusDaemonManager , getSystemState};
+module.exports = { PlatformDaemonManager , getSystemState, DaemonNotFoundError, DatabaseSystem, GuaranteeResourceAllocationError, OverloadResourceAllocationError};
 
   
   

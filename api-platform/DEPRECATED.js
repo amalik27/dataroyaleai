@@ -1,5 +1,5 @@
 var shell = require('shelljs');
-var chalk = require("chalk");
+var chalk = require(`chalk`);
 const rl = require('readline-sync');
 const EventEmitter = require('events');
 const { default: image } = require('node-docker-api/lib/image');
@@ -16,19 +16,19 @@ const _ = undefined;
 //TODO: Create new function using ls to return true or false if a given port is taken.
 
 
-let containerIDs = ["7295434","34554466","6857458"]
+let containerIDs = [`7295434`,`34554466`,`6857458`]
 
 class PrometheusDaemon{
   
-
-  constructor(portsAllowed, maxCPU = .05, maxMemory = 300){
+  #name
+  constructor(portsAllowed, maxCPU = .05, maxMemory = 300, name = `Proemtheus`){
     this.ports = new Array(portsAllowed);
     this.containerQueue = new ContainerQueue()
     this.containerStack = new ContainerStack(maxCPU,maxMemory)
     this.interval = null
-    
+    this.#name = name;
 
-    console.log(chalk.green("[Prometheus] Initialized Daemon. Prometheus is watching for updates..."));
+    console.log(chalk.green(`[${this.#name}] Initialized Daemon. ${this.#name} is watching for updates...`));
   }
 
   startMonitoring(intervalTime) {
@@ -41,7 +41,7 @@ class PrometheusDaemon{
           try{
             this.containerStack.push(container.containerID,container.parameters);
           }catch(e){
-            console.log(chalk.yellow(`[Prometheus] Reached hardware limit when attempting to initialize new container ${container.toString()} on queue...`));
+            console.log(chalk.yellow(`[${this.#name}] Reached hardware limit when attempting to initialize new container ${container.toString()} on queue...`));
           }
           
         }
@@ -54,7 +54,7 @@ class PrometheusDaemon{
       clearInterval(this.interval);
       this.interval = null;
     }
-    console.log(chalk.gray("[Prometheus] Prometheus has stopped watching for updates..."));
+    console.log(chalk.gray(`[${this.#name}] ${this.#name} has stopped watching for updates...`));
   }
     /**
    * Function to add a number to the ports using linear probing 
@@ -82,7 +82,7 @@ class PrometheusDaemon{
    * @param {number} [cpus=defaultCPU] determines how much processing power we give it. Numbers <4 are safe. Beyond that it COULD slow down your machine.(no promises)
    */
   initializeContainers(containerIDs, maxMemory = defaultMemory, cpus = defaultCPU, silent = true){
-    console.log(chalk.green("[Prometheus] Starting Containers..."));
+    console.log(chalk.green(`[${this.#name}] Starting Containers...`));
     containerIDs.forEach((containerID) => {
         shell.exec(`docker build -t ${containerID} ./dockercontainer`, {silent: silent});
     });
@@ -109,7 +109,7 @@ class PrometheusDaemon{
    * @param {Array<number>} containers Array of container IDs we generate
    */
   killContainers(containers, silent = true){
-    console.log(chalk.red("[Prometheus] Killing Containers..."));
+    console.log(chalk.red(`[${this.#name}] Killing Containers...`));
     containers.forEach((user)=>{
         let containerID = shell.exec(`docker ps | grep ${user} | cut -f 1 -d ' ' `, {silent: silent})
         //console.log(containerID);
@@ -150,7 +150,7 @@ class ContainerStack {
       this.currentCPU += cpu;
       this.currentMemory += memory;
     } else {
-      throw new Error("Push failed. Exceeds CPU or memory limits.");
+      throw new Error(`Push failed. Exceeds CPU or memory limits.`);
     }
   }
 
@@ -225,13 +225,13 @@ class ContainerQueue {
 daemon = new PrometheusDaemon()
 daemon.startMonitoring(500)
 containerIDs.forEach((id)=>{
-  console.log(chalk.gray("Enqueuing " + id.toString()))
+  console.log(chalk.gray(`Enqueuing ` + id.toString()))
   daemon.containerQueue.enqueue({cpus:.2, memory:100, toString: ()=>console.log(`{cpu: ${this.cpu}, memory: ${this.memory}}`)},1,id)
 })
 
 
 process.on('SIGINT', () => {
-  console.log(chalk.red("[Prometheus] Shutdown signal recieved, performing cleanup."));
+  console.log(chalk.red(`[${this.#name}] Shutdown signal recieved, performing cleanup.`));
   
   daemon.stopMonitoring();
   daemon.killContainers(containerIDs);

@@ -1,5 +1,5 @@
 var shell = require('shelljs');
-var chalk = require("chalk");
+var chalk = require(`chalk`);
 var http = require('http');
 const EventEmitter = require('events');
 const { default: container } = require('node-docker-api/lib/container');
@@ -12,7 +12,7 @@ const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com
 //While debugging, we don't want to see the logs. Comment this line to see logs
 //console.log = function() {};
 
-//TODO: Create new function using `docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}" -a` to return true or false if a given port is taken.
+//TODO: Create new function using `docker container ls --format `table {{.ID}}\t{{.Names}}\t{{.Ports}}` -a` to return true or false if a given port is taken.
 
 
 /**
@@ -20,7 +20,7 @@ const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com
  */
 
 
-class PrometheusDaemon extends EventEmitter{
+class PlatformDaemon extends EventEmitter{
 
   #isOverload;
   getOverload = () => this.#isOverload;
@@ -28,26 +28,29 @@ class PrometheusDaemon extends EventEmitter{
   enableOverload = () => {
     this.#isOverload = true; 
     this.#overloadStartTime = Date.now();
-    console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Overload mode enabled.`));
-    console.log(chalk.gray(`[Prometheus Daemon - ${this.processID}] Overload time limit is ${this.maxOverloadTime} seconds.`));  
+    console.log(chalk.red(`[${this.#name} Daemon - ${this.processID}] Overload mode enabled.`));
+    console.log(chalk.gray(`[${this.#name} Daemon - ${this.processID}] Overload time limit is ${this.maxOverloadTime} seconds.`));  
   }
   #overloadStartTime ;
   getOverloadUptime = () => (Date.now() - this.#overloadStartTime)/1000;
-  constructor( portsAllowed, maxCPU = .05, maxMemory = 300, processID, maxUptime,maxOverloadTime) {
+  #name;
+  constructor( portsAllowed, maxCPU = .05, maxMemory = 300, processID, maxUptime,maxOverloadTime, name) {
         super();
+        this.#name = name;
         this.ports = new Set(portsAllowed);
         this.portMap = new Map();
         // this.containerQueue = new ContainerQueue(this.processID);
         //console.log memory and cpu
-        console.log(`[Prometheus Daemon - ${this.processID}] Max CPU: ${maxCPU.toFixed(3)}, Max Memory: ${maxMemory.toFixed(3)}`);
-        this.containerStack = new ContainerStack(maxCPU, maxMemory,this.processID);
+        console.log(`[${this.#name} Daemon - ${this.processID}] Max CPU: ${maxCPU.toFixed(3)}, Max Memory: ${maxMemory.toFixed(3)}`);
+        this.containerStack = new ContainerStack(maxCPU, maxMemory,this.processID,name);
         this.interval = null;
         this.processID = processID;
         this.maxUptime = maxUptime;
         this.#isOverload = false;
         this.maxOverloadTime = maxOverloadTime;
 
-        console.log(`[Prometheus Daemon - ${this.processID}] Initialized Daemon. Prometheus is watching for updates...`);
+
+        console.log(`[${this.#name} Daemon - ${this.processID}] Initialized Daemon. ${this.#name} is watching for updates...`);
   }
 
   
@@ -62,7 +65,7 @@ class PrometheusDaemon extends EventEmitter{
         const elapsedTime = (currentTime - startTime) / 1000; // Convert to seconds
 
         if (elapsedTime >= this.maxUptime) {
-          console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Max uptime reached. Stopping daemon and cleaning up...`))
+          console.log(chalk.red(`[${this.#name} Daemon - ${this.processID}] Max uptime reached. Stopping daemon and cleaning up...`))
           this.shutdown();
         }
         //Check if we are in overload mode
@@ -70,7 +73,7 @@ class PrometheusDaemon extends EventEmitter{
           const overloadTime = (currentTime - this.#overloadStartTime) / 1000; // Convert to seconds
           if(overloadTime >= this.maxOverloadTime){
             this.#isOverload = false;
-            console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Overload time limit reached. Sending out alert...`))
+            console.log(chalk.red(`[${this.#name} Daemon - ${this.processID}] Overload time limit reached. Sending out alert...`))
             //Send out alert 
             this.emit('overload-exit', 0);
           }
@@ -90,19 +93,19 @@ class PrometheusDaemon extends EventEmitter{
       clearInterval(this.interval);
       this.interval = null;
     }
-    console.log(chalk.gray(`[Prometheus Daemon - ${this.processID}] Prometheus has stopped watching for updates...`));
+    console.log(chalk.gray(`[${this.#name} Daemon - ${this.processID}] ${this.#name} has stopped watching for updates...`));
   }
 
 
   shutdown() {
-    console.log(chalk.green(`[Prometheus Daemon - ${this.processID}] Shutting down...`));
+    console.log(chalk.green(`[${this.#name} Daemon - ${this.processID}] Shutting down...`));
     this.stopMonitoring();
     this.killContainers(this.getRunningContainers()).then(() => {
-        console.log(chalk.green(`[Prometheus Daemon - ${this.processID}] Successfully shut down.`));
+        console.log(chalk.green(`[${this.#name} Daemon - ${this.processID}] Successfully shut down.`));
         this.emit('exit', 0);
         return;
     }).catch((error) => {
-        console.error(chalk.red('[PrometheusDaemon] Error during shutdown:', error));
+        console.error(chalk.red('[${this.#name}Daemon] Error during shutdown:', error));
         this.emit('exit', 1);
     });
   }
@@ -121,7 +124,7 @@ class PrometheusDaemon extends EventEmitter{
       this.containerStack.evaluateState();
     } catch (error){
       //While evaluateStates throws an error, we want to catch it and pop/kill the container on top of the stack.
-      console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Error during resource limit change: ${error.message}`));
+      console.log(chalk.red(`[${this.#name} Daemon - ${this.processID}] Error during resource limit change: ${error.message}`));
       //While loop
       while(this.containerStack.getCurrentCPU() > this.containerStack.getMaxCPU() || this.containerStack.getCurrentMemory() > this.containerStack.getMaxMemory()){
         //Check what container is on top of stack
@@ -145,11 +148,11 @@ class PrometheusDaemon extends EventEmitter{
   addToPortMap(containerID) {
     // 1. Check if the container exists in the map
     if (this.portMap.has(containerID)) {
-        throw new Error(chalk.red("Container already has an allocated port"));
+        throw new Error(chalk.red(`Container already has an allocated port`));
     }
     // 1.5 Check if we have reached the limit of port allocations
     if (this.portMap.size === this.ports.size) {
-        throw new Error(chalk.red("No free ports available"));
+        throw new Error(chalk.red(`No free ports available`));
     }
     
     // Convert ports set to an array for easier index management
@@ -216,7 +219,7 @@ class PrometheusDaemon extends EventEmitter{
    * 
    */
   initializeContainer(container, silent = true) {
-    console.log(chalk.green(`[Prometheus Daemon - ${this.processID}] Starting Container...`));
+    console.log(chalk.green(`[${this.#name} Daemon - ${this.processID}] Starting Container...`));
 
     if (this.containerStack.exists(container.containerID)) {
       throw new Error(chalk.yellow(`Container ${container.containerID} already exists in the stack. Skipping initialization.`));
@@ -293,7 +296,7 @@ class PrometheusDaemon extends EventEmitter{
    * @param {Array<Container>} containers
    */
   async killContainers(containers, silent = true){
-    console.log(chalk.red(`[Prometheus Daemon - ${this.processID}] Killing Containers...`));
+    console.log(chalk.red(`[${this.#name} Daemon - ${this.processID}] Killing Containers...`));
     let promises = containers.map(container => {
         return new Promise((resolve, reject) => {
             if (!this.containerStack.exists(container.containerID)) {
@@ -340,7 +343,7 @@ class PrometheusDaemon extends EventEmitter{
     });
 
     return Promise.all(promises)
-        .then(() => console.log(chalk.green("All specified containers have been processed.")))
+        .then(() => console.log(chalk.green(`All specified containers have been processed.`)))
         .catch(error => console.log(chalk.red(error.message)));
   };
 
@@ -403,12 +406,12 @@ class PrometheusDaemon extends EventEmitter{
       // End the request
       forwardReq.end();
     }).catch((error) => {
-      throw new Error(chalk.red(`[Prometheus Daemon - ${this.processID}] Error during forward pass: ${error}`));});
+      throw new Error(chalk.red(`[${this.#name} Daemon - ${this.processID}] Error during forward pass: ${error}`));});
   }
 
 }
 
-/**This class is a tool for the PrometheusDaemon */
+/**This class is a tool for the ${this.#name}Daemon */
 class ContainerStack {
   //Private Fields, use getters and setters
   #maxCPU;
@@ -425,20 +428,21 @@ class ContainerStack {
   #currentMemory
   getCurrentMemory = () => this.#currentMemory;
 
-  
-  constructor(maxCPU, maxMemory, processID) {
+  #name;
+  constructor(maxCPU, maxMemory, processID, name) {
     this.stack = [];
     this.#maxCPU = maxCPU;
     this.#maxMemory = maxMemory;
     this.#currentCPU = 0;
     this.#currentMemory = 0;
     this.processID = processID;
+    this.#name = name;
   }
 
   //Evaluate state of the stack(see if it is still within limits)
   evaluateState(){
     if(this.#currentCPU > this.#maxCPU || this.#currentMemory > this.#maxMemory){
-      throw new HardwareLimitError(chalk.yellow(`[Prometheus Daemon - ${this.processID}] Reached hardware limit. CPU: ${this.#currentCPU}/${this.#maxCPU}, Memory: ${this.#currentMemory}/${this.#maxMemory}`));
+      throw new HardwareLimitError(chalk.yellow(`[${this.#name} Daemon - ${this.processID}] Reached hardware limit. CPU: ${this.#currentCPU}/${this.#maxCPU}, Memory: ${this.#currentMemory}/${this.#maxMemory}`));
     }
   }
 
@@ -453,7 +457,7 @@ class ContainerStack {
       this.#currentCPU += container.cpu;
       this.#currentMemory += container.memory;
     } else {
-      throw new HardwareLimitError(chalk.yellow(`[Prometheus Daemon - ${this.processID}] Reached hardware limit when attempting to initialize ${container.toString()}. CPU: ${this.#currentCPU + container.cpu}/${this.#maxCPU}, Memory: ${this.#currentMemory + container.memory}/${this.#maxMemory}`));
+      throw new HardwareLimitError(chalk.yellow(`[${this.#name} Daemon - ${this.processID}] Reached hardware limit when attempting to initialize ${container.toString()}. CPU: ${this.#currentCPU + container.cpu}/${this.#maxCPU}, Memory: ${this.#currentMemory + container.memory}/${this.#maxMemory}`));
     }
   }
 
@@ -497,8 +501,8 @@ class Container{
 class HardwareLimitError extends Error {
   constructor(message) {
     super(message);
-    this.name = "HardwareLimitError";
+    this.name = `HardwareLimitError`;
   }
 }
 
-module.exports = { Container, PrometheusDaemon}
+module.exports = { Container, PlatformDaemon}
