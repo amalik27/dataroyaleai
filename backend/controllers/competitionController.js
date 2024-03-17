@@ -787,7 +787,7 @@ async function viewAllCompetitions(){
                             desc: competition.description,
                             player_cap: competition.player_cap,
                             date_created: competition.date_created,
-                            file_path: competition.filepath
+                            file_path: competition.file_path
                         };
                     });
 
