@@ -155,12 +155,12 @@ app.get('/athena/database', (req, res) => {
 });
 //All the add endpoints
 app.post('/athena/database/addCompetition', (req, res) => {
-    const { competitionID, competitionName, competitionDescription } = req.body;
-    if (!competitionID || !competitionName || !competitionDescription) {
+    const { competitionID, competitionName, competitionDescription, competitionDataset} = req.body;
+    if (!competitionID || !competitionName || !competitionDescription || !competitionDataset) {
         return res.status(400).send('Competition ID, name and description are required.');
     }
     try {
-        AthenaManagerInstance.databaseSystem.createCompetition(competitionID, competitionName, competitionDescription);
+        AthenaManagerInstance.databaseSystem.createCompetition(competitionID, competitionName, competitionDescription,competitionDataset);
         res.send('Competition added.');
     } catch (error) {
         res.status(500).send(error.message);
@@ -207,6 +207,9 @@ app.get('/athena/database/getLeaderboard', (req, res) => {
         res.status(500).send(error.message);
     }
 });
+
+
+
 
 // Start the server
 const port = 3000;

@@ -175,7 +175,10 @@ class PlatformDaemonManager {
     }
    
     /**
-     * @param {PlatformDaemon} process
+     * Initializes a container for a specific process on a daemon.
+     * @param {string} processID - The ID of the process.
+     * @param {string} container - The container to be initialized.
+     * @throws {DaemonNotFoundError} If no daemon is found with the specified process ID.
      */
     initializeContainer(processID,container) {
       // Logic to start a process on a daemon
@@ -221,7 +224,7 @@ class PlatformDaemonManager {
         //Create new daemon with the guarantee blocks asssigned to it based on its tier
         const daemon = new PlatformDaemon(ports, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockCPU, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockMemory, parameters.processID, parameters.uptime, 3);
         daemon.startMonitoring(parameters.interval);
-        this.#registerDaemon(parameters.processID, daemon);
+        this.registerDaemon(parameters.processID, daemon);
 
         //Callback functions for various needs. We use event emitters for asynchronous work rather than function calls which force the program counter to move.
         daemon.on('exit', (code) => {
@@ -229,7 +232,7 @@ class PlatformDaemonManager {
             //Print daemons
             
             console.log(chalk.gray(`[${this.name}] Daemons: ${Array.from(this.daemons.keys())}`));
-            this.#unregisterDaemon(parameters.processID);
+            this.unregisterDaemon(parameters.processID);
             this.resourceMonitor.processExitCleanup(parameters.processID);
           });
         //TODO:Overload callback function
@@ -307,7 +310,7 @@ class PlatformDaemonManager {
     }
 
     //Register and unregister daemons
-    #registerDaemon(processID, daemon) {
+    registerDaemon(processID, daemon) {
       if (!this.daemons[processID]) {
           this.daemons.set(processID, daemon);
           console.log(chalk.green(`[${this.name}] Daemon registered with process ID ${processID}`));
@@ -316,7 +319,7 @@ class PlatformDaemonManager {
       }
     }
 
-    #unregisterDaemon(processID) {
+    unregisterDaemon(processID) {
       if (this.daemons.get(processID)) {
           this.daemons.delete(processID);
           console.log(`Daemon unregistered with process ID ${processID}`);
@@ -633,7 +636,7 @@ class OverloadResourceAllocationError extends ResourceAllocationError {
     }
 }
 
-module.exports = { PlatformDaemonManager , getSystemState, DaemonNotFoundError, DatabaseSystem};
+module.exports = { PlatformDaemonManager , getSystemState, DaemonNotFoundError, DatabaseSystem, GuaranteeResourceAllocationError, OverloadResourceAllocationError};
 
   
   

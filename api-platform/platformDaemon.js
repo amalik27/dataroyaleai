@@ -36,6 +36,7 @@ class PlatformDaemon extends EventEmitter{
   #name;
   constructor( portsAllowed, maxCPU = .05, maxMemory = 300, processID, maxUptime,maxOverloadTime, name) {
         super();
+        this.#name = name;
         this.ports = new Set(portsAllowed);
         this.portMap = new Map();
         // this.containerQueue = new ContainerQueue(this.processID);
@@ -47,7 +48,7 @@ class PlatformDaemon extends EventEmitter{
         this.maxUptime = maxUptime;
         this.#isOverload = false;
         this.maxOverloadTime = maxOverloadTime;
-        this.#name = name;
+
 
         console.log(`[${this.#name} Daemon - ${this.processID}] Initialized Daemon. ${this.#name} is watching for updates...`);
   }
