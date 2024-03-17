@@ -515,6 +515,11 @@ async function submitModel(user_id, competition_id, submission_file, current_dat
         console.error("The deadline has passed.");
         return false;
     }
+    if (!validateSubmissionFile(submission_file)){
+        console.error("The submission file is invalid."); 
+        return false; 
+    }
+
     try {
         return new Promise((resolve, reject) => {
             db.query(query, params, function(err, result) {
@@ -602,6 +607,67 @@ async function checkDeadline(comp_id) {
 
 // Join Competition (Helper Functions)
 
+async function validateSubmissionFile(submission_file){
+    const extractionPath = './extracted_files';
+    if (!fs.existsSync(extractionPath)) {
+        fs.mkdirSync(extractionPath);
+    }
+
+    try {
+        await fs.createReadStream(submission_file)
+            .pipe(unzipper.Extract({ path: extractionPath }))
+            .promise();
+
+        const files = fs.readdirSync(extractionPath);
+        const csvFilePath = files.find(file => file === 'dataset.csv');
+        if (!csvFilePath) {
+            console.error("No 'dataset.csv' file found.");
+            return false;
+        }
+
+        const allowedExtensions = ['.csv', '.py', '.js', '.dockerfile'];
+        const extraFiles = files.filter(file => {
+            return !allowedExtensions.includes(file.substr(file.lastIndexOf('.')));
+        });
+        if (extraFiles.length > 0) {
+            console.error("Extra non-code files found:", extraFiles);
+            return false;
+        }
+
+        const referencedFiles = [];
+        await new Promise((resolve, reject) => {
+            fs.createReadStream(`${extractionPath}/${csvFilePath}`)
+                .pipe(csv())
+                .on('data', (row) => {
+                    for (const key in row) {
+                        if (row.hasOwnProperty(key)) {
+                            const filePath = row[key];
+                            if (!fs.existsSync(filePath)) {
+                                console.error(`Invalid file path referenced in dataset.csv: ${filePath}`);
+                                return resolve(false);
+                            }
+                            referencedFiles.push(filePath);
+                        }
+                    }
+                })
+                .on('end', () => {
+                    resolve(true);
+                });
+        });
+
+        const dockerfile = files.find(file => file.toLowerCase() === 'dockerfile');
+        if (!dockerfile) {
+            console.error("No 'Dockerfile' found.");
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Error validating submission files:", error);
+        return false;
+    }
+
+}
 
 // Manage Competition (Main Functions)
 
