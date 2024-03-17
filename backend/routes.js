@@ -157,23 +157,30 @@ function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                let page_number = await courseController.getDefaultPage(course_id, api_token);
-                if(given_page_number !== undefined){
-                    page_number = given_page_number;
-                }
-                const filePath = await courseController.openCourse(course_id, page_number, api_token);
-                let curDir = __dirname;
-                fs.readFile(curDir.replace('/backend', "") + filePath, (err, data) => {
-                    if (err) {
-                        res.writeHead(500, { 'Content-Type': 'text/plain' });
-                        res.end('500 Internal Server Error: ', err);
-                        return;
+                let page_number;
+                try {
+                    page_number = await courseController.getDefaultPage(course_id, api_token);
+                    if (given_page_number !== undefined) {
+                        page_number = given_page_number;
                     }
-                    res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(data);
-                });
+                    const filePath = await courseController.openCourse(course_id, page_number, api_token);
+                    let curDir = __dirname;
+                    fs.readFile(curDir.replace('/backend', '') + filePath, (err, data) => {
+                        if (err) {
+                            res.writeHead(500, { 'Content-Type': 'text/plain' });
+                            res.end('500 Internal Server Error: ' + err);
+                            return;
+                        }
+                        res.writeHead(200, { 'Content-Type': 'text/html' });
+                        res.end(data);
+                    });
+                } catch (err) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + err.message);
+                    return;
+                }
             });
-        }
+        }        
         else if (req.method === 'PATCH') {
             let body = '';
             req.on('data', (chunk) => {
