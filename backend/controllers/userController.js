@@ -14,7 +14,7 @@ async function createUser(username, email, salt, password_encrypted, role, tier,
 async function registerUser(username, email, password, role){
     const salt = generateRandomString(16);
     const password_encrypted = passwordUtils.encrypt(password, salt);
-    const credits = 100;
+    const credits = 50;
     const tier = 1;
     const currentDate = new Date();
     const year = currentDate.getFullYear();
