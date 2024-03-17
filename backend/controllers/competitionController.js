@@ -375,8 +375,10 @@ function validateDescription(desc){
     let words = desc.trim().split(/\s+/);
     if (words.length > 1000){
         desc = words.slice(0,1000);
+        return false; 
     }
-    return desc;
+    
+    return true;
 }
 
 /**
@@ -389,16 +391,11 @@ function validatePrize(prize, organizerCredits){
     
     if (prize < mincreds){
         return false;
-    }
-    else if(prize>organizerCredits){
+    } else if (prize > organizerCredits){
         return false;
-    }
-    else{
+    } else{
         return true;
     }
-
-
-
 }
 
 
