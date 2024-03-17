@@ -9,6 +9,15 @@ function processRequest(req, res){
     const pathname = parsedUrl.pathname;
     const path = parsedUrl.path;
     const api_token = req.headers['api_token'];
+   
+    const sendResponse = (statusCode, contentType, data) => {
+        res.writeHead(statusCode, { 'Content-Type': contentType });
+        res.end(data);
+    };
+
+    const sendErrorResponse = (statusCode, message) => {
+        sendResponse(statusCode, 'application/json', JSON.stringify({ success: false, error: message }));
+    };
 
     if (pathname === '/users') {
         if (req.method === 'GET') {
