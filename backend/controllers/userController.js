@@ -2,14 +2,15 @@ const db = require('../db');
 const passwordUtils = require('../utils/passwordUtils');
 
 async function createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) {
+    const sql = `INSERT INTO users (username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     try {
-        const sql = `INSERT INTO users (username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         await db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token]);
     } catch (error) {
         console.error('Error creating user:', error);
         throw error;
     }
 }
+
 
 async function registerUser(username, email, password, role){
     const salt = generateRandomString(16);
@@ -26,16 +27,22 @@ async function registerUser(username, email, password, role){
     const reg_date = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     let api_token = passwordUtils.encrypt(username, salt); 
     api_token = api_token.slice(0, 15);
-    createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token);
+    try {
+        await createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token);
+    } catch (error) {
+        console.error('Error registering user:', error);
+        throw error;
+    }
+    //createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token);
 }
 
 async function loginUser(username, password){
-    const user = await readUserByUsername(username);
-    if(user.password_encrypted == passwordUtils.encrypt(password, user.salt)){
-        return true;
-    }
-    else{
-        return false;
+    try {
+        const user = await readUserByUsername(username);
+        return user.password_encrypted == passwordUtils.encrypt(password, user.salt);
+    } catch (error) {
+        console.error('Error logging in user:', error);
+        throw error;
     }
 }
 
@@ -69,10 +76,8 @@ async function readUserById(id) {
                 resolve(user);
             });
         });
-    } catch (error) {
-        console.error('Error getting user by id:', error);
-        throw error;
-    }
+    } 
+    
 }
 
 async function readUserByUsername(username) {
@@ -105,10 +110,7 @@ async function readUserByUsername(username) {
                 resolve(user);
             });
         });
-    } catch (error) {
-        console.error('Error getting user by username:', error);
-        throw error;
-    }
+    } 
 }
 
 async function readUserByApiToken(api_token) {
@@ -141,10 +143,7 @@ async function readUserByApiToken(api_token) {
                 resolve(user);
             });
         });
-    } catch (error) {
-        console.error('Error getting user by api_token:', error);
-        throw error;
-    }
+    } 
 }
 
 async function updateUserById(id, username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) {
