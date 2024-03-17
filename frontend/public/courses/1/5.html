@@ -20,41 +20,62 @@
     <p>Thank you for completing our course on AI models!</p>
     <p>Go back to <a href="4.html" id="lesson4">Lesson 4</a></p>
 
-<script>
-// Add event listener for Lesson 4 link
-document.getElementById("lesson4").addEventListener("click", function(event) {
-    handleLessonLinkClick(event, 4);
-});
+    <script>
+        // Add event listener for Lesson 4 link
+        document.getElementById("lesson4").addEventListener("click", function(event) {
+            // Prevent the default behavior of the anchor element
+            event.preventDefault();
 
-function handleLessonLinkClick(event, lessonNumber) {
-    // Prevent the default behavior of the anchor element
-    event.preventDefault();
-    
-    // Retrieve the apiToken and courseId values dynamically from the current URL
-    var apiToken = getQueryParamValue("api_token");
-    var courseId = getQueryParamValue("course");
-
-    // Check if the values are valid
-    if (!apiToken || !courseId) {
-        console.error("API token or course ID not available in the URL.");
-        return; // Stop further execution if the values are not available
-    }
-    
-    // Construct the URL with the retrieved values and the lesson number
-    var pageNumber = lessonNumber;
-    var url = "http://localhost:3000/course?api_token=" + apiToken + "&course=" + courseId + "&page=" + pageNumber;
-    
-    // Navigate to the constructed URL
-    window.location.href = url;
-}
-
-function getQueryParamValue(param) {
-    // Get the query parameters from the current URL
-    var urlParams = new URLSearchParams(window.location.search);
-    // Retrieve the value of the specified parameter
-    return urlParams.get(param);
-}
-</script>
+            // Function to make a PATCH request
+            function updateCourseProgress() {
+                // Retrieve the api_token from the current URL
+                var apiToken = getQueryParamValue("api_token");
+                
+                // Check if apiToken exists
+                if (!apiToken) {
+                    console.error("API token not available in the URL.");
+                    return;
+                }
+                
+                // Construct the PATCH URL with the extracted apiToken
+                var url = "http://localhost:3000/course?api_token=" + apiToken + "&course=1&page=4";
+                
+                // Configure the request
+                var options = {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                // Make the PATCH request
+                fetch(url, options)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Course progress updated successfully:', data);
+                    })
+                    .catch(error => {
+                        console.error('There was a problem updating course progress:', error);
+                    });
+                    window.location.href = url
+            }
+            
+            // Call the function to make the PATCH request
+            updateCourseProgress();
+            
+        });
+        
+        // Function to extract query parameter from URL
+        function getQueryParamValue(param) {
+            var urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+    </script>
 
 </body>
 </html>

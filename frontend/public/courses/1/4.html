@@ -22,45 +22,74 @@
     </p>
     
     <script>
-    // Add event listener for Lesson 5 link
-    document.getElementById("lesson5").addEventListener("click", function(event) {
-        handleLessonLinkClick(event, 5);
-    });
-    
-    // Add event listener for Lesson 3 link
-    document.getElementById("lesson3").addEventListener("click", function(event) {
-        handleLessonLinkClick(event, 3);
-    });
-    
-    function handleLessonLinkClick(event, lessonNumber) {
-        // Prevent the default behavior of the anchor element
-        event.preventDefault();
+        // Add event listener for Lesson 5 link
+        document.getElementById("lesson5").addEventListener("click", function(event) {
+            handleLessonLinkClick(event, 5);
+        });
         
-        // Retrieve the apiToken and courseId values dynamically from the current URL
-        var apiToken = getQueryParamValue("api_token");
-        var courseId = getQueryParamValue("course");
-    
-        // Check if the values are valid
-        if (!apiToken || !courseId) {
-            console.error("API token or course ID not available in the URL.");
-            return; // Stop further execution if the values are not available
+        // Add event listener for Lesson 3 link
+        document.getElementById("lesson3").addEventListener("click", function(event) {
+            handleLessonLinkClick(event, 3);
+        });
+        
+        function handleLessonLinkClick(event, lessonNumber) {
+            // Prevent the default behavior of the anchor element
+            event.preventDefault();
+            
+            // Retrieve the apiToken and courseId values dynamically from the current URL
+            var apiToken = getQueryParamValue("api_token");
+            var courseId = getQueryParamValue("course");
+        
+            // Check if the values are valid
+            if (!apiToken || !courseId) {
+                console.error("API token or course ID not available in the URL.");
+                return; // Stop further execution if the values are not available
+            }
+            
+            // Construct the URL with the retrieved values and the lesson number
+            var pageNumber = lessonNumber;
+            var url = "http://localhost:3000/course?api_token=" + apiToken + "&course=" + courseId + "&page=" + pageNumber;
+            
+            // Call function to make the PATCH request
+            updateCourseProgress(url);
+            window.location.href = url
         }
         
-        // Construct the URL with the retrieved values and the lesson number
-        var pageNumber = lessonNumber;
-        var url = "http://localhost:3000/course?api_token=" + apiToken + "&course=" + courseId + "&page=" + pageNumber;
+        function getQueryParamValue(param) {
+            // Get the query parameters from the current URL
+            var urlParams = new URLSearchParams(window.location.search);
+            // Retrieve the value of the specified parameter
+            return urlParams.get(param);
+        }
         
-        // Navigate to the constructed URL
-        window.location.href = url;
-    }
-    
-    function getQueryParamValue(param) {
-        // Get the query parameters from the current URL
-        var urlParams = new URLSearchParams(window.location.search);
-        // Retrieve the value of the specified parameter
-        return urlParams.get(param);
-    }
-    </script>
+        // Function to make a PATCH request
+        function updateCourseProgress(url) {
+            // Configure the request
+            var options = {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            // Make the PATCH request
+            fetch(url, options)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Course progress updated successfully:', data);
+                    // Optionally, you can redirect the user after the PATCH request is completed
+                    window.location.href = url;
+                })
+                .catch(error => {
+                    console.error('There was a problem updating course progress:', error);
+                });
+        }
+        </script>
     
 </body>
 </html>
