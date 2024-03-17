@@ -10,7 +10,20 @@ function processRequest(req, res){
     const path = parsedUrl.path;
     const api_token = req.headers['api_token'];
 
-    if (pathname === '/users') {
+    if (pathname === '/') { //Test Endpoint
+        if (req.method === 'GET') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, message: "Hi \ud83d\ude00" }));
+        } else {
+            res.writeHead(405, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
+        }
+    
+    /** 
+    YOUR ENDPOINT HERE
+    **/
+
+    } else if (pathname === '/users') { //Users Endpoint
         if (req.method === 'GET') {
             let body = '';
             req.on('data', (chunk) => {
@@ -19,18 +32,18 @@ function processRequest(req, res){
             req.on('end', async () => {
                 const { id } = JSON.parse(body);
                 if (!id) {
-                    res.writeHead(400, { 'Content-Type': 'text/plain' });
-                    res.end('Bad Request: Missing user ID in JSON body');
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing user ID in JSON body' }));
                     return;
                 }
                 const user = await userController.readUserById(id);
                 if (!user) {
-                    res.writeHead(404, { 'Content-Type': 'text/plain' });
-                    res.end('User not found');
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'User not found' }));
                     return;
                 }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(user));
+                res.end(JSON.stringify({ success: true, message: user }));
             });
         } else if (req.method === 'POST') {
             let body = '';
@@ -66,8 +79,8 @@ function processRequest(req, res){
                 res.end(JSON.stringify({ success: true }));
             });
         } else {
-            res.writeHead(405, { 'Content-Type': 'text/plain' });
-            res.end('Method Not Allowed');
+            res.writeHead(405, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
     }
     else if (pathname === '/register') {
@@ -192,10 +205,9 @@ function processRequest(req, res){
                 res.end(JSON.stringify({ success: true }));
             });
         }
-    }
-    else {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('Not Found');
+    } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, message: 'Endpoint Not Found' }));
     }    
 }
 
