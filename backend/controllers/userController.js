@@ -45,11 +45,11 @@ async function readUserById(id) {
         return new Promise((resolve, reject) => {
             db.query(sql, id, function (err, result, fields) {
                 if (err) {
-                    console.error('Error getting user by id:', err);
+                    console.error('Error getting user by username:', err);
                     return reject(err);
                 }
                 if (!result || result.length === 0) {
-                    const error = new Error('User not found');
+                    const error = new Error('User with username ${username} not found');
                     console.error(error.message);
                     return reject(error);
                 }
