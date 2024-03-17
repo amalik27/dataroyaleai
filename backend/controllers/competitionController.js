@@ -9,6 +9,11 @@ const unzipper = require('unzipper');
 const csv = require('csv-parser');
 const { readUserById } = require('./userController');
 
+
+
+
+
+
 // Create Competition (Main Functions)
 
 /**
@@ -35,13 +40,12 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
 
         if (isValidCompetition){
             try {
-                const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, metrics, description, player_cap, date_created, filepath) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'; 
-                const params = [id, userid, title, deadline, prize, metrics, desc, cap, datecreated, filepath]; 
+                const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, metrics, description, player_cap, date_created, file_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'; 
+                const params = [id, userid, title, deadline, prize, JSON.stringify(metrics), desc, cap, datecreated, filepath]; 
                 await db.query(query, params); 
             } catch (error) {
                 console.error("Error creating competition:", error); 
                 throw error; 
-        
             }
         } else {
             throw new Error("Invalid entries for competition creation."); 
@@ -231,25 +235,32 @@ async function updateDeadlineEligibility(id, userid, newDeadline) {
  * @param {*} filepath .zip File's path
  */
 async function processCompetitionDatsets(filepath){
-    await fs.createReadStream(filepath)
-    .pipe(unzipper.Extract({ path: 'tempCompDatasetExtracts' }))
-    .promise();
+    try {
+        await fs.createReadStream(filepath)
+            .pipe(unzipper.Extract({ path: 'tempCompDatasetExtracts' }))
+            .promise();
 
-    const files = fs.readdirSync('temp_extracted_files');
+        const files = fs.readdirSync('tempCompDatasetExtracts');
 
-    if (files.length !== 2) {
-        return false;
-    }
-
-    for (const file of files) {
-        const inidivdualFilePath = `tempCompDatasetExtracts/${file}`;
-        const rowCount = await countRows(inidivdualFilePath);
-
-        if (rowCount < 500) {
-            return false; 
-        } else {
-            return true; 
+        if (files.length !== 2) {
+            console.error("Not enough files."); 
+            throw error; 
         }
+
+        for (const file of files) {
+            const individualFilePath = `tempCompDatasetExtracts/${file}`;
+            const rowCount = await countRows(individualFilePath);
+
+            if (rowCount < 10) { // Changed to 10 rows for testing
+                console.error("Not enough rows."); 
+                throw error; 
+            }
+        }
+
+        return true; 
+    } catch (error) {
+        console.error("Error processing competition datasets:", error);
+        return false; 
     }
 
 }
@@ -311,6 +322,12 @@ async function filterByDeadline(min, max){
     }
 
 }
+
+
+
+
+
+
 
 // Create Competition (Validation Functions)
 
@@ -390,6 +407,11 @@ function validateDeadline(deadline) {
 }
 
 
+
+
+
+
+
 // Create Competition (Helper Functions)
 
 /**
@@ -437,6 +459,12 @@ function countRows(filepath) {
             .on('error', reject);
     });
 }
+
+
+
+
+
+
 
 
 // Participate in Competition (Main Functions)
@@ -604,6 +632,12 @@ async function checkDeadline(comp_id) {
         return err;
     }
 }
+
+
+
+
+
+
 
 // Join Competition (Helper Functions)
 

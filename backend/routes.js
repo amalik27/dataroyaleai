@@ -52,17 +52,17 @@ function processRequest(req, res){
 
             req.on('end', async () => {
                 
-                const {userid, title, deadline, prize, metrics, desc, cap, created} = JSON.parse(body);
+                const {userid, title, deadline, prize, metrics, desc, cap, created, filepath} = JSON.parse(body);
 
 
-                if (!userid || !title || !deadline || !prize || !desc || !cap || !created || !metrics) {
+                if (!userid || !title || !deadline || !prize || !desc || !cap || !created || !metrics || !filepath) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing competition fields in JSON body' }));
                     return;
                 }
 
                 try {
-                    await competitionController.createCompetition(userid, title, deadline, prize, desc, cap, created); 
+                    await competitionController.createCompetition(userid, title, deadline, prize, metrics, desc, cap, created, filepath); 
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true, message: "Competition created." }));
                 } catch (error){
@@ -105,6 +105,17 @@ function processRequest(req, res){
         }
 
     } else if (pathname === '/competitions/join'){
+        if (req.method === 'GET'){
+            // Join Competition
+
+        } else if (req.method === 'POST'){
+            // Submit a Model
+
+        } else if (req.method === 'DELETE'){
+            // Leave a Competitions
+
+
+        }
 
     } else if (pathname === '/users') { //Users Endpoint
         if (req.method === 'GET') {
