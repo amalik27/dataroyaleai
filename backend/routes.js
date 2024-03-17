@@ -69,6 +69,40 @@ function processRequest(req, res){
             res.end('Method Not Allowed');
         }
     }
+    else if (pathname === '/register') {
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', () => {
+                const { username, email, password, role } = JSON.parse(body);
+                userController.registerUser(username, email, password, role);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            });
+        }
+    }
+    else if (pathname === '/login') {
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const { username, password } = JSON.parse(body);
+                try {
+                    let status = await userController.loginUser(username, password);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: status }));
+                } catch (error) {
+                    console.error('Error occurred during login:', error);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Internal Server Error' }));
+                }
+            });
+        }
+    }    
     else if (pathname.includes("/courses/")) {
         const coursesRegex = /\/courses\/(.+)/;
         const match = pathname.match(coursesRegex);
@@ -148,8 +182,7 @@ function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const progress = JSON.parse(body).progress;
-                await courseController.updateCourseProgress(progress, api_token, course_id);
+                await courseController.updateCourseProgress(given_page_number, api_token, course_id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
             });

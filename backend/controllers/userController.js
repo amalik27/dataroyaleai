@@ -1,5 +1,5 @@
 const db = require('../db');
-const { encrypt } = require('../utils/passwordUtils');
+const passwordUtils = require('../utils/passwordUtils');
 
 async function createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) {
     try {
@@ -11,11 +11,32 @@ async function createUser(username, email, salt, password_encrypted, role, tier,
     }
 }
 
-
-// WIP
 async function registerUser(username, email, password, role){
-    const [salt, password_encrypted] = encrypt(password, salt);
+    const salt = generateRandomString(16);
+    const password_encrypted = passwordUtils.encrypt(password, salt);
+    const credits = 100;
+    const tier = 1;
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const hours = String(currentDate.getHours()).padStart(2, '0');
+    const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+    const seconds = String(currentDate.getSeconds()).padStart(2, '0');
+    const reg_date = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    let api_token = passwordUtils.encrypt(username, salt); 
+    api_token = api_token.slice(0, 15);
     createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token);
+}
+
+async function loginUser(username, password){
+    const user = await readUserByUsername(username);
+    if(user.password_encrypted == passwordUtils.encrypt(password, user.salt)){
+        return true;
+    }
+    else{
+        return false;
+    }
 }
 
 async function readUserById(id) {
@@ -50,6 +71,42 @@ async function readUserById(id) {
         });
     } catch (error) {
         console.error('Error getting user by id:', error);
+        throw error;
+    }
+}
+
+async function readUserByUsername(username) {
+    try {
+        const sql = 'SELECT * FROM users WHERE username = ?';
+        return new Promise((resolve, reject) => {
+            db.query(sql, username, function (err, result, fields) {
+                if (err) {
+                    console.error('Error getting user by username:', err);
+                    return reject(err);
+                }
+                if (!result || result.length === 0) {
+                    const error = new Error('User not found');
+                    console.error(error.message);
+                    return reject(error);
+                }
+                const output = Object.values(JSON.parse(JSON.stringify(result[0])));
+                const user = {
+                    id: output[0],
+                    username: output[1],
+                    email: output[2],
+                    salt: output[3],
+                    password_encrypted: output[4],
+                    role: output[5],
+                    tier: output[6],
+                    credits: output[7],
+                    reg_date: output[8],
+                    api_token: output[9]
+                };
+                resolve(user);
+            });
+        });
+    } catch (error) {
+        console.error('Error getting user by username:', error);
         throw error;
     }
 }
@@ -115,10 +172,22 @@ async function deleteUserById(id) {
     }
 }
 
+function generateRandomString(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+}
+
 module.exports = {
     createUser,
     readUserById,
     updateUserById,
     deleteUserById,
-    readUserByApiToken
+    readUserByApiToken,
+    registerUser,
+    loginUser
 };

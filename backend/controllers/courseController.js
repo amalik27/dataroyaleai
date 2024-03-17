@@ -60,7 +60,7 @@ async function readAllCoursesOfUserByApiToken(api_token) {
                         user_id: result.user_id,
                         api_token: result.api_token,
                         course_id: result.course_id,
-                        course_progress: result.course_progress
+                        progress: result.progress
                     };
                 });
                 resolve(courseProgressList);

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:8889
--- Generation Time: Mar 12, 2024 at 09:57 PM
+-- Generation Time: Mar 17, 2024 at 02:57 PM
 -- Server version: 5.7.39
 -- PHP Version: 7.4.33
 
@@ -29,7 +29,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `course_progress` (
   `user_id` int(11) NOT NULL,
-  `api_token` varchar(30) NOT NULL,
+  `api_token` varchar(120) NOT NULL,
   `course_id` int(11) NOT NULL,
   `progress` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -45,12 +45,12 @@ CREATE TABLE `users` (
   `username` varchar(30) NOT NULL,
   `email` varchar(30) NOT NULL,
   `salt` varchar(30) NOT NULL,
-  `password_encrypted` varchar(30) NOT NULL,
+  `password_encrypted` varchar(120) NOT NULL,
   `role` varchar(30) NOT NULL,
   `tier` int(30) NOT NULL,
   `credits` int(30) NOT NULL,
   `reg_date` datetime NOT NULL,
-  `api_token` varchar(30) NOT NULL
+  `api_token` varchar(120) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -61,7 +61,8 @@ CREATE TABLE `users` (
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`,`email`,`api_token`,`salt`,`password_encrypted`);
 
 --
 -- AUTO_INCREMENT for dumped tables
