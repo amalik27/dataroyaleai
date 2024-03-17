@@ -7,7 +7,7 @@ class AthenaDaemon extends PlatformDaemon {
         super( port, maxCPU, maxMemory, processID, maxUptime,0,"Athena");
     }
 
-    async evaluateModel(filePath, containerID, bodyMapper, columnNameX, columnNameY) {
+    async evaluateModel(filePath, containerID, bodyMapper, columnNameX, columnNameY, metric) {
         const results = [];
         const readStream = fs.createReadStream(filePath);
 
@@ -35,9 +35,9 @@ class AthenaDaemon extends PlatformDaemon {
                 correctPredictions++;
             }
         }
-        let metric= 'mse';
-        const accuracy = this.model_performance(predictions,labels, metric);
-        console.log(`Final score ${metric}: ${accuracy}`);
+        const score = this.model_performance(predictions,labels, metric);
+        console.log(`Final score ${metric}: ${score}`);
+        return { score: score }
     }
 
     //calculate performance

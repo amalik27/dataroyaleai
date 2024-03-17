@@ -1,5 +1,5 @@
-const { PrometheusDaemonManager, getSystemState } = require('./prometheusManager');
-const { PrometheusDaemon, Container } = require('./platformDaemon');
+const { PlatformDaemonManager, getSystemState } = require('./platformManager');
+const { PlatformDaemon, Container } = require('./platformDaemon');
 
 // Mocking the dependencies
 jest.mock('./daemon', () => ({
