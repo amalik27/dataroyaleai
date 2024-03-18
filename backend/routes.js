@@ -204,7 +204,6 @@ function processRequest(req, res){
                 const allJoined = await competitionController.viewLeaderboard(compid);   
 
                 if (!allJoined || allJoined.length == 0) {
-                    console.log("here"); 
                     res.writeHead(404, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Joined competitions not found' }));
                     return;

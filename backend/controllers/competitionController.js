@@ -901,6 +901,8 @@ module.exports = {
     findCompetitionByID,
     updateCompetition, 
     viewAllCompetitions, 
+    filterByDeadline, 
+    filterByPrize,
     joinCompetition, 
     leaveCompetition, 
     submitModel, 
