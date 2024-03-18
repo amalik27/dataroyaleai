@@ -7,6 +7,7 @@ app = Flask(__name__)
 @app.route('/', methods=['POST'])
 def calculate_hypotenuse():
     data = request.get_json()
+    sleep(1)
     a = data['a']
     b = data['b']
     hypotenuse = math.sqrt(a**2 + b**2)

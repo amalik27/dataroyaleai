@@ -177,7 +177,7 @@ class AthenaDatabaseSystem extends DatabaseSystem {
     }
     //Get db state as json
     getDBState() {
-        let comps = Array.from(this.competitions);
+        let comps = Array.from(this.competitions).slice();
         //The leaderboards are maps, therefore convert to arrays
         comps.forEach((comp) => {
             comp[1].competitionLeaderboard = Array.from(comp[1].competitionLeaderboard);

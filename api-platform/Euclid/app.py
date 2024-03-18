@@ -15,6 +15,7 @@ def calculate_sine():
     except ValueError:
         return jsonify({"error": "Invalid angle parameter"}), 400
     result = math.sin(math.radians(angle))
+    time.sleep(3)
     return jsonify({"result": result}), 200
 
 @app.route('/health', methods=['GET'])  # Health check typically uses a GET request
