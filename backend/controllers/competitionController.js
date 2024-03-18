@@ -71,7 +71,7 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
 }
 
 /**
- * Determine if a competition exists based on the compeititon ID and user ID. 
+ * Determine if a competition exists based on the competition ID and organizer ID. 
  * @author @deshnadoshi
  * @param {*} id competition ID. 
  * @param {*} userid user ID. 
@@ -377,7 +377,6 @@ function validateDescription(desc){
         desc = words.slice(0,1000);
         return false; 
     }
-
     return true;
 }
 
@@ -505,7 +504,6 @@ async function joinCompetition(user_id, competition_id) {
     const validCompetition = checkValidCompetition(competition_id, user_id);
     if (validCompetition) {
         let id = generateCompetitionID(); 
-        
         const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
         const params = [competition_id, id, 0, "", user_id]
         return new Promise((resolve, reject) => {
@@ -605,7 +603,7 @@ async function submitModel(user_id, competition_id, submission_file, current_dat
  * @param {*} competitor_id | id of competitor who wants to join
  * @returns 
  */
-async function checkValidCompetition(competition_id, competitor_id) {
+async function checkValidCompetition(competition_id) {
     try {
         const query = `SELECT * FROM competitions WHERE id = ?`;
         const params = [competition_id];
@@ -632,6 +630,7 @@ async function checkValidCompetition(competition_id, competitor_id) {
 }
 
 /**
+ * Check for whether competition exists or not.
  * @author Haejin Song
  * @param {*} comp_id 
  * @returns 
