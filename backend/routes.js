@@ -83,7 +83,7 @@ function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const {client_id} = await JSON.parse(body);
+                const {client_id, payment_method} = await JSON.parse(body);
                 const status = await paymentController.checkStatus(client_id);
                 if (!status) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -96,7 +96,7 @@ function processRequest(req, res){
                     return;
                 }
                 
-                const confirm = await paymentController.confirmPaymentIntent(client_id);
+                const confirm = await paymentController.confirmPaymentIntent(client_id, payment_method);
                 const status2 = await paymentController.checkStatus(client_id);
                 console.log(status2) //should output "success or something similar"
                 if (!confirm) {

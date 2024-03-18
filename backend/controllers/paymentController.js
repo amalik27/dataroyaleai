@@ -27,12 +27,11 @@ async function createPaymentIntent(credits, id, currency) {
     }
 }
 
-async function confirmPaymentIntent(client_id) {
+async function confirmPaymentIntent(client_id, payment_method) {
     try {
         const paymentIntent = await stripe.paymentIntents.confirm(client_id, {
-            payment_method: 'pm_card_visa',
-            return_url: 'https://www.google.com',
-            receipt_email: 'mgrimalovsky@gmail.com'
+            payment_method: payment_method,
+            return_url: 'https://www.google.com', //TODO: replace with checkout HTML page
         });
         
         return paymentIntent;
