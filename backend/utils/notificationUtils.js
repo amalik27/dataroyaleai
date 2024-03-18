@@ -10,7 +10,7 @@ const mailjet = new Mailjet({
     apiSecret: process.env.MJ_APIKEY_PRIVATE
 });
 
-async function send_mail(sender_email, sender_name, receiver_email, receiver_name, subject, text, html) {
+async function send_mail(sender_email, sender_name, receiver_email, receiver_name, subject, text, html=false) {
      /*
     RETURNS STATUS CODE, 200 = OK, ANYTHING ELSE = BAD
 
@@ -18,32 +18,33 @@ async function send_mail(sender_email, sender_name, receiver_email, receiver_nam
     From: <sender_name> @ <sender_email>
     To: <receiver_name> @ <receiver_email>
     Subject: <subject>
-    Metadat: <text>
     Body:
-    <html>
+    <text> or <html> //IF YOU PUT SOMETHING IN HTML, IT WILL OVERRIDE THE TEXT
     */
     return new Promise((resolve, reject) => {
+        json_body = {
+            Messages: [
+                {
+                    From: {
+                        Email: sender_email,
+                        Name: sender_name
+                    },
+                    To: [
+                        {
+                            Email: receiver_email,
+                            Name: receiver_name
+                        }
+                    ],
+                    Subject: subject,
+                    TextPart: text,
+                    ...html && {HTMLPart: html}
+                }
+            ]
+        };
+        console.log(json_body)
         const request = mailjet
             .post('send', { version: 'v3.1' })
-            .request({
-                Messages: [
-                    {
-                        From: {
-                            Email: sender_email,
-                            Name: sender_name
-                        },
-                        To: [
-                            {
-                                Email: receiver_email,
-                                Name: receiver_name
-                            }
-                        ],
-                        Subject: subject,
-                        TextPart: text,
-                        HTMLPart: html
-                    }
-                ]
-            });
+            .request(json_body);
 
         request.then((result) => {
                 resolve(result.response.status);
