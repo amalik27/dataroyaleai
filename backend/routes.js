@@ -90,16 +90,16 @@ function processRequest(req, res){
 
             req.on('end', async () => {
                 
-                const {prize, deadline} = JSON.parse(body);
+                const {id, userid, prize, deadline} = JSON.parse(body);
 
-                if (!prize || !deadline) {
+                if (!id || !userid, !prize || !deadline) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing competition update fields in JSON body' }));
                     return;
                 }
 
                 try {
-                    await competitionController.updateCompetition(505748451, 1, deadline, prize); 
+                    await competitionController.updateCompetition(id, userid, deadline, prize); 
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true, message: "Competition updated." }));
                 } catch (error) {
@@ -151,6 +151,41 @@ function processRequest(req, res){
 
         } else if (req.method === 'PATCH'){
             // Submit a Model 
+            let body = '';
+            
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+
+            req.on('end', async () => {
+                
+                const {userid, compid, filepath} = JSON.parse(body);
+
+                if (!userid || !compid || !filepath) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing submission fields in JSON body' }));
+                    return;
+                }
+
+                try {
+                    let submitResult = await competitionController.submitModel(userid, compid, filepath);  
+                    if (submitResult == true){
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: true, message: "Model submitted." }));
+                    } else {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: false, message: submitResult }));
+    
+                    }
+
+                } catch (error) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: submitResult }));
+
+                }
+            });
+
+
 
         } else if (req.method === 'DELETE'){
             // Leave a Competition

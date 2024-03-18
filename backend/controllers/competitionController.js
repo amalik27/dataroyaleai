@@ -588,8 +588,10 @@ async function leaveCompetition(user_id, competition_id) {
  * @param {*} competition_id 
  * @param {*} submission_file 
  */
-async function submitModel(user_id, competition_id, submission_file, current_date) {
-    const query = "UPDATE submissions SET file_path = ? WHERE user_id = ? AND competition_id = ?";
+async function submitModel(user_id, competition_id, submission_file) {
+    let current_date = new Date(); 
+    
+    const query = "UPDATE submissions SET file_path = ? WHERE user_id = ? AND comp_id = ?";
     const params = [submission_file, user_id, competition_id];
     // assuming these are valid dates that can be compared, can be changed if not
     if (checkDeadline(competition_id) > current_date) {
@@ -606,11 +608,11 @@ async function submitModel(user_id, competition_id, submission_file, current_dat
             db.query(query, params, function(err, result) {
                 if (err) {
                     console.error("Error submitting model:", err);
-                    return resolve(null);
+                    return resolve("Error submitting model");
                 }
                 if (result.length === 0 || !result) {
                     console.error("There is an invalid id or file.");
-                    return resolve(null);
+                    return resolve("There is an invalid id or file.");
                 } else {
                     return resolve(true);
                 }
@@ -688,15 +690,10 @@ async function checkDeadline(comp_id) {
 }
 
 
-
-
-
-
-
 // Join Competition (Helper Functions)
 
 async function validateSubmissionFile(submission_file){
-    const extractionPath = './extracted_files';
+    const extractionPath = './extractedSubmissionFiles';
     if (!fs.existsSync(extractionPath)) {
         fs.mkdirSync(extractionPath);
     }
@@ -713,7 +710,7 @@ async function validateSubmissionFile(submission_file){
             return false;
         }
 
-        const allowedExtensions = ['.csv', '.py', '.js', '.dockerfile'];
+        const allowedExtensions = ['.csv', '.py', '.js', '.dockerfile', '.txt'];
         const extraFiles = files.filter(file => {
             return !allowedExtensions.includes(file.substr(file.lastIndexOf('.')));
         });
@@ -743,7 +740,7 @@ async function validateSubmissionFile(submission_file){
                 });
         });
 
-        const dockerfile = files.find(file => file.toLowerCase() === 'dockerfile');
+        const dockerfile = files.find(file => file.toLowerCase().includes('dockerfile'));
         if (!dockerfile) {
             console.error("No 'Dockerfile' found.");
             return false;
