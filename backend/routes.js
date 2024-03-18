@@ -105,18 +105,69 @@ function processRequest(req, res){
         }
 
     } else if (pathname === '/competitions/join'){
-        if (req.method === 'GET'){
+        if (req.method === 'POST'){
             // Join Competition
+            let body = '';
+            
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
 
-        } else if (req.method === 'POST'){
-            // Submit a Model
+            req.on('end', async () => {
+                
+                const {userid, compid} = JSON.parse(body);
+
+
+                if (!userid || !compid) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing join fields in JSON body' }));
+                    return;
+                }
+
+                try {
+                    await competitionController.joinCompetition(userid, compid); 
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: true, message: "Competition joined." }));
+                } catch (error){
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: error }));
+                }
+            });
+
+
+
+        } else if (req.method === 'PATCH'){
+            // Submit a Model 
 
         } else if (req.method === 'DELETE'){
-            // Leave a Competitions
+            // Leave a Competition
+
+
+        } else if (req.method === 'GET'){
+            // View Leaderboard
+            let body = '';
+            
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+
+            req.on('end', async () => {
+                const {compid} = JSON.parse(body);
+                
+                const allJoined = await competitionController.viewLeaderboard(compid);   
+
+                if (!allJoined || allJoined.length == 0) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Joined competitions not found' }));
+                    return;
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: allJoined }));
+            });
+
 
 
         }
-
     } else if (pathname === '/users') { //Users Endpoint
         if (req.method === 'GET') {
             let body = '';

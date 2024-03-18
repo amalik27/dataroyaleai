@@ -377,7 +377,7 @@ function validateDescription(desc){
         desc = words.slice(0,1000);
         return false; 
     }
-    
+
     return true;
 }
 
@@ -504,8 +504,10 @@ function countRows(filepath) {
 async function joinCompetition(user_id, competition_id) {
     const validCompetition = checkValidCompetition(competition_id, user_id);
     if (validCompetition) {
+        let id = generateCompetitionID(); 
+        
         const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
-        const params = [competition_id, null, null, null, user_id]
+        const params = [competition_id, id, 0, "", user_id]
         return new Promise((resolve, reject) => {
             db.query(query, params, function(err, result) {
                 if (err) {
@@ -605,8 +607,8 @@ async function submitModel(user_id, competition_id, submission_file, current_dat
  */
 async function checkValidCompetition(competition_id, competitor_id) {
     try {
-        const query = `SELECT * FROM competitions WHERE id = ? AND userid != ?`;
-        const params = [competition_id, competitor_id];
+        const query = `SELECT * FROM competitions WHERE id = ?`;
+        const params = [competition_id];
         return new Promise((resolve, reject) => {
             db.query(query, params, function(err, result) {
                 if (err) {
@@ -874,5 +876,9 @@ module.exports = {
     createCompetition,
     findCompetitionByID,
     updateCompetition, 
-    viewAllCompetitions
+    viewAllCompetitions, 
+    joinCompetition, 
+    leaveCompetition, 
+    submitModel, 
+    viewLeaderboard
 };
