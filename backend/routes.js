@@ -101,7 +101,7 @@ function processRequest(req, res){
                 console.log(status2) //should output "success or something similar"
                 if (!confirm) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Server error with submitting purchase' }));
+                    res.end(JSON.stringify({ success: false, message: 'Error with submitting purchase' }));
                     return;
                 }
 

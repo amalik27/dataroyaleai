@@ -1,3 +1,9 @@
+/*
+To get started: go to stripe.com, sign up, and get your secret and public key
+Add these keys to your .env file
+DON'T OVERUSE .... 6k email limit, 1.5k contacts limit
+*/
+
 require('dotenv').config();
 const {getOrderAmount} = require('../utils/paymentUtils')
 secret_key = process.env.STRIPE_SECRET_API_KEY
@@ -52,7 +58,7 @@ async function initialize() {
     return clientSecret;
   }
 
-// Sample Code for a "Pay" button
+// Sample Code for a "Pay" button on client side
 async function handleSubmit(e) {
     e.preventDefault();
   

@@ -1,3 +1,8 @@
+/*
+To get started: go to mailjet.com, sign up, and get your public and private key
+Add these keys to your .env file
+*/
+
 const Mailjet = require('node-mailjet');
 require('dotenv').config()
 const mailjet = new Mailjet({
