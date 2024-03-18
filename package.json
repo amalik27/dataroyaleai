@@ -11,10 +11,12 @@
     "jasmine": "5.1.0"
   },
   "dependencies": {
+    "@enzoic/enzoic": "^3.0.0",
     "bcrypt": "^5.1.1",
     "http": "^0.0.1-security",
     "jsdom": "^24.0.0",
     "mysql": "^2.18.1",
-    "url": "^0.11.3"
+    "url": "^0.11.3",
+    "zxcvbn": "^4.4.2"
   }
 }

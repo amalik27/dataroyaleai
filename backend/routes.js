@@ -85,11 +85,16 @@ function processRequest(req, res){
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
-            req.on('end', () => {
+            req.on('end', async () => {
                 const { username, email, password, role } = JSON.parse(body);
-                userController.registerUser(username, email, password, role);
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true }));
+                try {
+                    await userController.registerUser(username, email, password, role);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: true }));
+                } catch (err) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: err.message }));
+                }
             });
         }
     }
@@ -105,10 +110,9 @@ function processRequest(req, res){
                     let status = await userController.loginUser(username, password);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: status }));
-                } catch (error) {
-                    console.error('Error occurred during login:', error);
+                } catch (err) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, error: 'Internal Server Error' }));
+                    res.end(JSON.stringify({ success: false, error: err.message }));
                 }
             });
         }

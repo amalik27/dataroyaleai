@@ -1,5 +1,6 @@
 const db = require('../db');
 const passwordUtils = require('../utils/passwordUtils');
+var zxcvbn = require('zxcvbn');
 
 async function createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) {
     const sql = `INSERT INTO users (username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
@@ -11,8 +12,10 @@ async function createUser(username, email, salt, password_encrypted, role, tier,
     }
 }
 
-
 async function registerUser(username, email, password, role){
+    if(zxcvbn(password).score < 3){
+        throw new Error("Weak password");
+    }
     const salt = generateRandomString(16);
     const password_encrypted = passwordUtils.encrypt(password, salt);
     const credits = 50;
@@ -33,7 +36,6 @@ async function registerUser(username, email, password, role){
         console.error('Error registering user:', error);
         throw error;
     }
-    //createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token);
 }
 
 async function loginUser(username, password){
@@ -47,7 +49,6 @@ async function loginUser(username, password){
 }
 
 async function readUserById(id) {
-    try {
         const sql = 'SELECT * FROM users WHERE id = ?';
         return new Promise((resolve, reject) => {
             db.query(sql, id, function (err, result, fields) {
@@ -75,13 +76,10 @@ async function readUserById(id) {
                 };
                 resolve(user);
             });
-        });
-    } 
-    
+        }); 
 }
 
 async function readUserByUsername(username) {
-    try {
         const sql = 'SELECT * FROM users WHERE username = ?';
         return new Promise((resolve, reject) => {
             db.query(sql, username, function (err, result, fields) {
@@ -110,11 +108,9 @@ async function readUserByUsername(username) {
                 resolve(user);
             });
         });
-    } 
 }
 
 async function readUserByApiToken(api_token) {
-    try {
         const sql = 'SELECT * FROM users WHERE api_token = ?';
         return new Promise((resolve, reject) => {
             db.query(sql, api_token, function (err, result, fields) {
@@ -142,8 +138,7 @@ async function readUserByApiToken(api_token) {
                 };
                 resolve(user);
             });
-        });
-    } 
+        }); 
 }
 
 async function updateUserById(id, username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) {
