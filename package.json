@@ -12,9 +12,11 @@
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
     "http": "^0.0.1-security",
     "jsdom": "^24.0.0",
     "mysql": "^2.18.1",
+    "stripe": "^14.21.0",
     "url": "^0.11.3"
   }
 }
