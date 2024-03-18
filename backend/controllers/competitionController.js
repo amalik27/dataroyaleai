@@ -31,27 +31,37 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
         let id = generateCompetitionID(); 
 
         let isValidCompetition = true; 
+        let errorMessage = ""; 
 
         // Insert validation functions here: 
         if (!processCompetitionDatsets(filepath)){
-            isValidCompetition = false; 
+            isValidCompetition = false;
+            errorMessage +=  "Check competition datasets. "; 
         }
         if(!validateTitle(title)){
-            return false;
+            isValidCompetition = false;
+            errorMessage += "Title must be within 60 characters. "; 
         }
         if(!validateDescription(desc)){
-            return false;
+            isValidCompetition = false; 
+            errorMessage += "Title must be within 1000 words. "; 
         }
-        if(!validatePrize(prize, organizerCredits)){
-            return false;
+        if(!validatePrize(prize, 100000)){
+            isValidCompetition = false;
+            errorMessage += "Prize must not exceed available credits. "; 
         }
         if(!validatePlayerCap(cap)){
-            return false;
+            isValidCompetition = false; 
+            errorMessage += "Player capacity must not exceed 500. "; 
         }
         if(!validateDeadline(deadline)){
-            return false;
+            isValidCompetition = false; 
+            errorMessage += "Deadline must be at least 1 month away. "; 
         }
 
+        if (!isValidCompetition){
+            return errorMessage; 
+        }
 
 
         if (isValidCompetition){
@@ -59,12 +69,13 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
                 const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, metrics, description, player_cap, date_created, file_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'; 
                 const params = [id, userid, title, deadline, prize, JSON.stringify(metrics), desc, cap, datecreated, filepath]; 
                 await db.query(query, params); 
+                return true; 
             } catch (error) {
                 console.error("Error creating competition:", error); 
-                throw error; 
+                return "Error creating competition"; 
             }
         } else {
-            throw new Error("Invalid entries for competition creation."); 
+            return "Invalid entries for competition creation"; 
         }
     }
     
@@ -502,25 +513,39 @@ function countRows(filepath) {
  * @returns 
  */
 async function joinCompetition(user_id, competition_id) {
-    const validCompetition = checkValidCompetition(competition_id, user_id);
+    const validCompetition = await checkValidCompetition(competition_id, user_id);
     if (validCompetition) {
         let id = generateCompetitionID(); 
         
         const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
         const params = [competition_id, id, 0, "", user_id]
         return new Promise((resolve, reject) => {
-            db.query(query, params, function(err, result) {
-                if (err) {
-                    console.error("Error joining competition:", err);
-                    return resolve(null);
-                }
-                if (result.length === 0 || !result) {
-                    console.error("User_id is invalid"); // checked for valid comp already, so maybe this
-                    return resolve(null);
+            try {
+                db.query(query, params, function(err, result) {
+                    if (err) {
+                        if (err.code === 'ER_DUP_ENTRY'){
+                            return resolve("User has already joined the competition."); 
+                        }
+
+                        return resolve(null); 
+                    }
+                    if (result.length === 0 || !result) {
+                        console.error("User_id is invalid"); 
+                        return resolve(null);
+                    } else {
+                        return resolve(true);
+                    }
+                });
+            } catch (error){
+
+                if (error.code === 'ER_DUP_ENTRY') {
+                    throw new Error("Duplicate entry error"); 
                 } else {
-                    return resolve(true);
+                    throw new Error("Error in joining competition"); 
                 }
-            });
+
+
+            }
         });
     } else {
         console.error("Error finding competition.");
@@ -546,7 +571,7 @@ async function leaveCompetition(user_id, competition_id) {
                 }
                 if (result.length === 0 || !result) {
                     console.error("There is an invalid id");
-                    return resolve(null);
+                    return resolve("There is an invalid id");
                 } else {
                     return resolve(true);
                 }
@@ -554,6 +579,7 @@ async function leaveCompetition(user_id, competition_id) {
         });
     } catch (err) {
         console.error("Error deleting competition:", err);
+        return resolve("Error deleting competition"); 
     }
 }
 
@@ -843,12 +869,12 @@ async function viewLeaderboard(compid){
 
         try {
             
-            const queryStr = `SELECT * FROM leaderboard WHERE comp_id = ?`;
+            const queryStr = `SELECT * FROM submissions WHERE comp_id = ?`;
     
             db.query(queryStr, [compid], (err, leaderboard) => {
                 if (err) {
                     console.error("Error executing query:", err);
-                    reject("Error in retrieving leaderboard.");
+                    return reject("Error in retrieving leaderboard.");
                 } else {
                     const formattedLeaderboard = leaderboard.map(stats => {
                         return {
@@ -857,13 +883,12 @@ async function viewLeaderboard(compid){
                         };
                     });
 
-                    resolve(formattedLeaderboard);
+                    return resolve(formattedLeaderboard);
                 }
             });
 
         } catch (error){
-            reject("Error in retrieving leaderboard."); 
-            throw new Error('Error in retrieving leaderboard'); 
+            return resolve("Error in retrieving leaderboard."); 
         }
     
     });

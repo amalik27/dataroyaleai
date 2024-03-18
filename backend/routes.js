@@ -1,6 +1,7 @@
 const url = require('url');
 const userController = require('./controllers/userController');
 const competitionController = require('./controllers/competitionController'); 
+const { get } = require('http');
 
 function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
@@ -62,9 +63,15 @@ function processRequest(req, res){
                 }
 
                 try {
-                    await competitionController.createCompetition(userid, title, deadline, prize, metrics, desc, cap, created, filepath); 
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: true, message: "Competition created." }));
+                    const getCreateResult = await competitionController.createCompetition(userid, title, deadline, prize, metrics, desc, cap, created, filepath); 
+                    if (getCreateResult == true){
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: true, message: "Competition created successfully." }));    
+                    } else {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: false, message: getCreateResult }));
+    
+                    }
                 } catch (error){
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: error }));
@@ -125,9 +132,15 @@ function processRequest(req, res){
                 }
 
                 try {
-                    await competitionController.joinCompetition(userid, compid); 
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: true, message: "Competition joined." }));
+                    const getJoinResult = await competitionController.joinCompetition(userid, compid); 
+                    if (getJoinResult == true){
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: true, message: "Competition joined successfully." }));    
+                    } else {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: false, message: getJoinResult }));
+    
+                    }
                 } catch (error){
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: error }));
@@ -141,6 +154,40 @@ function processRequest(req, res){
 
         } else if (req.method === 'DELETE'){
             // Leave a Competition
+
+            let body = '';
+            
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+
+            req.on('end', async () => {
+                
+                const {userid, compid} = JSON.parse(body);
+
+
+                if (!userid || !compid) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing withdraw fields in JSON body' }));
+                    return;
+                }
+
+                try {
+                    const getLeaveResult = await competitionController.leaveCompetition(userid, compid); 
+                    if (getLeaveResult == true){
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: true, message: "Withdraw successful." }));    
+                    } else {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: false, message: getLeaveResult }));
+    
+                    }
+                } catch (error){
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: error }));
+                }
+            });
+
 
 
         } else if (req.method === 'GET'){
@@ -157,6 +204,7 @@ function processRequest(req, res){
                 const allJoined = await competitionController.viewLeaderboard(compid);   
 
                 if (!allJoined || allJoined.length == 0) {
+                    console.log("here"); 
                     res.writeHead(404, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Joined competitions not found' }));
                     return;
