@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const { JSDOM } = require('jsdom');
 const userController = require('./userController');
 
+// Function to create course progress for a user.
 async function createCourseProgress(api_token, course_id) {
     try {
         const sql = `INSERT INTO course_progress (user_id, api_token, course_id, progress) VALUES (?, ?, ?, ?)`;
@@ -16,6 +17,7 @@ async function createCourseProgress(api_token, course_id) {
     }
 }
 
+// Function to update course progress for a user.
 async function updateCourseProgress(progress, api_token, course_id) {
     try {
         const sql = `UPDATE course_progress SET progress = ? WHERE api_token = ? AND course_id = ?`;
@@ -26,6 +28,7 @@ async function updateCourseProgress(progress, api_token, course_id) {
     }
 }
 
+// Function to retrieve IDs of courses that a user can buy or access.
 async function readAllCoursesThatUserCanBuyOrAccessByApiToken(api_token) {
     try {
         const allCourses = await retrieveCourseMetadata();
@@ -45,6 +48,7 @@ async function readAllCoursesThatUserCanBuyOrAccessByApiToken(api_token) {
     }
 }
 
+// Function to retrieve all courses of a user by API token.
 async function readAllCoursesOfUserByApiToken(api_token) {
     try {
         const sql = 'SELECT * FROM course_progress WHERE api_token = ?';
@@ -71,6 +75,7 @@ async function readAllCoursesOfUserByApiToken(api_token) {
     }
 }
 
+// Function to retrieve the file path for opening a course.
 async function openCourse(course_id, courseProgress, api_token) {
     try {
         const sql = 'SELECT * FROM course_progress WHERE api_token = ? AND course_id = ?';
@@ -95,6 +100,7 @@ async function openCourse(course_id, courseProgress, api_token) {
     }
 }
 
+// Function to retrieve the default page for a course.
 async function getDefaultPage(course_id, api_token) {
     try {
         const sql = 'SELECT * FROM course_progress WHERE api_token = ? AND course_id = ?';
@@ -119,6 +125,7 @@ async function getDefaultPage(course_id, api_token) {
     }
 }
 
+// Function to retrieve metadata of courses.
 async function retrieveCourseMetadata() {
     const courseMetadata = [];
     const courseFiles = ['1.html', '1.html', '1.html']; // List of course HTML files WITH METADATA
