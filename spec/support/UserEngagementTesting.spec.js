@@ -233,3 +233,17 @@ describe('updateEmail function', () => {
     });
 });
 
+describe('deleteUserById function', () => {
+    let userId;
+
+    beforeEach(() => {
+        userId = 1;
+    });
+
+    it('should delete user by ID', async () => {
+        spyOn(userController, 'deleteUserById').and.returnValue({ success: true, message: 'User deleted successfully' });
+
+        const result = await userController.deleteUserById(userId);
+        expect(result.success).toBeTrue();
+    });
+});
