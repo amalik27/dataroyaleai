@@ -1,5 +1,5 @@
-const db = require("/Users/nehamurthy/Desktop/Rutgers/RutgersClasses/Spring2024/Software Engineering/Project/Registration/db.js");
-const passwordUtils = require('/Users/nehamurthy/Desktop/Rutgers/RutgersClasses/Spring2024/Software Engineering/Project/Registration/passwordUtils.js');
+const db = require('../db');
+const passwordUtils = require('../utils/passwordUtils');
 var zxcvbn = require('zxcvbn');
 
 async function createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) {
