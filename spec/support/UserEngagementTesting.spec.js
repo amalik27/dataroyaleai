@@ -1,8 +1,8 @@
 const mockDb = {
     query: jasmine.createSpy()
 };
-const record  = require('../../backend/controllers/userController.js');
-record.db = mockDb;
+const userController  = require('../../backend/controllers/userController.js');
+userController.db = mockDb;
 
 
 describe('registerUser function', () => {
@@ -24,7 +24,7 @@ describe('registerUser function', () => {
         const password = 'weak'; // Weak password
         const role = 'user';
 
-        await expectAsync(record.registerUser(username, email, password, role)).toBeRejectedWithError('Weak password'); 
+        await expectAsync(userController.registerUser(username, email, password, role)).toBeRejectedWithError('Weak password'); 
     });
     //checks for invalid email - returns Invalid
     it('should throw an error if email is not valid', async () => {
@@ -33,9 +33,9 @@ describe('registerUser function', () => {
         const password = 'StrongPassword123';
         const role = 'user';
 
-        spyOn(record, 'isValidEmail').and.returnValue(false);
+        spyOn(userController, 'isValidEmail').and.returnValue(false);
 
-        await expectAsync(record.registerUser(username, email, password, role)).toBeRejectedWithError('Invalid email address');
+        await expectAsync(userController.registerUser(username, email, password, role)).toBeRejectedWithError('Invalid email address');
     });
 });
 
@@ -47,7 +47,7 @@ describe('createUser', () => {
             password: 'strongpassword',
             role: 'user'
         };
-        const result = await record.createUser(newUser.username, newUser.email, newUser.password, newUser.role);
+        const result = await userController.createUser(newUser.username, newUser.email, newUser.password, newUser.role);
         expect(result).toBeUndefined();
     });
 });
@@ -68,8 +68,8 @@ describe('readUserById function', () => {
             role: 'user'
         };
 
-        spyOn(record, 'readUserById').and.returnValue(mockUser);
-        const user = await record.readUserById(userId);
+        spyOn(userController, 'readUserById').and.returnValue(mockUser);
+        const user = await userController.readUserById(userId);
 
         expect(user).toBeDefined();
         expect(user.id).toEqual(userId);
@@ -95,8 +95,8 @@ describe('readUserByUsername function', () => {
             role: 'user'
         };
 
-        spyOn(record, 'readUserByUsername').and.returnValue(mockUser);
-        const user = await record.readUserByUsername(username);
+        spyOn(userController, 'readUserByUsername').and.returnValue(mockUser);
+        const user = await userController.readUserByUsername(username);
 
         expect(user).toBeDefined();
         expect(user.username).toEqual(username);
@@ -122,9 +122,9 @@ describe('readUserByApiToken function', () => {
             role: 'user'
         };
 
-        spyOn(record, 'readUserByApiToken').and.returnValue(mockUser);
+        spyOn(userController, 'readUserByApiToken').and.returnValue(mockUser);
 
-        const user = await record.readUserByApiToken(apiToken);
+        const user = await userController.readUserByApiToken(apiToken);
 
         expect(user).toBeDefined();
         expect(user.username).toEqual('testuser');
@@ -148,9 +148,9 @@ describe('updateUserById function', () => {
             role: 'admin'
         };
 
-        spyOn(record, 'updateUserById').and.returnValue({ success: true });
+        spyOn(userController, 'updateUserById').and.returnValue({ success: true });
 
-        const result = await record.updateUserById(userId, newUserData);
+        const result = await userController.updateUserById(userId, newUserData);
         expect(result.success).toBeTrue();
 
        });
@@ -160,21 +160,21 @@ describe('generateRandomString function', () => {
     //should generate a random string
     it('should generate a random string of specified length', () => {
         const length = 10;
-        const randomString = record.generateRandomString(length);
+        const randomString = userController.generateRandomString(length);
         expect(randomString).toBeDefined();
         expect(randomString.length).toEqual(length);
     });
 //should be randomized and giving different strings
     it('should generate a different string on each call', () => {
         const length = 10;
-        const randomString1 = record.generateRandomString(length);
-        const randomString2 = record.generateRandomString(length);
+        const randomString1 = userController.generateRandomString(length);
+        const randomString2 = userController.generateRandomString(length);
         expect(randomString1).not.toEqual(randomString2);
     });
 
     it('should generate a string containing only alphanumeric characters', () => {
         const length = 10;
-        const randomString = record.generateRandomString(length);
+        const randomString = userController.generateRandomString(length);
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
         expect(alphanumericRegex.test(randomString)).toBeTrue();
     });
@@ -202,9 +202,9 @@ describe('readUserByEmail function', () => {
             role: 'user'
         };
 
-        spyOn(record, 'readUserByEmail').and.returnValue(mockUser);
+        spyOn(userController, 'readUserByEmail').and.returnValue(mockUser);
 
-        const user = await record.readUserByEmail(email);
+        const user = await userController.readUserByEmail(email);
 
         expect(user).toBeDefined();
         expect(user.email).toEqual(email);
@@ -224,9 +224,9 @@ describe('updateEmail function', () => {
     it('should update user email by user ID', async () => {
         const newEmail = 'newemail@example.com';
 
-        spyOn(record, 'updateUserById').and.returnValue({ success: true, message: 'User updated successfully' });
+        spyOn(userController, 'updateUserById').and.returnValue({ success: true, message: 'User updated successfully' });
 
-        const result = await record.updateEmail(userId, newEmail);
+        const result = await userController.updateEmail(userId, newEmail);
 
         // 
         expect(result).toEqual({ success: true, message: 'The new email given was updated successfully' });
