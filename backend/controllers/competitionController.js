@@ -9,11 +9,6 @@ const unzipper = require('unzipper');
 const csv = require('csv-parser');
 const { readUserById } = require('./userController');
 
-
-
-
-
-
 // Create Competition (Main Functions)
 
 /**
@@ -224,6 +219,8 @@ async function updateCompetition (id, userid, deadline, prize){
  * @param {*} newPrize Proposed new prize amount.
  */
 async function updatePrizeEligibility(id, userid, newPrize) {
+    let organizerCredits = await fetchOrganizerCredits(userid);
+
     const existingCompetition = await findCompetitionByID(id, userid);
     if (!existingCompetition) {
         return false;
@@ -242,8 +239,9 @@ async function updatePrizeEligibility(id, userid, newPrize) {
                     const originalPrize = results[0].prize;
 
                     const allowablePrize = newPrize > originalPrize && originalPrize !== -1;
+                    const allowableAmount = newPrize < organizerCredits; 
 
-                    resolve(allowablePrize);
+                    resolve(allowablePrize && allowableAmount);
                 } else {
                     resolve(false);
                 }
@@ -303,7 +301,14 @@ async function updateDeadlineEligibility(id, userid, newDeadline) {
  * @param {*} filepath .zip File's path
  */
 async function processCompetitionDatsets(filepath) {
+
     try {
+
+        if (!fs.existsSync(filepath)) {
+            console.error(`File "${filepath}" does not exist.`);
+            return false;
+        }
+
         await fs.createReadStream(filepath)
             .pipe(unzipper.Extract({ path: 'tempCompDatasetExtracts' }))
             .promise();
@@ -660,7 +665,7 @@ async function leaveCompetition(user_id, competition_id) {
                     console.error("Error deleting competition:", err);
                     return resolve(null);
                 }
-                if (result.length === 0 || !result) {
+                if (result.length === 0 || !result || result.affectedRows == 0) {
                     console.error("There is an invalid id");
                     return resolve("There is an invalid id");
                 } else {
@@ -682,6 +687,11 @@ async function leaveCompetition(user_id, competition_id) {
  * @param {*} submission_file 
  */
 async function submitModel(user_id, competition_id, submission_file) {
+    if (!fs.existsSync(submission_file)) {
+        console.error(`File "${submission_file}" does not exist.`);
+        return "File does not exist";
+    }
+
     let current_date = new Date(); 
     
     const query = "UPDATE submissions SET file_path = ? WHERE user_id = ? AND comp_id = ?";
@@ -694,6 +704,7 @@ async function submitModel(user_id, competition_id, submission_file) {
     if (!validateSubmissionFile(submission_file)){
         console.error("The submission file is invalid."); 
         return false; 
+
     }
 
     try {
@@ -703,9 +714,9 @@ async function submitModel(user_id, competition_id, submission_file) {
                     console.error("Error submitting model:", err);
                     return resolve("Error submitting model");
                 }
-                if (result.length === 0 || !result) {
-                    console.error("There is an invalid id or file.");
-                    return resolve("There is an invalid id or file.");
+                if (result.length === 0 || !result || result.affectedRows == 0) {
+                    console.error("There is an invalid id or file. User may not be registered for the competition.");
+                    return resolve("There is an invalid id or file. User may not be registered for the competition.");
                 } else {
                     return resolve(true);
                 }
@@ -713,6 +724,7 @@ async function submitModel(user_id, competition_id, submission_file) {
         });
     } catch (err) {
         console.error("Error submitting model:", err);
+        return false; 
     }
 }
 
@@ -791,6 +803,8 @@ async function checkDeadline(comp_id) {
  * @param {*} submission_file Submisison files path.
  */
 async function validateSubmissionFile(submission_file){
+    
+    
     const extractionPath = './extractedSubmissionFiles';
     if (!fs.existsSync(extractionPath)) {
         fs.mkdirSync(extractionPath);
