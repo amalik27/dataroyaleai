@@ -8,6 +8,8 @@ const fs = require('fs');
 const unzipper = require('unzipper');
 const csv = require('csv-parser');
 const { readUserById } = require('./userController');
+const path = require('path');
+
 
 // Create Competition (Main Functions)
 
@@ -22,7 +24,8 @@ const { readUserById } = require('./userController');
  * @param {*} cap Maximum player capacity for the competition. 
  */ 
 async function createCompetition (userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath){
-    
+    let emptyResult = emptyFolder("./extractedCompDatasets"); 
+
     let validUser = await checkValidUser(userid); 
 
     if (validUser && await authenticateAccess('organizer', userid)){
@@ -32,9 +35,7 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
         let isValidCompetition = true; 
         let errorMessage = ""; 
 
-        // Insert validation functions here: 
         if (!(await processCompetitionDatsets(filepath))){
-            
             isValidCompetition = false;
             errorMessage +=  "Check competition datasets. "; 
         }
@@ -310,10 +311,10 @@ async function processCompetitionDatsets(filepath) {
         }
 
         await fs.createReadStream(filepath)
-            .pipe(unzipper.Extract({ path: 'tempCompDatasetExtracts' }))
+            .pipe(unzipper.Extract({ path: 'extractedCompDatasets' }))
             .promise();
 
-        const files = fs.readdirSync('tempCompDatasetExtracts');
+        const files = fs.readdirSync('extractedCompDatasets');
 
         if (files.length !== 2) {
             console.error("Not enough files.");
@@ -321,7 +322,7 @@ async function processCompetitionDatsets(filepath) {
         }
 
         for (const file of files) {
-            const individualFilePath = `tempCompDatasetExtracts/${file}`;
+            const individualFilePath = `extractedCompDatasets/${file}`;
             const rowCount = await countRows(individualFilePath);
 
             if (rowCount < 10) { // Changed to 10 rows for testing
@@ -418,11 +419,6 @@ async function filterByDeadline(min, max){
     }
 
 }
-
-
-
-
-
 
 
 // Create Competition (Validation Functions)
@@ -608,6 +604,7 @@ function countRows(filepath) {
  * @returns 
  */
 async function joinCompetition(user_id, competition_id) {
+
     const validCompetition = await checkValidCompetition(competition_id, user_id);
     const validUser = await authenticateAccess('competitor', user_id); 
 
@@ -646,6 +643,7 @@ async function joinCompetition(user_id, competition_id) {
     } else {
         console.error("Error finding competition.");
     }
+
 }
 
 /**
@@ -691,6 +689,9 @@ async function submitModel(user_id, competition_id, submission_file) {
         console.error(`File "${submission_file}" does not exist.`);
         return "File does not exist";
     }
+
+    let emptyResult = emptyFolder("./extractedSubmissionFiles"); 
+
 
     let current_date = new Date(); 
     
@@ -1003,6 +1004,44 @@ async function viewLeaderboard(compid){
     });
 
 }
+
+/**
+ * Delete folder contents after each iteration.
+ * @author @deshnadoshi
+ * @param {*} filepath Location of file to delete.
+ */
+function emptyFolder(filepath) {
+    fs.readdir(filepath, (err, files) => {
+        if (err) {
+            console.error('Error reading folder:', err);
+            return;
+        }
+
+        files.forEach(file => {
+            const filePath = path.join(filepath, file);
+
+            fs.stat(filePath, (err, stats) => {
+                if (err) {
+                    console.error('Error getting file stats:', err);
+                    return;
+                }
+
+                if (stats.isFile()) {
+                    fs.unlink(filePath, err => {
+                        if (err) {
+                            console.error('Error deleting file:', err);
+                        }
+                    });
+                }
+                else if (stats.isDirectory()) {
+                    console.log("emptied directory."); 
+                    emptyFolder(filePath);
+                }
+            });
+        });
+    });
+}
+
 
 // Exports
 
