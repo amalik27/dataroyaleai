@@ -1,5 +1,5 @@
-const db = require('../db');
-const passwordUtils = require('../utils/passwordUtils');
+const db = require("/Users/nehamurthy/Desktop/Rutgers/RutgersClasses/Spring2024/Software Engineering/Project/Registration/db.js");
+const passwordUtils = require('/Users/nehamurthy/Desktop/Rutgers/RutgersClasses/Spring2024/Software Engineering/Project/Registration/passwordUtils.js');
 var zxcvbn = require('zxcvbn');
 
 async function createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) {
@@ -13,6 +13,10 @@ async function createUser(username, email, salt, password_encrypted, role, tier,
 }
 
 async function registerUser(username, email, password, role){
+    
+    if (!isValidEmail(email)) {
+        throw new Error('Invalid email address');
+    }
     if(zxcvbn(password).score < 3){
         throw new Error("Weak password");
     }
@@ -175,6 +179,8 @@ function generateRandomString(length) {
     }
     return result;
 }
+
+// extra implementations 
 const passwordResetTokens= {};
 
 async function generatePasswordTokenReset (email) {
@@ -206,7 +212,7 @@ async function resetPassword (token, newPassword){
     }
 }
 
-//additional way to read user is through their email
+//additional way to read the user is through their email
 async function readUserByEmail (email){
     const sql = 'SELECT * FROM users WHERE email = ?';
     return new Promise ((resolve, reject) =>{
@@ -250,16 +256,24 @@ async function updateEmail (id,newEmail){
     }
 }
 
+//validating email
+function isValidEmail (email){
+    const emailRegex  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test (email);
+}
+
 module.exports = {
     createUser,
     readUserById,
     updateUserById,
+    readUserByUsername, 
     deleteUserById,
     readUserByApiToken,
     registerUser,
     loginUser,
-    generatePasswordTokenReset, 
+    generatePasswordTokenReset,
     resetPassword, 
     readUserByEmail, 
-    updateEmail 
+    updateEmail,
+    isValidEmail 
 };
