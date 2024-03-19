@@ -4,6 +4,10 @@ const mockDb = {
 const userController  = require('../../backend/controllers/userController.js');
 userController.db = mockDb;
 
+const passwordUtils = require('../../backend/utils/passwordUtils.js'); 
+
+
+
 describe('registerUser function', () => {
     let mockZxcvbn;
     let mockPasswordUtils;
@@ -26,6 +30,8 @@ it('should not register a new user with weak password', async () => {
         await expectAsync(userController.registerUser(username, email, password, role)).toBeRejectedWithError('Weak password'); 
     });
 
+    
+
 //Test Case 2 : Show throw error if email is invalid  
  it('should throw an error if email is not valid', async () => {
         const username = 'testuser';
@@ -37,6 +43,8 @@ it('should not register a new user with weak password', async () => {
 
         await expectAsync(userController.registerUser(username, email, password, role)).toBeRejectedWithError('Invalid email address');
     });
+
+   
 });
 
 // Test Case 3 : Checks if creating a new user is done successfully 
@@ -253,5 +261,46 @@ describe('deleteUserById function', () => {
 
         const result = await userController.deleteUserById(userId);
         expect(result.success).toBeTrue();
+    });
+});
+
+//Tests PasswordUtils.js functions
+
+// Test Case 15 : Tests the functionality of encryptSHA1 function
+describe('encryptSHA1 function', () => {
+    it('should return the SHA-1 hash of the password', () => {
+        const password = 'password123';
+        const expectedHash = 'cbfdac6008f9cab4083784cbd1874f76618d2a97'; // This is the SHA-1 hash for "password123"
+        const actualHash = passwordUtils.encryptSHA1(password);
+        expect(actualHash).toEqual(expectedHash);
+    });
+});
+
+// Test Case 16 : Tests functionality of encrypt function
+describe('encrypt function', () => {
+    it('should return the SHA-256 hash of the password concatenated with the salt', () => {
+        const password = 'password123';
+        const salt = 'randomsalt';
+        const expectedHash = '00c12708d816f8066cf1ba57259deb5719992afdeaa6f4149ba66c225d52da1f'; // This is the SHA-256 hash for "password123randomsalt"
+        const actualHash = passwordUtils.encrypt(password, salt);
+        expect(actualHash).toEqual(expectedHash);
+    });
+// Test Case 17 : Test functionality to make sure even with same password, different salts will create different hash
+    it('should return a different hash for the same password with different salts', () => {
+        const password = 'password123'; //same password
+        const salt1 = 'randomsalt1'; //different salt 
+        const salt2 = 'randomsalt2'; // different salt
+        const hash1 = passwordUtils.encrypt(password, salt1);
+        const hash2 = passwordUtils.encrypt(password, salt2);
+        expect(hash1).not.toEqual(hash2);
+    });
+// Test Case 18 : Test functionality to make sure even with different password and same salt, different hashes will be created
+    it('should return a different hash for different passwords with the same salt', () => {
+        const password1 = 'password123';
+        const password2 = 'password456';
+        const salt = 'randomsalt'; 
+        const hash1 = passwordUtils.encrypt(password1, salt);
+        const hash2 = passwordUtils.encrypt(password2, salt);
+        expect(hash1).not.toEqual(hash2);
     });
 });
