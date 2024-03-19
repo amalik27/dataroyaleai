@@ -26,29 +26,38 @@ const { readUserById } = require('./userController');
  * @param {*} desc Description for the competition. 
  * @param {*} cap Maximum player capacity for the competition. 
  */ 
-async function createCompetition (userid, title, deadline, prize, metrics, desc, cap, datecreated, filepath){
-    if (authenticateAccess('organizer', userid)){
+async function createCompetition (userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath){
+    
+    let validUser = await checkValidUser(userid); 
+
+    if (validUser && await authenticateAccess('organizer', userid)){
         let id = generateCompetitionID(); 
+        let datecreated = new Date(); 
 
         let isValidCompetition = true; 
         let errorMessage = ""; 
 
         // Insert validation functions here: 
-        if (!processCompetitionDatsets(filepath)){
+        if (!(await processCompetitionDatsets(filepath))){
+            
             isValidCompetition = false;
             errorMessage +=  "Check competition datasets. "; 
         }
-        if(!validateTitle(title)){
+        if (!validateTitle(title)){
             isValidCompetition = false;
             errorMessage += "Title must be within 60 characters. "; 
         }
-        if(!validateDescription(desc)){
+
+        if (!validateDescription(desc)){
             isValidCompetition = false; 
             errorMessage += "Title must be within 1000 words. "; 
         }
-        if(!validatePrize(prize, 100000)){
+
+        let organizerCredits = await fetchOrganizerCredits(userid);
+
+        if (!validatePrize(prize, organizerCredits)) {
             isValidCompetition = false;
-            errorMessage += "Prize must not exceed available credits. "; 
+            errorMessage += "Prize must not exceed available credits. ";
         }
         if(!validatePlayerCap(cap)){
             isValidCompetition = false; 
@@ -63,12 +72,18 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
             return errorMessage; 
         }
 
+        if (!metrics || !inputs_outputs){
+            isValidCompetition = false; 
+            errorMessage += "Missing metrics/inputs/outputs"; 
+        }
+
 
         if (isValidCompetition){
             try {
-                const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, metrics, description, player_cap, date_created, file_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'; 
-                const params = [id, userid, title, deadline, prize, JSON.stringify(metrics), desc, cap, datecreated, filepath]; 
+                const query = 'INSERT INTO competitions (id, userid, title, deadline, prize, metrics, description, player_cap, date_created, inputs_outputs, file_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'; 
+                const params = [id, userid, title, deadline, prize, JSON.stringify(metrics), desc, cap, datecreated, JSON.stringify(inputs_outputs), filepath]; 
                 await db.query(query, params); 
+                // Call payments team's function here to deduct the credits
                 return true; 
             } catch (error) {
                 console.error("Error creating competition:", error); 
@@ -80,6 +95,32 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
     }
     
 }
+
+/**
+ * Determine the credits a given user has.
+ * @author @deshnadoshi
+ * @param {*} userid user ID. 
+ */
+async function fetchOrganizerCredits(userid) {
+    return new Promise((resolve, reject) => {
+        const query = 'SELECT credits FROM users WHERE id = ?';
+        const params = [userid];
+        db.query(query, params, function (err, result) {
+            if (err) {
+                console.error("Error retrieving prize credits:", err);
+                reject(err);
+            } else {
+                if (result.length === 0 || !result) {
+                    console.error("No prize credits.");
+                    resolve(0); // Assuming default credits is 0 if not found
+                } else {
+                    resolve(result[0].credits);
+                }
+            }
+        });
+    });
+}
+
 
 /**
  * Determine if a competition exists based on the competition ID and organizer ID. 
@@ -261,7 +302,7 @@ async function updateDeadlineEligibility(id, userid, newDeadline) {
  * @author @deshnadoshi
  * @param {*} filepath .zip File's path
  */
-async function processCompetitionDatsets(filepath){
+async function processCompetitionDatsets(filepath) {
     try {
         await fs.createReadStream(filepath)
             .pipe(unzipper.Extract({ path: 'tempCompDatasetExtracts' }))
@@ -270,8 +311,8 @@ async function processCompetitionDatsets(filepath){
         const files = fs.readdirSync('tempCompDatasetExtracts');
 
         if (files.length !== 2) {
-            console.error("Not enough files."); 
-            throw error; 
+            console.error("Not enough files.");
+            return false;
         }
 
         for (const file of files) {
@@ -279,18 +320,41 @@ async function processCompetitionDatsets(filepath){
             const rowCount = await countRows(individualFilePath);
 
             if (rowCount < 10) { // Changed to 10 rows for testing
-                console.error("Not enough rows."); 
-                throw error; 
+                console.error("Not enough rows.");
+                return false; 
             }
+
+            const headers = await getCSVHeaders(individualFilePath);
+
+            for (const header of headers) {
+                if (!/<[a-zA-Z]+>/.test(header)) {
+                    console.error(`Invalid format for header "${header}". Header should contain angle brackets with letters inside.`);
+                    return false; 
+                }
+            }
+            
         }
 
-        return true; 
+        return true;
     } catch (error) {
         console.error("Error processing competition datasets:", error);
-        return false; 
+        return false;
     }
-
 }
+
+/**
+ * Helper function to determine CSV file headers.
+ * @param {*} filepath CSV filepath
+ */
+async function getCSVHeaders(filepath) {
+    return new Promise((resolve, reject) => {
+        fs.createReadStream(filepath)
+            .pipe(csv())
+            .on('headers', (headers) => resolve(headers))
+            .on('error', reject);
+    });
+}
+
 
 /**
  * Filter competitions by given prize amounts.
@@ -444,8 +508,35 @@ function validateDeadline(deadline) {
 }
 
 
+/**
+ * Determine if a given user ID exists in the database of registered users.
+ * @author @deshnadoshi
+ * @param {*} user_id user ID. 
+ */
+async function checkValidUser(user_id) {
+    try {
+        const query = `SELECT * FROM users WHERE id = ?`;
+        const params = [user_id];
+        return new Promise((resolve, reject) => {
+            db.query(query, params, function(err, result) {
+                if (err) {
+                    console.error("Error finding user:", err); 
+                    return resolve(null); 
+                }
 
-
+                if (result.length === 0 || !result) {
+                    console.error("User does not exist."); 
+                    return resolve(null); 
+                } else {
+                    return resolve(true); 
+                }
+            }); 
+        }); 
+    } catch (err) {
+        console.error("Error finding user:", err);
+        return err;
+    }
+}
 
 
 
@@ -513,7 +604,9 @@ function countRows(filepath) {
  */
 async function joinCompetition(user_id, competition_id) {
     const validCompetition = await checkValidCompetition(competition_id, user_id);
-    if (validCompetition) {
+    const validUser = await authenticateAccess('competitor', user_id); 
+
+    if (validCompetition && validUser) {
         let id = generateCompetitionID(); 
         const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
         const params = [competition_id, id, 0, "", user_id]
@@ -692,6 +785,11 @@ async function checkDeadline(comp_id) {
 
 // Join Competition (Helper Functions)
 
+/**
+ * Validate the submission files to ensure that they are of the correct type.
+ * @author @deshnadoshi 
+ * @param {*} submission_file Submisison files path.
+ */
 async function validateSubmissionFile(submission_file){
     const extractionPath = './extractedSubmissionFiles';
     if (!fs.existsSync(extractionPath)) {
@@ -838,6 +936,7 @@ async function viewAllCompetitions(){
                             desc: competition.description,
                             player_cap: competition.player_cap,
                             date_created: competition.date_created,
+                            inputs_outputs: competition.inputs_outputs,
                             file_path: competition.file_path
                         };
                     });

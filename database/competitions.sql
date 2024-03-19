@@ -30,13 +30,14 @@ SET time_zone = "+00:00";
 CREATE TABLE `competitions` (
   `id` int(11) NOT NULL,
   `userid` int(30) NOT NULL,
-  `title` varchar(30) NOT NULL,
+  `title` varchar(100) NOT NULL,
   `deadline` date NOT NULL,
   `prize` int(11) NOT NULL,
   `metrics` json NOT NULL,
   `description` varchar(6000) NOT NULL,
   `player_cap` int(11) NOT NULL,
   `date_created` date NOT NULL,
+  `inputs_outputs` json NOT NULL,
   `file_path` varchar(512) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
