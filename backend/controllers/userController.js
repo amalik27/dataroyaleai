@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require("../db");
 const passwordUtils = require('../utils/passwordUtils');
 var zxcvbn = require('zxcvbn');
 
@@ -256,11 +256,11 @@ async function updateEmail (id,newEmail){
     }
 }
 
-//validating email
-function isValidEmail (email){
-    const emailRegex  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test (email);
+function isValidEmail(email){
+    const emailRegex  = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
 }
+
 
 module.exports = {
     createUser,
@@ -271,8 +271,10 @@ module.exports = {
     readUserByApiToken,
     registerUser,
     loginUser,
-    generatePasswordTokenReset,
+    generatePasswordTokenReset, 
+     generateRandomString,
     resetPassword, 
+    generatePasswordTokenReset,
     readUserByEmail, 
     updateEmail,
     isValidEmail 
