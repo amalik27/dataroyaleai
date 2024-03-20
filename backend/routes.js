@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const userController = require('./controllers/userController');
 const courseController = require('./controllers/courseController');
+const paymentController = require('./controllers/paymentController')
 
 function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
