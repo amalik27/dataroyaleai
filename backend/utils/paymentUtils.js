@@ -6,6 +6,9 @@ const getOrderAmount = (credits_purchased) => {
     return order;
   };
 
+  // Test Comment
+  //other test comment here
+
 module.exports = {
     getOrderAmount
 }
