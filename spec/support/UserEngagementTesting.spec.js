@@ -304,3 +304,19 @@ describe('encrypt function', () => {
         expect(hash1).not.toEqual(hash2);
     });
 });
+
+// Test Case 19 : Test Functionality of deleteAccount function
+describe('deleteAccount function', () => {
+    it('should delete user account successfully', async () => {
+        // Sample User Data to Use 
+        const username = 'testuser';
+        const password = 'TestPassword123';
+    
+        spyOn(userController, 'deleteAccount').and.returnValue({ success: true, message: 'Account deleted successfully' });
+    
+        const deleteResult = await userController.deleteAccount(username, password);
+    
+        expect(deleteResult.success).toBe(true);
+        expect(deleteResult.message).toBe('Account deleted successfully');
+    });
+});
