@@ -4,7 +4,7 @@ const getOrderAmount = (credits_purchased) => {
     order = credits_purchased * exchange_rate;
     console.log(order)
     return order;
-  };
+};
 
 module.exports = {
     getOrderAmount

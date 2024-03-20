@@ -19,13 +19,20 @@ async function checkPurchase(credits) { //helper function to be placed in /utils
     return true;
 }
 
+const addCredits = (id, credits) => {
+  return
+}
+
+const subtractCredits = (id, credits) => {
+  return
+}
+
 async function createPaymentIntent(credits, id, currency) {
     try {
         const paymentIntent = await stripe.paymentIntents.create({
             amount: getOrderAmount(credits),
             currency: currency,
         });
-        //console.log(paymentIntent.id)
         return paymentIntent;
     } catch (err) {
         console.log(err)
@@ -39,13 +46,14 @@ async function confirmPaymentIntent(client_id, payment_method) {
             payment_method: payment_method,
             return_url: 'https://www.google.com', //TODO: replace with checkout HTML page
         });
-        
         return paymentIntent;
     } catch (err) {
         console.log(err)
         return false
     }
 }
+
+/**  THE FOLLOWING ARE CLIENT-SIDE SCRIPTS FOR THE FRONT-END, TO BE USED LATER */
 
 // Call this to initialize payment setup for a particular user on the client side
 async function initialize() {
@@ -101,6 +109,8 @@ async function handleSubmit(e) {
   }
 
   module.exports = {
+    addCredits,
+    subtractCredits,
     createPaymentIntent,
     confirmPaymentIntent,
     initialize,
