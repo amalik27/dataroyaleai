@@ -320,8 +320,17 @@ async function processCompetitionDatsets(filepath) {
             console.error("Not enough files.");
             return false;
         }
+        const expectedFiles = ['training.csv', 'testing.csv'];
+
 
         for (const file of files) {
+
+            if (!expectedFiles.includes(file)) {
+                console.error(`Unexpected file "${file}" found.`);
+                return false;
+            }
+
+
             const individualFilePath = `extractedCompDatasets/${file}`;
             const rowCount = await countRows(individualFilePath);
 
