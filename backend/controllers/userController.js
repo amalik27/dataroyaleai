@@ -297,6 +297,24 @@ function isValidEmail(email){
     return emailRegex.test(email);
 }
 
+async function deleteAccount(username, password) {
+    try {
+        const loggedIn = await loginUser(username, password);
+        if (!loggedIn) {
+            throw new Error("Invalid username or password");
+        }
+        const user = await readUserByUsername(username);
+        await deleteUserById(user.id);
+        return { success: true, message: "Account deleted successfully" };
+    } catch (error) {
+        console.error("Error deleting account:", error);
+        throw error;
+    }
+}
+
+
+
+
 module.exports = {
     createUser,
     readUserById,
@@ -312,5 +330,6 @@ module.exports = {
     generatePasswordTokenReset,
     readUserByEmail, 
     updateEmail,
-    isValidEmail 
+    isValidEmail,
+    deleteAccount
 };
