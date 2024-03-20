@@ -14,7 +14,7 @@ function processRequest(req, res){
         res.writeHead(statusCode, { 'Content-Type': contentType });
         res.end(data);
     };
-
+  
     const sendErrorResponse = (statusCode, message) => {
         sendResponse(statusCode, 'application/json', JSON.stringify({ success: false, error: message }));
     };
