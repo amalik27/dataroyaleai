@@ -10,6 +10,14 @@ const mailjet = new Mailjet({
     apiSecret: process.env.MJ_APIKEY_PRIVATE
 });
 
+function checkEmail(email) { // Evaluates whether an email address is in the correct format, as MailJet does not provide this endpoint
+    var emailFormat = /^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$/; //https://regex101.com/r/lHs2R3/1 for the regex
+    if (email !== '' && email.match(emailFormat)) { 
+        return true; 
+    }
+    return false;
+}
+
 async function send_mail(sender_email, sender_name, receiver_email, receiver_name, subject, text, html=false) {
      /*
     RETURNS STATUS CODE, 200 = OK, ANYTHING ELSE = BAD
@@ -53,4 +61,9 @@ async function send_mail(sender_email, sender_name, receiver_email, receiver_nam
                 reject(err.statusCode);
             });
     });
+}
+
+module.exports = {
+    checkEmail,
+    send_mail
 }
