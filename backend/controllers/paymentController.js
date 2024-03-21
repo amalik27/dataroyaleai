@@ -8,7 +8,7 @@ require('dotenv').config();
 const {getOrderAmount} = require('../utils/paymentUtils')
 secret_key = process.env.STRIPE_SECRET_API_KEY
 public_key = process.env.STRIPE_PUBLIC_API_KEY
-console.log(secret_key)
+//console.log(secret_key)
 const Stripe = require('stripe');
 const stripe = Stripe(secret_key);
 
