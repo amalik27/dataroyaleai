@@ -8,10 +8,8 @@ const fs = require('fs');
 const unzipper = require('unzipper');
 const csv = require('csv-parser');
 const { readUserById } = require('./userController');
-
-
-
-
+const { addCredits, subtractCredits } = require('./paymentController');
+const path = require('path');
 
 
 // Create Competition (Main Functions)
@@ -27,7 +25,8 @@ const { readUserById } = require('./userController');
  * @param {*} cap Maximum player capacity for the competition. 
  */ 
 async function createCompetition (userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath){
-    
+    let emptyResult = emptyFolder("./extractedCompDatasets"); 
+
     let validUser = await checkValidUser(userid); 
 
     if (validUser && await authenticateAccess('organizer', userid)){
@@ -37,9 +36,7 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
         let isValidCompetition = true; 
         let errorMessage = ""; 
 
-        // Insert validation functions here: 
         if (!(await processCompetitionDatsets(filepath))){
-            
             isValidCompetition = false;
             errorMessage +=  "Check competition datasets. "; 
         }
@@ -83,6 +80,7 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
                 const params = [id, userid, title, deadline, prize, JSON.stringify(metrics), desc, cap, datecreated, JSON.stringify(inputs_outputs), filepath]; 
                 await db.query(query, params); 
                 // Call payments team's function here to deduct the credits
+                await subtractCredits(userid);
                 return true; 
             } catch (error) {
                 return `Error creating competition: ${error}`; 
@@ -226,6 +224,8 @@ async function updateCompetition (id, userid, deadline, prize){
  * @param {*} newPrize Proposed new prize amount.
  */
 async function updatePrizeEligibility(id, userid, newPrize) {
+    let organizerCredits = await fetchOrganizerCredits(userid);
+
     const existingCompetition = await findCompetitionByID(id, userid);
     if (!existingCompetition) {
         return false;
@@ -244,8 +244,9 @@ async function updatePrizeEligibility(id, userid, newPrize) {
                     const originalPrize = results[0].prize;
 
                     const allowablePrize = newPrize > originalPrize && originalPrize !== -1;
+                    const allowableAmount = newPrize < organizerCredits; 
 
-                    resolve(allowablePrize);
+                    resolve(allowablePrize && allowableAmount);
                 } else {
                     resolve(false);
                 }
@@ -305,20 +306,36 @@ async function updateDeadlineEligibility(id, userid, newDeadline) {
  * @param {*} filepath .zip File's path
  */
 async function processCompetitionDatsets(filepath) {
+
     try {
+
+        if (!fs.existsSync(filepath)) {
+            console.error(`File "${filepath}" does not exist.`);
+            return false;
+        }
+
         await fs.createReadStream(filepath)
-            .pipe(unzipper.Extract({ path: 'tempCompDatasetExtracts' }))
+            .pipe(unzipper.Extract({ path: 'extractedCompDatasets' }))
             .promise();
 
-        const files = fs.readdirSync('tempCompDatasetExtracts');
+        const files = fs.readdirSync('extractedCompDatasets');
 
         if (files.length !== 2) {
             console.error("Not enough files.");
             return false;
         }
+        const expectedFiles = ['training.csv', 'testing.csv'];
+
 
         for (const file of files) {
-            const individualFilePath = `tempCompDatasetExtracts/${file}`;
+
+            if (!expectedFiles.includes(file)) {
+                console.error(`Unexpected file "${file}" found.`);
+                return false;
+            }
+
+
+            const individualFilePath = `extractedCompDatasets/${file}`;
             const rowCount = await countRows(individualFilePath);
 
             if (rowCount < 10) { // Changed to 10 rows for testing
@@ -415,11 +432,6 @@ async function filterByDeadline(min, max){
     }
 
 }
-
-
-
-
-
 
 
 // Create Competition (Validation Functions)
@@ -605,7 +617,11 @@ function countRows(filepath) {
  * @returns 
  */
 async function joinCompetition(user_id, competition_id) {
+<<<<<<< HEAD
     let validUserID = await checkValidUser(user_id); 
+=======
+
+>>>>>>> 50d60eb93bde9645ad9b8efe77d35a1b39392764
     const validCompetition = await checkValidCompetition(competition_id, user_id);
     const validUser = await authenticateAccess('competitor', user_id); 
 
@@ -613,6 +629,7 @@ async function joinCompetition(user_id, competition_id) {
         return "Error joining competition: User ID doesn't exist."
     }
 
+<<<<<<< HEAD
     if (validCompetition == null) {
         return "Error joining competition: Invalid competition.";
     }
@@ -652,6 +669,8 @@ async function joinCompetition(user_id, competition_id) {
 
         }
     });
+=======
+>>>>>>> 50d60eb93bde9645ad9b8efe77d35a1b39392764
 }
 
 /**
@@ -671,7 +690,7 @@ async function leaveCompetition(user_id, competition_id) {
                     console.error("Error deleting competition:", err);
                     return resolve(null);
                 }
-                if (result.length === 0 || !result) {
+                if (result.length === 0 || !result || result.affectedRows == 0) {
                     console.error("There is an invalid id");
                     return resolve("There is an invalid id");
                 } else {
@@ -693,6 +712,14 @@ async function leaveCompetition(user_id, competition_id) {
  * @param {*} submission_file 
  */
 async function submitModel(user_id, competition_id, submission_file) {
+    if (!fs.existsSync(submission_file)) {
+        console.error(`File "${submission_file}" does not exist.`);
+        return "File does not exist";
+    }
+
+    let emptyResult = emptyFolder("./extractedSubmissionFiles"); 
+
+
     let current_date = new Date(); 
     
     const query = "UPDATE submissions SET file_path = ? WHERE user_id = ? AND comp_id = ?";
@@ -705,6 +732,7 @@ async function submitModel(user_id, competition_id, submission_file) {
     if (!validateSubmissionFile(submission_file)){
         console.error("The submission file is invalid."); 
         return false; 
+
     }
 
     try {
@@ -714,9 +742,9 @@ async function submitModel(user_id, competition_id, submission_file) {
                     console.error("Error submitting model:", err);
                     return resolve("Error submitting model");
                 }
-                if (result.length === 0 || !result) {
-                    console.error("There is an invalid id or file.");
-                    return resolve("There is an invalid id or file.");
+                if (result.length === 0 || !result || result.affectedRows == 0) {
+                    console.error("There is an invalid id or file. User may not be registered for the competition.");
+                    return resolve("There is an invalid id or file. User may not be registered for the competition.");
                 } else {
                     return resolve(true);
                 }
@@ -724,6 +752,7 @@ async function submitModel(user_id, competition_id, submission_file) {
         });
     } catch (err) {
         console.error("Error submitting model:", err);
+        return false; 
     }
 }
 
@@ -803,6 +832,8 @@ async function checkDeadline(comp_id) {
  * @param {*} submission_file Submisison files path.
  */
 async function validateSubmissionFile(submission_file){
+    
+    
     const extractionPath = './extractedSubmissionFiles';
     if (!fs.existsSync(extractionPath)) {
         fs.mkdirSync(extractionPath);
@@ -1000,6 +1031,44 @@ async function viewLeaderboard(compid){
     });
 
 }
+
+/**
+ * Delete folder contents after each iteration.
+ * @author @deshnadoshi
+ * @param {*} filepath Location of file to delete.
+ */
+function emptyFolder(filepath) {
+    fs.readdir(filepath, (err, files) => {
+        if (err) {
+            console.error('Error reading folder:', err);
+            return;
+        }
+
+        files.forEach(file => {
+            const filePath = path.join(filepath, file);
+
+            fs.stat(filePath, (err, stats) => {
+                if (err) {
+                    console.error('Error getting file stats:', err);
+                    return;
+                }
+
+                if (stats.isFile()) {
+                    fs.unlink(filePath, err => {
+                        if (err) {
+                            console.error('Error deleting file:', err);
+                        }
+                    });
+                }
+                else if (stats.isDirectory()) {
+                    console.log("emptied directory."); 
+                    emptyFolder(filePath);
+                }
+            });
+        });
+    });
+}
+
 
 // Exports
 
