@@ -617,11 +617,7 @@ function countRows(filepath) {
  * @returns 
  */
 async function joinCompetition(user_id, competition_id) {
-<<<<<<< HEAD
     let validUserID = await checkValidUser(user_id); 
-=======
-
->>>>>>> 50d60eb93bde9645ad9b8efe77d35a1b39392764
     const validCompetition = await checkValidCompetition(competition_id, user_id);
     const validUser = await authenticateAccess('competitor', user_id); 
 
@@ -629,7 +625,6 @@ async function joinCompetition(user_id, competition_id) {
         return "Error joining competition: User ID doesn't exist."
     }
 
-<<<<<<< HEAD
     if (validCompetition == null) {
         return "Error joining competition: Invalid competition.";
     }
@@ -669,8 +664,6 @@ async function joinCompetition(user_id, competition_id) {
 
         }
     });
-=======
->>>>>>> 50d60eb93bde9645ad9b8efe77d35a1b39392764
 }
 
 /**
