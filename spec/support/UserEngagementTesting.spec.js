@@ -1,4 +1,4 @@
-@author @nehamurthy
+// Author: Neha Murthy
 const mockDb = {
     query: jasmine.createSpy()
 };
