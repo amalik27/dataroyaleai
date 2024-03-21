@@ -52,9 +52,7 @@ function processRequest(req, res){
             });
 
             req.on('end', async () => {
-                
                 const {userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath} = JSON.parse(body);
-
 
                 if (!userid || !title || !deadline || !prize || !desc || !cap || !metrics || !inputs_outputs || !filepath) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });

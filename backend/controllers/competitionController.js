@@ -50,7 +50,7 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
 
         if (!validateDescription(desc)){
             isValidCompetition = false; 
-            errorMessage += "Title must be within 1000 words. "; 
+            errorMessage += "Description must be within 1000 words. "; 
         }
 
         let organizerCredits = await fetchOrganizerCredits(userid);
@@ -68,15 +68,14 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
             errorMessage += "Deadline must be at least 1 month away. "; 
         }
 
-        if (!isValidCompetition){
-            return errorMessage; 
-        }
-
         if (!metrics || !inputs_outputs){
             isValidCompetition = false; 
             errorMessage += "Missing metrics/inputs/outputs"; 
         }
 
+        if (!isValidCompetition){
+            return `Error creating competition: ${errorMessage}`; 
+        }
 
         if (isValidCompetition){
             try {
@@ -86,12 +85,15 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
                 // Call payments team's function here to deduct the credits
                 return true; 
             } catch (error) {
-                console.error("Error creating competition:", error); 
-                return "Error creating competition"; 
+                return `Error creating competition: ${error}`; 
             }
         } else {
-            return "Invalid entries for competition creation"; 
+            return `Invalid entries for competition creation: ${errorMessage}`; 
         }
+    } else if (!validUser) {
+        return `Error creating competition: Invalid User ID`;
+    } else {
+        return `Error creating competition: User is not an organizer.`;
     }
     
 }
@@ -603,44 +605,53 @@ function countRows(filepath) {
  * @returns 
  */
 async function joinCompetition(user_id, competition_id) {
+    let validUserID = await checkValidUser(user_id); 
     const validCompetition = await checkValidCompetition(competition_id, user_id);
     const validUser = await authenticateAccess('competitor', user_id); 
 
-    if (validCompetition && validUser) {
-        let id = generateCompetitionID(); 
-        const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
-        const params = [competition_id, id, 0, "", user_id]
-        return new Promise((resolve, reject) => {
-            try {
-                db.query(query, params, function(err, result) {
-                    if (err) {
-                        if (err.code === 'ER_DUP_ENTRY'){
-                            return resolve("User has already joined the competition."); 
-                        }
-
-                        return resolve(null); 
-                    }
-                    if (result.length === 0 || !result) {
-                        console.error("User_id is invalid"); 
-                        return resolve(null);
-                    } else {
-                        return resolve(true);
-                    }
-                });
-            } catch (error){
-
-                if (error.code === 'ER_DUP_ENTRY') {
-                    throw new Error("Duplicate entry error"); 
-                } else {
-                    throw new Error("Error in joining competition"); 
-                }
-
-
-            }
-        });
-    } else {
-        console.error("Error finding competition.");
+    if (validUserID == null) {
+        return "Error joining competition: User ID doesn't exist."
     }
+
+    if (validCompetition == null) {
+        return "Error joining competition: Invalid competition.";
+    }
+
+    if (!validUser) {
+        return "Error joining competition: User is not a competitor.";
+    }
+
+    let id = generateCompetitionID(); 
+    const query = "INSERT INTO submissions (comp_id, submission_id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
+    const params = [competition_id, id, 0, "", user_id]
+    return new Promise((resolve, reject) => {
+        try {
+            db.query(query, params, function(err, result) {
+                if (err) {
+                    if (err.code === 'ER_DUP_ENTRY'){
+                        return resolve("User has already joined the competition."); 
+                    }
+                    console.error(err);
+                    return resolve(null); 
+                }
+                if (result.length === 0 || !result) {
+                    console.error("User_id is invalid"); 
+                    return resolve(null);
+                } else {
+                    return resolve(true);
+                }
+            });
+        } catch (error){
+
+            if (error.code === 'ER_DUP_ENTRY') {
+                throw new Error("Duplicate entry error"); 
+            } else {
+                throw new Error("Error in joining competition"); 
+            }
+
+
+        }
+    });
 }
 
 /**
@@ -734,8 +745,9 @@ async function checkValidCompetition(competition_id) {
                     console.error("Error finding competition:", err); 
                     return resolve(null); 
                 }
+                console.log(result);
                 // Selected competition does not exist. 
-                if (result.length === 0 || !result) {
+                if (!result || result.length == 0) {
                     console.error("Competition does not exist."); 
                     return resolve(null); 
                 } else {
@@ -746,7 +758,7 @@ async function checkValidCompetition(competition_id) {
         }); 
     } catch (err) {
         console.error("Error finding competition:", err);
-        return err;
+        return null;
     }
 }
 
@@ -873,8 +885,7 @@ async function authenticateAccess(role, userid){
             return false;
         }
     } catch (error) {
-        console.error('Error in authorizing user:', error);
-        throw error; 
+        return false;
     }
 
 }
