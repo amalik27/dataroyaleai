@@ -32,7 +32,7 @@ function processRequest(req, res){
             });
             req.on('end', async () => {
                 const { credits_purchased, user_id, currency} = await JSON.parse(body);
-                console.log(credits_purchased, user_id, currency)
+                //console.log(credits_purchased, user_id, currency)
                 if(!credits_purchased || !user_id || !currency) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
@@ -61,7 +61,7 @@ function processRequest(req, res){
 
     } else if (pathname === '/payment') { //Payment Endpoint For Exchanging USD for Credits
         if (req.method === 'GET') { //get current status of payment
-            console.log("Checking status of a payment.")
+            //console.log("Checking status of a payment.")
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
@@ -78,7 +78,7 @@ function processRequest(req, res){
                 res.end(JSON.stringify({ success: true, message: status }));
             });
         } else if (req.method === 'POST') { //actually submit the payment
-            console.log("Submitting/Confirming payment.")
+            //console.log("Submitting/Confirming payment.")
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
@@ -99,7 +99,7 @@ function processRequest(req, res){
                 
                 const confirm = await paymentController.confirmPaymentIntent(client_id, payment_method);
                 const status2 = await paymentController.checkStatus(client_id);
-                console.log(status2) //should output "success or something similar"
+                //console.log(status2) //should output "success or something similar"
                 if (!confirm) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Error with submitting purchase' }));

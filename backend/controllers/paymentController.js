@@ -48,7 +48,7 @@ async function confirmPaymentIntent(client_id, payment_method) {
         });
         return paymentIntent;
     } catch (err) {
-        console.log(err)
+        //console.log(err)
         return false
     }
 }
@@ -90,21 +90,24 @@ async function handleSubmit(e) {
     // const clientSecret = new URLSearchParams(window.location.search).get(
     //   "payment_intent_client_secret" //client secret is stored in user's window
     // );
-  
-    if (!client_id) {
-      return "Error with client secret. Please refresh.";
-    }
-    const paymentIntent = await stripe.paymentIntents.retrieve(client_id);
-    console.log(paymentIntent.status);
-    switch (paymentIntent.status) {
-      case "succeeded":
-        return "Payment succeeded!";
-      case "processing":
-        return "Payment is processing.";
-      case "requires_payment_method":
-        return "Payment has not been initiated or was unsuccessful.";
-      default:
-        return "Something went wrong.";
+    try {
+      if (!client_id) {
+        return "Error with client secret. Please refresh.";
+      }
+      const paymentIntent = await stripe.paymentIntents.retrieve(client_id);
+      //console.log(paymentIntent.status);
+      switch (paymentIntent.status) {
+        case "succeeded":
+          return "Payment succeeded!";
+        case "processing":
+          return "Payment is processing.";
+        case "requires_payment_method":
+          return "Payment has not been initiated or was unsuccessful.";
+        default:
+          return "Something went wrong.";
+      }
+    } catch {
+      return false;
     }
   }
 
