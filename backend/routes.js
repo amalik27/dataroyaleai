@@ -24,6 +24,7 @@ function processRequest(req, res){
     YOUR ENDPOINT HERE
     **/
     } else if (pathname === '/stripe_auth') { // endpoint to be called at the very beginning of a payment session to sent up Stripe Auth
+        // Called once per purchase session
         if (req.method === 'POST') {
             let body = '';
             req.on('data', (chunk) => {
@@ -76,7 +77,7 @@ function processRequest(req, res){
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, message: status }));
             });
-        } else if (req.method === 'POST') {
+        } else if (req.method === 'POST') { //actually submit the payment
             console.log("Submitting/Confirming payment.")
             let body = '';
             req.on('data', (chunk) => {
