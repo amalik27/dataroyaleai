@@ -722,7 +722,8 @@ async function submitModel(user_id, competition_id, submission_file) {
             return false;
         }
 
-        if (!validateSubmissionFile(submission_file)) {
+        const containsAllFiles = await validateSubmissionFile(submission_file);
+        if (!(containsAllFiles)) {
             console.error("The submission file is invalid.");
             return false;
         }
@@ -744,7 +745,7 @@ async function submitModel(user_id, competition_id, submission_file) {
                     console.log('API called successfully. Returned data: ', data);
                     if (data['ContainsViruses']) {
                         console.error("The submission file contains viruses.");
-                        resolve(false); 
+                        return resolve(false); 
                     } else {
                         resolve(true); 
                     }
@@ -766,14 +767,16 @@ async function submitModel(user_id, competition_id, submission_file) {
                 }
                 if (result.length === 0 || !result || result.affectedRows == 0) {
                     console.error("There is an invalid id or file. User may not be registered for the competition.");
-                    resolve("There is an invalid id or file. User may not be registered for the competition.");
+                    return resolve("There is an invalid id or file. User may not be registered for the competition.");
                 } else {
-                    resolve(true);
+                    console.log("here1"); // delete later
+                    return resolve(true);
                 }
             });
         });
 
         const databaseUpdateResult = await databaseUpdatePromise;
+        console.log("db update", databaseUpdateResult); 
 
         return databaseUpdateResult;
 
@@ -902,10 +905,78 @@ async function validateWithdrawDeadline(comp_id, user_id){
  * @author @deshnadoshi 
  * @param {*} submission_file Submisison files path.
  */
-async function validateSubmissionFile(submission_file){
+// async function validateSubmissionFile(submission_file){
     
     
+//     const extractionPath = './extractedSubmissionFiles';
+//     if (!fs.existsSync(extractionPath)) {
+//         fs.mkdirSync(extractionPath);
+//     }
+
+//     try {
+//         await fs.createReadStream(submission_file)
+//             .pipe(unzipper.Extract({ path: extractionPath }))
+//             .promise();
+
+//         const files = fs.readdirSync(extractionPath);
+//         const csvFilePath = files.find(file => file === 'dataset.csv');
+//         if (!csvFilePath) {
+//             console.error("No 'dataset.csv' file found.");
+//             return false;
+//         }
+
+//         const allowedExtensions = ['.csv', '.py', '.js', '.dockerfile', '.txt'];
+//         const extraFiles = files.filter(file => {
+//             return !allowedExtensions.includes(file.substr(file.lastIndexOf('.')));
+//         });
+//         if (extraFiles.length > 0) {
+//             console.error("Extra non-code files found:", extraFiles);
+//             return false;
+//         }
+
+//         const referencedFiles = [];
+//         await new Promise((resolve, reject) => {
+//             fs.createReadStream(`${extractionPath}/${csvFilePath}`)
+//                 .pipe(csv())
+//                 .on('data', (row) => {
+//                     for (const key in row) {
+//                         if (row.hasOwnProperty(key)) {
+//                             const filePath = row[key];
+//                             if (!fs.existsSync(filePath)) {
+//                                 console.error(`Invalid file path referenced in dataset.csv: ${filePath}`);
+//                                 return resolve(false);
+//                             }
+//                             referencedFiles.push(filePath);
+//                         }
+//                     }
+//                 })
+//                 .on('end', () => {
+//                     resolve(true);
+//                 });
+//         });
+
+
+//         await new Promise((resolve, reject) => {
+//             const dockerfile = files.find(file => file.toLowerCase().includes('dockerfile'));
+
+//         if (!dockerfile) {
+//             console.error("No 'Dockerfile' found.");
+//             return resolve("No 'dockerfile' found.");
+//         } else {
+//             console.log("here"); // delete later
+//             return resolve(true);
+//         }
+    
+//         });
+//     } catch (error) {
+//         console.error("Error validating submission files:", error);
+//         return false;
+//     }
+
+// }
+async function validateSubmissionFile(submission_file) {
     const extractionPath = './extractedSubmissionFiles';
+
     if (!fs.existsSync(extractionPath)) {
         fs.mkdirSync(extractionPath);
     }
@@ -917,6 +988,7 @@ async function validateSubmissionFile(submission_file){
 
         const files = fs.readdirSync(extractionPath);
         const csvFilePath = files.find(file => file === 'dataset.csv');
+
         if (!csvFilePath) {
             console.error("No 'dataset.csv' file found.");
             return false;
@@ -926,14 +998,16 @@ async function validateSubmissionFile(submission_file){
         const extraFiles = files.filter(file => {
             return !allowedExtensions.includes(file.substr(file.lastIndexOf('.')));
         });
+
         if (extraFiles.length > 0) {
             console.error("Extra non-code files found:", extraFiles);
             return false;
         }
 
         const referencedFiles = [];
+
         await new Promise((resolve, reject) => {
-            fs.createReadStream(`${extractionPath}/${csvFilePath}`)
+            const csvParser = fs.createReadStream(`${extractionPath}/${csvFilePath}`)
                 .pipe(csv())
                 .on('data', (row) => {
                     for (const key in row) {
@@ -941,6 +1015,7 @@ async function validateSubmissionFile(submission_file){
                             const filePath = row[key];
                             if (!fs.existsSync(filePath)) {
                                 console.error(`Invalid file path referenced in dataset.csv: ${filePath}`);
+                                csvParser.close();
                                 return resolve(false);
                             }
                             referencedFiles.push(filePath);
@@ -949,22 +1024,27 @@ async function validateSubmissionFile(submission_file){
                 })
                 .on('end', () => {
                     resolve(true);
+                })
+                .on('error', (error) => {
+                    reject(error);
                 });
         });
 
         const dockerfile = files.find(file => file.toLowerCase().includes('dockerfile'));
+
         if (!dockerfile) {
             console.error("No 'Dockerfile' found.");
             return false;
         }
 
+        console.log("Validation successful.");
         return true;
     } catch (error) {
         console.error("Error validating submission files:", error);
         return false;
     }
-
 }
+
 
 // Manage Competition (Main Functions)
 
@@ -1077,7 +1157,7 @@ async function viewLeaderboard(compid){
 
         try {
             
-            const queryStr = `SELECT * FROM submissions WHERE comp_id = ?`;
+            const queryStr = `SELECT * FROM submissions WHERE comp_id = ? ORDER BY score DESC`;
     
             db.query(queryStr, [compid], (err, leaderboard) => {
                 if (err) {

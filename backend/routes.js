@@ -71,7 +71,7 @@ function processRequest(req, res){
     
                     }
                 } catch (error){
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: error }));
                 }
             });
@@ -101,7 +101,7 @@ function processRequest(req, res){
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true, message: "Competition updated." }));
                 } catch (error) {
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: error }));
 
                 }
@@ -140,7 +140,7 @@ function processRequest(req, res){
     
                     }
                 } catch (error){
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: error }));
                 }
             });
@@ -172,12 +172,12 @@ function processRequest(req, res){
                         res.end(JSON.stringify({ success: true, message: "Model submitted." }));
                     } else {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: false, message: submitResult }));
+                        res.end(JSON.stringify({ success: false, message: "Please check your submission." }));
     
                     }
 
                 } catch (error) {
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: submitResult }));
 
                 }
@@ -216,7 +216,7 @@ function processRequest(req, res){
     
                     }
                 } catch (error){
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: error }));
                 }
             });
@@ -238,7 +238,7 @@ function processRequest(req, res){
 
                 if (!allJoined || allJoined.length == 0) {
                     res.writeHead(404, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Joined competitions not found' }));
+                    res.end(JSON.stringify({ success: false, message: 'Competition does not exist/Nobody has joined this competition.' }));
                     return;
                 }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
