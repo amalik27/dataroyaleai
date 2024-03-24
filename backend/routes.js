@@ -1,3 +1,8 @@
+/**
+ * @Author: Nikita Filippov <nikfilippov1@gmail.com>
+ * @Description: Module for handling HTTP requests and routing them to corresponding controllers.
+ */
+
 const url = require('url');
 const fs = require('fs');
 const path = require('path');

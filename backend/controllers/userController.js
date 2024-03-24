@@ -1,3 +1,8 @@
+/**
+ * @Author: Nikita Filippov <nikfilippov1@gmail.com>
+ * @Description: Module containing functions for user management and authentication in a MySQL database.
+ */
+
 const db = require("../db");
 const passwordUtils = require('../utils/passwordUtils');
 var zxcvbn = require('zxcvbn');
@@ -307,7 +312,7 @@ module.exports = {
     registerUser,
     loginUser,
     generatePasswordTokenReset, 
-     generateRandomString,
+    generateRandomString,
     resetPassword, 
     generatePasswordTokenReset,
     readUserByEmail, 

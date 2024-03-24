@@ -1,3 +1,8 @@
+/**
+ * @Author: Nikita Filippov <nikfilippov1@gmail.com>
+ * @Description: Module containing functions related to course management and user progress tracking in a learning management system.
+ */
+
 const db = require('../db');
 const fs = require('fs').promises;
 const { JSDOM } = require('jsdom');
