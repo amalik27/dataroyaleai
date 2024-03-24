@@ -1,5 +1,5 @@
 const supertest = require("supertest");
-const server = require("../server.js/");
+const server = require("./backend/server.js");
 const request = supertest(server);
 
 afterAll(() => {
@@ -17,7 +17,7 @@ describe("Competition Creation Testing", () => {
             desc: "A sample Competition",
             cap: 120,
             inputs_outputs: { inputs: ["id", "images"], outputs: ["name"] },
-            filepath: "./backend/controllers/goodcat.zip"
+            filepath: "./spec/support/goodcat.zip"
         };
         const expected = { success: true, message: "Competition created successfully." };
         const response = await request.post("/competitions/create")
@@ -36,7 +36,7 @@ describe("Competition Creation Testing", () => {
             desc: "A competition that doesn't work",
             cap: 100,
             inputs_outputs: { inputs: ["id", "images"], outputs: ["name"] },
-            filepath: "./backend/controllers/goodcat.zip"
+            filepath: "./spec/support/goodcat.zip"
         };
         const testDataJSON = JSON.stringify(testData);
         const expected = { success: false, message: 'Error creating competition: Invalid User ID' };
@@ -54,7 +54,7 @@ describe("Competition Creation Testing", () => {
             desc: "A competition that doesn't work",
             cap: 100,
             inputs_outputs: { inputs: ["id", "images"], outputs: ["name"] },
-            filepath: "./backend/controllers/goodcat.zip"
+            filepath: "./spec/support/goodcat.zip"
         };
         const testDataJSON = JSON.stringify(testData);
         const expected = { success: false, message: 'Error creating competition: User is not an organizer.' };
@@ -72,7 +72,7 @@ describe("Competition Creation Testing", () => {
             desc: "A competition that doesn't work",
             cap: 100,
             inputs_outputs: { inputs: ["id", "images"], outputs: ["name"] },
-            filepath: "./backend/controllers/goodcat.zip"
+            filepath: "./spec/support/goodcat.zip"
         };
         const testDataJSON = JSON.stringify(testData);
         const expected = { success: false, message: 'Error creating competition: Title must be within 60 characters. ' };
@@ -90,7 +90,7 @@ describe("Competition Creation Testing", () => {
             desc: "A competition that doesn't work",
             cap: 100,
             inputs_outputs: { inputs: ["id", "images"], outputs: ["name"] },
-            filepath: "./backend/controllers/goodcat.zip"
+            filepath: "./spec/support/goodcat.zip"
         };
         const testDataJSON = JSON.stringify(testData);
         const expected = { success: false, message: 'Error creating competition: Prize must not exceed available credits. ' };
@@ -108,7 +108,7 @@ describe("Competition Creation Testing", () => {
             desc: "A competition that doesn't work",
             cap: 100,
             inputs_outputs: { inputs: ["id", "images"], outputs: ["name"] },
-            filepath: "./backend/controllers/goodcat.zip"
+            filepath: "./spec/support/goodcat.zip"
         };
         const testDataJSON = JSON.stringify(testData);
         const expected = { success: false, message: 'Error creating competition: Deadline must be at least 1 month away. ' };
@@ -126,7 +126,7 @@ describe("Competition Creation Testing", () => {
             desc: "A competition that doesn't work",
             cap: 600,
             inputs_outputs: { inputs: ["id", "images"], outputs: ["name"] },
-            filepath: "./backend/controllers/goodcat.zip"
+            filepath: "./spec/support/goodcat.zip"
         };
         const testDataJSON = JSON.stringify(testData);
         const expected = { success: false, message: 'Error creating competition: Player capacity must not exceed 500. ' };
@@ -143,7 +143,7 @@ describe("Competition Creation Testing", () => {
             desc: "A competition that doesn't work",
             cap: 200,
             inputs_outputs: { inputs: ["id", "images"], outputs: ["name"] },
-            filepath: "./backend/controllers/goodcat.zip"
+            filepath: "./spec/support/goodcat.zip"
         };
         const testDataJSON = JSON.stringify(testData);
         const expected = { success: false, message: 'Bad Request: Missing competition fields in JSON body' };
@@ -161,7 +161,7 @@ describe("Competition Creation Testing", () => {
             desc: "A competition that doesn't work",
             cap: 100,
             inputs_outputs: { inputs: ["id", "images"], outputs: ["name"] },
-            filepath: "./backend/controllers/badcat.zip"
+            filepath: "./spec/support/badcat.zip"
         };
         const testDataJSON = JSON.stringify(testData);
         const expected = { success: false, message: 'Error creating competition: Check competition datasets. ' };
