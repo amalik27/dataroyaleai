@@ -672,6 +672,8 @@ async function joinCompetition(user_id, competition_id) {
  * @returns 
  */
 async function leaveCompetition(user_id, competition_id) {
+    const isValid = await validateWithdrawalCredits(user_id, 1);
+
     const query = "DELETE FROM submissions WHERE comp_id = ? AND user_id = ?";
     const params = [competition_id, user_id]
     try {
@@ -850,6 +852,49 @@ async function checkDeadline(comp_id) {
     }
 }
 
+/**
+ * Withdraw credits if a user attempts to leave with 1 month left to the competition deadline. 
+ * @author @deshnadoshi
+ * @param {*} comp_id competition ID. 
+ * @param {*} user_id user ID. 
+
+ */
+async function validateWithdrawDeadline(comp_id, user_id){
+    let today = new Date(); 
+    let oneMonthFromNow = new Date();
+    oneMonthFromNow.setMonth(today.getMonth() + 1);
+
+    const query = "SELECT deadline FROM competitions WHERE id = ?";
+    const params = [comp_id];
+    try {
+        return new Promise((resolve, reject) => {
+            db.query(query, params, function(err, result) {
+                if (err) {
+                    console.error("Error finding competition:", err); 
+                    return resolve(null); 
+                }
+                // Selected competition does not exist. 
+                if (result.length === 0 || !result) {
+                    console.error("Competition does not exist."); 
+                    return resolve(null); 
+                } else {
+                    
+                    let competitionDeadline = new Date(result[0].deadline);
+                    if (competitionDeadline.getTime() === oneMonthFromNow.getTime()) {
+                        subtractCredits(user_id, 1);
+                    }
+                    return resolve(true);
+
+                }
+            }); 
+        });
+    } catch (err) {
+        console.error("Error finding competition:", err);
+        return err;
+    }
+
+
+}
 
 // Join Competition (Helper Functions)
 
