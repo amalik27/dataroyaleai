@@ -7,9 +7,12 @@ const db = require('../db');
 const fs = require('fs');
 const unzipper = require('unzipper');
 const csv = require('csv-parser');
+const path = require('path');
+const defaultClient = require('cloudmersive-virus-api-client');
+
 const { readUserById } = require('./userController');
 const { addCredits, subtractCredits } = require('./paymentController');
-const path = require('path');
+
 
 
 // Create Competition (Main Functions)
@@ -604,11 +607,6 @@ function countRows(filepath) {
 
 
 
-
-
-
-
-
 // Participate in Competition (Main Functions)
 /**
  * @author Haejin Song
@@ -634,7 +632,7 @@ async function joinCompetition(user_id, competition_id) {
     }
 
     let id = generateCompetitionID(); 
-    const query = "INSERT INTO submissions (comp_id, submission_id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
+    const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
     const params = [competition_id, id, 0, "", user_id]
     return new Promise((resolve, reject) => {
         try {
@@ -699,55 +697,91 @@ async function leaveCompetition(user_id, competition_id) {
 
 /**
  * Submitting model to submissions database
- * @author Haejin Song
+ * @author Haejin Song @deshnadoshi
  * @param {*} user_id 
  * @param {*} competition_id 
  * @param {*} submission_file 
  */
 async function submitModel(user_id, competition_id, submission_file) {
-    if (!fs.existsSync(submission_file)) {
-        console.error(`File "${submission_file}" does not exist.`);
-        return "File does not exist";
-    }
-
-    let emptyResult = emptyFolder("./extractedSubmissionFiles"); 
-
-
-    let current_date = new Date(); 
-    
-    const query = "UPDATE submissions SET file_path = ? WHERE user_id = ? AND comp_id = ?";
-    const params = [submission_file, user_id, competition_id];
-    // assuming these are valid dates that can be compared, can be changed if not
-    if (checkDeadline(competition_id) > current_date) {
-        console.error("The deadline has passed.");
-        return false;
-    }
-    if (!validateSubmissionFile(submission_file)){
-        console.error("The submission file is invalid."); 
-        return false; 
-
-    }
-
     try {
-        return new Promise((resolve, reject) => {
-            db.query(query, params, function(err, result) {
-                if (err) {
-                    console.error("Error submitting model:", err);
-                    return resolve("Error submitting model");
-                }
-                if (result.length === 0 || !result || result.affectedRows == 0) {
-                    console.error("There is an invalid id or file. User may not be registered for the competition.");
-                    return resolve("There is an invalid id or file. User may not be registered for the competition.");
+        if (!fs.existsSync(submission_file)) {
+            console.error(`File "${submission_file}" does not exist.`);
+            return "File does not exist";
+        }
+
+        let emptyResult = emptyFolder("./extractedSubmissionFiles");
+        let current_date = new Date();
+
+        const query = "UPDATE submissions SET file_path = ? WHERE user_id = ? AND comp_id = ?";
+        const params = [submission_file, user_id, competition_id];
+
+        // Assuming these are valid dates that can be compared, can be changed if not
+        if (checkDeadline(competition_id) > current_date) {
+            console.error("The deadline has passed.");
+            return false;
+        }
+
+        if (!validateSubmissionFile(submission_file)) {
+            console.error("The submission file is invalid.");
+            return false;
+        }
+
+        
+        const virusScanApiClient = defaultClient.ApiClient.instance;
+        const apiInstance = new defaultClient.ScanApi();
+        const apiKey = virusScanApiClient.authentications['Apikey'];
+        apiKey.apiKey = 'a387af42-5160-46d1-ac1a-480f2938c964';
+
+        const file = fs.readFileSync(submission_file);
+
+        const scanFilePromise = new Promise((resolve, reject) => {
+            apiInstance.scanFile(file, (error, data, response) => {
+                if (error) {
+                    console.error('Error:', error);
+                    reject(error);
                 } else {
-                    return resolve(true);
+                    console.log('API called successfully. Returned data: ', data);
+                    if (data['ContainsViruses']) {
+                        console.error("The submission file contains viruses.");
+                        resolve(false); 
+                    } else {
+                        resolve(true); 
+                    }
                 }
             });
         });
+
+        const malwareScanResult = await scanFilePromise;
+
+        if (malwareScanResult === false) {
+            return false;
+        }
+
+        const databaseUpdatePromise = new Promise((resolve, reject) => {
+            db.query(query, params, (err, result) => {
+                if (err) {
+                    console.error("Error submitting model:", err);
+                    reject(err);
+                }
+                if (result.length === 0 || !result || result.affectedRows == 0) {
+                    console.error("There is an invalid id or file. User may not be registered for the competition.");
+                    resolve("There is an invalid id or file. User may not be registered for the competition.");
+                } else {
+                    resolve(true);
+                }
+            });
+        });
+
+        const databaseUpdateResult = await databaseUpdatePromise;
+
+        return databaseUpdateResult;
+
     } catch (err) {
         console.error("Error submitting model:", err);
-        return false; 
+        return false;
     }
 }
+
 
 // Participate in Competition (Validation Functions)
 /**
