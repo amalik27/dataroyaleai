@@ -672,7 +672,6 @@ async function joinCompetition(user_id, competition_id) {
  * @returns 
  */
 async function leaveCompetition(user_id, competition_id) {
-    const isValid = await validateWithdrawalCredits(user_id, 1);
 
     const query = "DELETE FROM submissions WHERE comp_id = ? AND user_id = ?";
     const params = [competition_id, user_id]
