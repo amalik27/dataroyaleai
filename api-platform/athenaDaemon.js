@@ -3,15 +3,21 @@ const csv = require('csv-parser');
 const fs = require('fs');
 const chalk = require('chalk');
 const { default: container } = require("node-docker-api/lib/container");
+const shell = require('shelljs');
+const EventEmitter = require('events')
 
 class AthenaDaemon extends PlatformDaemon {
     constructor( port, maxCPU, maxMemory, processID, maxUptime) {
         super( port, maxCPU, maxMemory, processID, maxUptime,0,"Athena");
+        this.dataRecording = false;
+        this.eventEmitter = new EventEmitter();
     }
 
     async evaluateModel(filePath, containerID, columnNamesX, columnNamesY, metric) {
         const results = [];
         const readStream = fs.createReadStream(filePath);
+        this.dataRecording = true;
+        this.eventEmitter.emit('dataRecordingStarted')
     
         const readCSV = new Promise((resolve, reject) => {
             readStream
@@ -41,8 +47,23 @@ class AthenaDaemon extends PlatformDaemon {
                 }
             });
         });
-    
+        this.dataRecording = false;
+        this.eventEmitter.emit('dataRecordingStopped');
         return score; // Return the awaited score from the promise
+    }
+    async getContainerStats(containerID) {
+        let command = `docker stats --no-stream --format "{{.CPUPerc}} {{.MemUsage}}" ${containerID}`;
+        let output = shell.exec(command, { silent: true });
+        if (output.code !== 0) {
+            console.error('Error executing docker stats command:', output.stderr);
+            return null;
+        }
+
+        let stats = output.stdout.split(' ');
+        let cpuUsage = stats[0];
+        let memoryUsage = stats[1];
+        console.log(`CPU Usage: ${cpuUsage}, Memory Usage: ${memoryUsage}`);
+        return { cpuUsage, memoryUsage };
     }
     
 
@@ -160,3 +181,4 @@ class AthenaDaemon extends PlatformDaemon {
 }
 
 module.exports = AthenaDaemon;
+
