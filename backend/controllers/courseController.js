@@ -148,6 +148,16 @@ async function retrieveCourseMetadata() {
     }
     return courseMetadata;
 }
+// Function to getCourseDetailsByCourseID
+async function getCourseDetailsById(course_id) {
+    try {
+        const courseDetails = await db.query('SELECT * FROM courses WHERE id = ?', [course_id]);
+        return courseDetails;
+    } catch (error) {
+        console.error('Error fetching course details:', error);
+        throw error;
+    }
+}
 
 module.exports = {
     readAllCoursesThatUserCanBuyOrAccessByApiToken,
@@ -155,5 +165,6 @@ module.exports = {
     createCourseProgress,
     updateCourseProgress,
     openCourse,
-    getDefaultPage
+    getDefaultPage,
+    getCourseDetailsById
 };
