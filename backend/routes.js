@@ -1,8 +1,14 @@
+/**
+ * @Author: Nikita Filippov <nikfilippov1@gmail.com>
+ * @Description: Module for handling HTTP requests and routing them to corresponding controllers.
+ */
+
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
 const userController = require('./controllers/userController');
 const courseController = require('./controllers/courseController');
+const paymentController = require('./controllers/paymentController')
 
 function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
@@ -14,7 +20,7 @@ function processRequest(req, res){
         res.writeHead(statusCode, { 'Content-Type': contentType });
         res.end(data);
     };
-  
+
     const sendErrorResponse = (statusCode, message) => {
         sendResponse(statusCode, 'application/json', JSON.stringify({ success: false, error: message }));
     };
