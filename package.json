@@ -15,8 +15,17 @@
     "unzipper": "^0.10.14"
   },
   "dependencies": {
+    "@enzoic/enzoic": "^3.0.0",
+    "axios": "^1.6.8",
+    "bcrypt": "^5.1.1",
+    "express": "^4.18.3",
     "http": "^0.0.1-security",
+    "jsdom": "^24.0.0",
     "mysql": "^2.18.1",
-    "url": "^0.11.3"
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-oauth2": "^1.8.0",
+    "url": "^0.11.3",
+    "zxcvbn": "^4.4.2"
   }
 }

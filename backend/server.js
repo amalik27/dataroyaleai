@@ -1,3 +1,8 @@
+/**
+ * @Author: Nikita Filippov <nikfilippov1@gmail.com>
+ * @Description: Module containing server creation service
+ */
+
 const http = require('http');
 const routes = require('./routes');
 

@@ -1,3 +1,8 @@
+/**
+ * @Author: Nikita Filippov <nikfilippov1@gmail.com>
+ * @Description: Module for establishing connection to MySQL database
+ */
+
 const mysql = require('mysql');
 
 const connection = mysql.createConnection({
