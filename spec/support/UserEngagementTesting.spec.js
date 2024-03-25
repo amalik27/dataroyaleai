@@ -1,3 +1,7 @@
+/**
+ * @Author: Neha Murthy <nehamurthy21@gmail.com>
+ * @Description: Wrote unit test cases to test functions
+ */
 const mockDb = {
     query: jasmine.createSpy()
 };
