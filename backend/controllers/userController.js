@@ -162,7 +162,10 @@ async function readUserByApiToken(api_token) {
         });
     }); 
 }
-
+/**
+ * @Author: Neha Murthy <nehamurthy21@gmail.com>
+ * @Description:
+ */
 // Function to retrieve a user by their email.
 async function readUserByEmail (email){
     const sql = 'SELECT * FROM users WHERE email = ?';
