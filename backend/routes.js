@@ -41,6 +41,41 @@ function processRequest(req, res){
     /** 
     YOUR ENDPOINT HERE
     **/
+    } else if (pathname === '/stripe_auth') { // endpoint to be called at the very beginning of a payment session to sent up Stripe Auth
+        // Called once per purchase session
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const { credits_purchased, user_id, currency} = await JSON.parse(body);
+                //console.log(credits_purchased, user_id, currency)
+                if(!credits_purchased || !user_id || !currency) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
+                    return;
+                }
+                let isValid = await paymentController.checkPurchase(credits_purchased)
+                if (!isValid) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Invalid Credit Amount' }));
+                    return;
+                }
+                let payment_intent = await paymentController.createPaymentIntent(credits_purchased, user_id, currency);
+                if (!payment_intent) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Error creating payment intent' }));
+                    return;
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: payment_intent.id})); //store in user window or in cookies
+            });
+        
+        } else {
+            res.writeHead(405, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
+        }
 
     } else if (pathname === '/competitions/create'){ // Competitions Endpoint
         if (req.method === 'GET'){
@@ -266,9 +301,63 @@ function processRequest(req, res){
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, message: allJoined }));
             });
+        }
 
 
 
+    } else if (pathname === '/payment') { //Payment Endpoint For Exchanging USD for Credits
+        if (req.method === 'GET') { //get current status of payment
+            //console.log("Checking status of a payment.")
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const {client_id} = await JSON.parse(body);
+                const status = await paymentController.checkStatus(client_id);
+                if (!status) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Server error with checking status' }));
+                    return;
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: status }));
+            });
+        } else if (req.method === 'POST') { //actually submit the payment
+            //console.log("Submitting/Confirming payment.")
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const {client_id, payment_method} = await JSON.parse(body);
+                const status = await paymentController.checkStatus(client_id);
+                if (!status) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Server error with checking status' }));
+                    return;
+                } else if (status === "processing") { //currently in payment processing mode
+                    console.log("Can't do that!")
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Currently involved in payment process'}));
+                    return;
+                }
+                
+                const confirm = await paymentController.confirmPaymentIntent(client_id, payment_method);
+                const status2 = await paymentController.checkStatus(client_id);
+                //console.log(status2) //should output "success or something similar"
+                if (!confirm) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Error with submitting purchase' }));
+                    return;
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: confirm }));
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
     } else if (pathname === '/users') { //Users Endpoint
         if (req.method === 'GET') {
