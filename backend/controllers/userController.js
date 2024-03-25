@@ -1,3 +1,9 @@
+/**
+ * @Author: Nikita Filippov <nikfilippov1@gmail.com>
+ * @Description: Module containing functions for user management and authentication in a MySQL database.
+ * @Author: Neha Murthy <nnm53@scarletmail.rutgers.edu>
+ * @Description: Functions (readUserByEmail, updateUserById, deleteUserById,generateRandomString,generatePasswordTokenReset, resetPassword, updateEmail, isValidEmail) 
+ */
 const db = require("../db");
 const passwordUtils = require('../utils/passwordUtils');
 var zxcvbn = require('zxcvbn');
@@ -156,6 +162,38 @@ async function readUserByApiToken(api_token) {
             resolve(user);
         });
     }); 
+}
+
+// Function to retrieve a user by their email.
+async function readUserByEmail (email){
+    const sql = 'SELECT * FROM users WHERE email = ?';
+    return new Promise ((resolve, reject) =>{
+        db.query (sql, email, function (err, result, fields){
+            if (err){
+                console.error ("There was an error getting the user by their email: ", err);
+                return reject (err);
+                    }
+            if (!result || result.length ===0){
+                const error = new error ("User with this email is not found");
+                console.error (error.message);
+                return reject (error);
+            }
+            const output = Object.values (JSON.parse (JSON.stringify (result [0])));
+            const user = {
+                id: output[0],
+                username: output[1],
+                email: output[2],
+                salt: output[3],
+                password_encrypted: output[4],
+                role: output[5],
+                tier: output[6],
+                credits: output[7],
+                reg_date: output[8],
+                api_token: output[9]
+            };
+            resolve (user);
+        });
+    });
 }
 
 // Function to retrieve a user by their email.

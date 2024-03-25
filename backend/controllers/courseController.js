@@ -1,3 +1,10 @@
+/**
+ * @Author: Nikita Filippov <nikfilippov1@gmail.com>
+ * @Description: Module containing functions related to course management and user progress tracking in a learning management system.
+ * @Author: Neha Murthy <nnm53@scarletmail.rutgers.edu>
+ * @Description: Functions (getCourseDetailsById, markCourseCompletion)
+ */
+
 const db = require('../db');
 const fs = require('fs').promises;
 const { JSDOM } = require('jsdom');
@@ -148,6 +155,26 @@ async function retrieveCourseMetadata() {
     }
     return courseMetadata;
 }
+// Function to get course details by course id
+async function getCourseDetailsById(course_id) {
+    try {
+        const courseDetails = await db.query('SELECT * FROM courses WHERE id = ?', [course_id]);
+        return courseDetails;
+    } catch (error) {
+        console.error('Error fetching course details:', error);
+        throw error;
+    }
+}
+//Function to mark course completed
+async function markCourseCompletion(api_token, course_id) {
+    try {
+        const sql = `UPDATE course_progress SET is_completed = true WHERE api_token = ? AND course_id = ?`;
+        await db.query(sql, [api_token, course_id]);
+    } catch (error) {
+        console.error('Error marking course completion:', error);
+        throw error;
+    }
+}
 
 module.exports = {
     readAllCoursesThatUserCanBuyOrAccessByApiToken,
@@ -155,5 +182,7 @@ module.exports = {
     createCourseProgress,
     updateCourseProgress,
     openCourse,
-    getDefaultPage
+    getDefaultPage,
+    getCourseDetailsById,
+    markCourseCompletion
 };
