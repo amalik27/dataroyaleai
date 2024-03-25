@@ -6,11 +6,13 @@
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
+const { get } = require('http');
 const userController = require('./controllers/userController');
 const competitionController = require('./controllers/competitionController'); 
-const { get } = require('http');
 const courseController = require('./controllers/courseController');
-const paymentController = require('./controllers/paymentController')
+const paymentController = require('./controllers/paymentController');
+const subscriptionController = require('./controllers/subscriptionController');
+const { parse } = require('querystring');
 
 function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
@@ -454,7 +456,47 @@ function processRequest(req, res){
                 res.end(JSON.stringify({ success: true }));
             });
         }
-    } else {
+    } 
+    else if (pathname.includes("/subscription")){
+        const supportedContentTypes = {'application/json': JSON.parse, 'text/plain': parse};
+        if (req.method === 'POST' || req.method === 'GET' || req.method === 'PATCH') {
+            const contentType = req.headers['content-type'];
+            if (!contentType) {
+              res.writeHead(400, { 'Content-Type': 'text/plain' });
+              return res.end('Content-Type header is required');
+            }
+            if (!supportedContentTypes[contentType]) {
+              res.writeHead(415, { 'Content-Type': 'text/plain' });
+              return res.end(`Unsupported Content-Type. Supported types: ${Object.keys(supportedContentTypes).join(', ')}`);
+            }
+            let body = '';
+            req.on('data', (chunk) => {
+              body += chunk.toString();        
+            });
+        
+            req.on('end', async () => {
+              try {
+                let parsedBody;
+                if (contentType === 'application/json') {
+                  parsedBody = JSON.parse(body);
+                } else if (contentType === 'text/plain') {
+                  parsedBody = body;
+                }
+                var output = await subscriptionController.selectOption(body, req, res);
+                res.writeHead(200, { 'Content-Type': contentType });
+                res.end(output);
+              } catch (error) {
+                console.error(error);
+                res.writeHead(400, { 'Content-Type': 'text/plain' });
+                res.end('Error parsing the request body');
+              }
+            });
+          } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('Method Not Allowed');
+          }
+    } 
+    else {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, message: 'Endpoint Not Found' }));
     }    
