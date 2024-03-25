@@ -1,3 +1,9 @@
+/**
+ * @Author: Nikita Filippov <nikfilippov1@gmail.com>
+ * @Description: Module containing functions for user management and authentication in a MySQL database.
+ * @Author: Neha Murthy <nehamurthy21@gmail.com>
+ * @Description: Functions (readUserByEmail, updateUserById, deleteUserById,generateRandomString,generatePasswordTokenReset, resetPassword, updateEmail, isValidEmail) 
+ */
 const db = require("../db");
 const passwordUtils = require('../utils/passwordUtils');
 var zxcvbn = require('zxcvbn');
