@@ -1,5 +1,5 @@
 /**
- * @Author: Neha Murthy <nehamurthy21@gmail.com>
+ * @Author: Neha Murthy <nnm53@scarletmail.rutgers.edu>
  * @Description: Tested 19 unit test cases to validate functions in userController.js and passwordUtils.js
  */
 const mockDb = {
