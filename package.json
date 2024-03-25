@@ -5,10 +5,14 @@
   "main": "server.js",
   "scripts": {
     "server": "node backend/server.js",
-    "test": "jasmine"
+    "test": "jest"
   },
   "devDependencies": {
-    "jasmine": "5.1.0"
+    "csv-parser": "^3.0.0",
+    "jasmine": "5.1.0",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4",
+    "unzipper": "^0.10.14"
   },
   "dependencies": {
     "http": "^0.0.1-security",
