@@ -1,4 +1,7 @@
-//Author: Neha Murthy
+/**
+ * @Author: Neha Murthy <nehamurthy21@gmail.com>
+ * @Description: Tested 19 unit test cases to validate functions in userController.js and passwordUtils.js
+ */
 const mockDb = {
     query: jasmine.createSpy()
 };
