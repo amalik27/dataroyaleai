@@ -34,7 +34,9 @@ async function registerUser(username, email, password, role){
         throw new Error("Weak password");
     }
     const salt = generateRandomString(16);
-    const password_encrypted = passwordUtils.encrypt(password, salt);
+    // const password_encrypted = passwordUtils.encrypt(password, salt);
+    const password_encrypted = '12345';
+    
     const credits = 50;
     const tier = 1;
     const currentDate = new Date();

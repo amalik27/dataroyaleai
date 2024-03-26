@@ -1,16 +1,18 @@
 const AthenaDaemon = require('./athenaDaemon');
 const { PlatformDaemonManager, DaemonNotFoundError, DatabaseSystem, GuaranteeResourceAllocationError } = require('./platformManager');
 const chalk = require('chalk');
-
+const util = require('util');
+const db = require('../backend/db.js')
+const mysql = require('mysql');
 //Inherit from PrometheusManager
 class AthenaManager extends PlatformDaemonManager {
     constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier) {
-        super(maxCPU, maxMemory, portsAllowed, blocksPerTier, "Athena")
-        this.databaseSystem = new AthenaDatabaseSystem();
+        super(maxCPU, maxMemory, portsAllowed, blocksPerTier, "Athena", new AthenaDatabaseSystem());
+        
     }
     startMonitoring(intervalTime) {
         if (!this.interval) {
-          this.interval = setInterval(() => {
+          this.interval = setInterval(async () => {
             if (this.messageQueue.length!=0) {
                 //MAKE SURE TO DQ MESSAGE IF WE ACT ON IT
                 
@@ -18,7 +20,7 @@ class AthenaManager extends PlatformDaemonManager {
                 
                 if(message.type === "START"){
                     try{
-                        this.spawnNewDaemon(message.body);
+                        await this.spawnNewDaemon(message.body);
                          //Dequeue if prior succeeeds
                         this.messageQueue.shift();
                         message.status = "SUCCESS";
@@ -36,13 +38,13 @@ class AthenaManager extends PlatformDaemonManager {
                     
                 } else if(message.type === "EVALUATE"){
                     try{
-                    this.initializeContainer(message.body.processID,message.body);
+                    await this.initializeContainer(message.body.processID,message.body);
                     //Create body mapper....somehow
 
                     
 
 
-                    this.evaluateModel(message.body.processID, message.body.competitionID,this.databaseSystem.getCompetitionDataset(message.body.competitionID), message.body.containerID, message.body.inputs, message.body.outputs, message.body.metric);
+                    await this.evaluateModel(message.body.processID, message.body.competitionID,await this.database.getCompetitionDataset(message.body.competitionID), message.body.containerID, message.body.inputs, message.body.outputs, message.body.metric);
 
                     this.messageQueue.shift();
                     message.status = "SUCCESS";
@@ -86,7 +88,7 @@ class AthenaManager extends PlatformDaemonManager {
      * @param {string} container - The container to be initialized.
      * @throws {DaemonNotFoundError} If no daemon is found with the specified process ID.
      */
-     initializeContainer(processID,container) {
+     async initializeContainer(processID,container) {
         // Logic to start a process on a daemon
         if (this.daemons.get(processID)) {
             //Always set container specs to maximum for daemon
@@ -94,7 +96,7 @@ class AthenaManager extends PlatformDaemonManager {
             container.cpu = daemon.containerStack.getMaxCPU();
             container.memory = daemon.containerStack.getMaxMemory();
             //Get user submission from database
-            let userSubmission = this.databaseSystem.getUserSubmissions(container.competitionID, container.userID);
+            let userSubmission = await this.database.getUserSubmissions(container.competitionID, container.userID);
             container.model = userSubmission;
             this.daemons.get(processID).initializeContainer(container);
         } else {
@@ -103,7 +105,7 @@ class AthenaManager extends PlatformDaemonManager {
      }
 
     //New method for initializing container and immediately beginning evaluation
-    async evaluateModel(processID, competitionID, filePath, containerID, columnNameX, columnNameY, metric) {
+    async evaluateModel(processID, competitionID, filePath, containerID, columnNameX, columnNameY) {
         // Check if the daemon exists
         if (!this.daemons.has(processID)) {
             throw new DaemonNotFoundError(`Daemon ${processID} does not exist`);
@@ -111,14 +113,13 @@ class AthenaManager extends PlatformDaemonManager {
     
         // Get reference to the daemon
         const daemon = this.daemons.get(processID);
-        
         // Begin inferences and wait for the score
-        const {score, AstatsData} = await daemon.evaluateModel(filePath, containerID, columnNameX, columnNameY, metric).then(score => {
+        const {score, AstatsData} = await daemon.evaluateModel(filePath, containerID, columnNameX, columnNameY).then(score => {
             // Log the score
             console.log(`Score for ${processID}: ${score.score}`);
             
             // Add score to leaderboard
-            this.databaseSystem.addScoreToLeaderboard(competitionID, processID, score);
+            this.database.addScoreToLeaderboard(competitionID, processID, score);
         
             // Return the score to the caller
             return score;
@@ -128,16 +129,19 @@ class AthenaManager extends PlatformDaemonManager {
     }
     
 
-    spawnNewDaemon(parameters) {
+    async spawnNewDaemon(parameters) {
         //Try allocations. If we fail, we deallocate and throw an error
         if (this.daemons.get(parameters.processID)) {
             throw new AlreadyRegisteredError(chalk.red(`Daemon with process ID ${parameters.processID} is already registered`));
         }
         
-        let ports = [];
+        let tier, resources, ports;
         parameters.ports = 1; 
         try{
-            ports = this.resourceMonitor.allocateProcess(parameters);
+            tier = await this.database.getUserTier(parameters.processID);
+            resources = await this.database.getTierResources(tier);
+            resources.processID = parameters.processID; //Terrible ik
+            ports = await this.resourceMonitor.allocateProcess(resources);
         } catch(e){
             throw e;
         }
@@ -172,68 +176,62 @@ class AthenaManager extends PlatformDaemonManager {
 class AthenaDatabaseSystem extends DatabaseSystem {
     constructor() {
         super();
-        this.competitions = new Map();
-        this.userSubmissions = new Map();
-    }
-    //Get db state as json
-    getDBState() {
-        let comps = Array.from(this.competitions).slice();
-        //The leaderboards are maps, therefore convert to arrays
-        comps.forEach((comp) => {
-            comp[1].competitionLeaderboard = Array.from(comp[1].competitionLeaderboard);
-        });
-        return {
-            competitions: comps,
-            userSubmissions: Array.from(this.userSubmissions)
-        };
+        this.query = util.promisify(db.query).bind(db);
     }
 
-    //Create competition
-    createCompetition(competitionID, competitionName, competitionDescription,competitionDataset) {
-        this.competitions.set(competitionID, {
-            competitionName,
-            competitionDataset,
-            competitionDescription,
-            competitionLeaderboard: new Map()
-        });
+    async createCompetition(id, title, description, file_path) {
+        const sql = "INSERT INTO Competitions (id, title, description, file_path) VALUES (?, ?, ?, ?, ?)";
+        await this.query(sql, [id, title, description, file_path]);
     }
 
-    getCompetitionDataset(competitionID){
-        return this.competitions.get(competitionID).competitionDataset;
-    }   
-
-    //Add user submission
-    addUserSubmission(competitionID, userID, filePath) {
-        this.userSubmissions.set(filePath, {
-            competitionID,
-            userID
-        });
+    async getCompetitionDataset(id) {
+        const sql = "SELECT file_path FROM Competitions WHERE id = ?";
+        const results = await this.query(sql, [id]);
+        return results.length ? results[0].file_path : null;
     }
 
-    //Add score to leaderboard
-    addScoreToLeaderboard(competitionID, userID, score) {
-        const competition = this.competitions.get(competitionID);
-        competition.competitionLeaderboard.set(userID, score);
-        //Place into map
-        this.competitions.set(competitionID, competition);
+    async addUserSubmission(comp_id, user_id, file_path) {
+        // Adjusted to match the Submissions table schema.
+        // Note: Assuming `score` is to be updated separately.
+        const sql = "INSERT INTO Submissions (comp_id, user_id, file_path) VALUES (?, ?, ?)";
+        await this.query(sql, [comp_id, user_id, file_path]);
     }
 
-    //Get leaderboard
-    getLeaderboard(competitionID) {
-        const competition = this.competitions.get(competitionID);
-        return competition.competitionLeaderboard;
+    async addScoreToLeaderboard(comp_id, user_id, score) {
+        // Note: Assuming Leaderboard updates or inserts are handled externally since PRIMARY KEY is `user_id`.
+        const sql = "INSERT INTO Leaderboard (comp_id, user_id, score) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE score = ?";
+        await this.query(sql, [comp_id, user_id, score, score]);
     }
 
-    //Get user submissions
-    getUserSubmissions(competitionID, userID) {
-        const userSubmissions = [];
-        for (let [filePath, submission] of this.userSubmissions) {
-            if (submission.competitionID === competitionID && submission.userID === userID) {
-                userSubmissions.push(filePath);
-            }
+    async getLeaderboard(comp_id) {
+        const sql = "SELECT user_id, score FROM Leaderboard WHERE comp_id = ? ORDER BY score DESC";
+        const results = await this.query(sql, [comp_id]);
+        return results;
+    }
+
+    async getUserSubmissions(comp_id, user_id) {
+        const sql = "SELECT file_path FROM Submissions WHERE comp_id = ? AND user_id = ?";
+        const results = await this.query(sql, [comp_id, user_id]);
+        return results.map(submission => submission.file_path);
+    }
+
+    async getUserTier(compID) {
+        //First grab the prize amount from the competitions database
+        const sql = "SELECT prize FROM competitions WHERE id = ?";
+        const results = await this.query(sql, [compID]);
+        if (results.length > 0) {
+            //If prize pool is between 0-100, get tier 1
+            if (results[0].prize <= 100) return 3;
+            if (results[0].prize <= 1000) return 2;
+            if (results[0].prize > 1000) return 1;
+        } else {
+            throw new Error('Competition not found');
         }
-        return userSubmissions;
     }
+
+
 }
+
+
 
 module.exports = { AthenaManager, AthenaDatabaseSystem };

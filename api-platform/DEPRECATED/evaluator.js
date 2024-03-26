@@ -1,6 +1,6 @@
 
-const {AthenaDatabaseSystem} = require('./athenaManager.js');
-const db = require('../backend/db.js');
+const {AthenaDatabaseSystem} = require('../athenaManager.js');
+const db = require('../../backend/db.js');
 const util = require('util');
 
 async function runEvaluations() {

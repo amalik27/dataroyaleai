@@ -7,10 +7,10 @@ const mysql = require('mysql');
 
 const connection = mysql.createConnection({
     host: 'localhost',
-    user: 'root', // changed to work locally
-    password: 'root', // changed to work locally
+    user: 'tester', // changed to work locally
+    password: 'tester', // changed to work locally
     database: 'swe2024',
-    port: '3306' // changed to work locally
+    port: '8999' // changed to work locally
 });
 
 connection.connect((err) => {

@@ -15,7 +15,7 @@ class AthenaDaemon extends PlatformDaemon {
         
     }
 
-    async evaluateModel(filePath, containerID, columnNamesX, columnNamesY, metric) {
+    async evaluateModel(filePath, containerID, columnNamesX, columnNamesY,metrics) {
         const results = [];
         const readStream = fs.createReadStream(filePath);
         this.dataRecording = true;
@@ -44,7 +44,8 @@ class AthenaDaemon extends PlatformDaemon {
                         this.getContainerStats(DOCKERID);
                     });
 
-                    
+                    //Start timer
+                    const start = new Date();
                     const predictions = await Promise.all(csvResults.map(row => {
                         const body = this.bodyMapper(row, columnNamesX, columnNamesY).inputs;
 
@@ -53,13 +54,14 @@ class AthenaDaemon extends PlatformDaemon {
 
                         return out;
                     }));
-                    const calculatedScore = this.model_performance(predictions, labels, metric);
+                    //Stop Timer
+                    const end = new Date();
+                    this.timeElapsed = (end - start) / 1000;
+
+
+                    const calculatedScore = this.model_performance_aggregate(predictions, labels, metrics);
                     
-                    console.log(`Final score ${metric}: ${calculatedScore}`);
-                    //clearInterval(this.dataRecordingIntervalId);
-                    
-                    let AstatsData = this.statsData;
-                    console.log(AstatsData)
+                    console.log(`Final score ${metrics}: ${calculatedScore}`);
                     resolve({ score: calculatedScore }); // Resolve the promise with the score
                 } catch (error) {
                     reject(error); // In case of error, reject the promise
@@ -69,7 +71,7 @@ class AthenaDaemon extends PlatformDaemon {
         this.stopDataRecording(containerID)
         
         
-        return {score:score, statsData:this.statsData}; // Return the awaited score from the promise
+        return {score:score}; // Return the awaited score from the promise
     }
 
 
@@ -149,10 +151,34 @@ class AthenaDaemon extends PlatformDaemon {
         return requestBody;
     }
 
-    //calculate performance
-    model_performance(predictions, labels,metric){
-        //Regression Metrics
+    //Aggregate performance calculator. Takes in predictions, labels, and metrics(plural). iterates through and collects the various metrics
+    model_performance_aggregate(predictions, labels, metrics){
+        let results = {};
+        for (let i = 0; i < metrics.length; i++) {
+            results[metrics[i]] = this.model_performance(predictions, labels, metrics[i]);
+        }
+    }
 
+    //calculate performance
+    model_performance(predictions, labels, metric){
+        //MODEL HARDWARE/INFRASTRUCTURE PERFORMANCE
+        //CPU Usage
+        if(metric === 'cpu'){
+            const cpuUsage = this.statsData.map(data => parseFloat(data.cpuUsage));
+            return cpuUsage.reduce((a, b) => a + b) / cpuUsage.length;
+        }
+        //Memory Usage
+        if(metric === 'memory'){
+            const memoryUsage = this.statsData.map(data => parseFloat(data.memoryUsage));
+            return memoryUsage.reduce((a, b) => a + b) / memoryUsage.length;
+        }
+        //Speed
+        if(metric === 'speed'){
+            return this.timeElapsed;
+        }
+
+        //MODEL INFERENCE CORRECTNESS
+        //Regression Metrics
         //MAE
         if(metric === 'mae'){
             let sum = 0;

@@ -1,7 +1,9 @@
 var shell = require('shelljs');
 var chalk = require("chalk");
 const EventEmitter = require('events');
-
+const mysql = require('mysql');
+const util = require('util');
+const db = require('../backend/db.js')
 const { PlatformDaemon , Container } = require('./platformDaemon');
 
 //Debug function for getting overall system state and packing it into a JSON object
@@ -51,7 +53,7 @@ function getSystemState(manager) {
 
 
 class PlatformDaemonManager {
-    constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier,name = "Prometheus") {
+    constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier,name = "Prometheus", databaseSystem =new DatabaseSystem()) {
         this.name = name
         this.daemons = new Map();
         this.messageQueue = [];
@@ -60,7 +62,7 @@ class PlatformDaemonManager {
         this.maxMemory = maxMemory;
         this.interval = null;
         // Initialize resource monitor with blocks and ports range
-        this.database = new DatabaseSystem();
+        this.database = databaseSystem
         this.resourceMonitor = new PlatformResourceMonitor(blocksPerTier, portsAllowed,this.database, this.name);
         //Listen for deallocation events
         this.resourceMonitor.on('overloadDeallocated', (processID,blocks) => {
@@ -79,7 +81,7 @@ class PlatformDaemonManager {
     //Needed for continuous monitoring of the queue asynchronously, allowing for reshuffles.
     startMonitoring(intervalTime) {
         if (!this.interval) {
-          this.interval = setInterval(() => {
+          this.interval = setInterval(async () => {
             if (this.messageQueue.length!=0) {
                 //MAKE SURE TO DQ MESSAGE IF WE ACT ON IT
                 
@@ -94,7 +96,7 @@ class PlatformDaemonManager {
                 if(message.type === "OVERLOAD"){
                     //Allocate overload blocks
                     try{
-                        this.allocateOverloadBlocks(message.body.processID);
+                        await this.allocateOverloadBlocks(message.body.processID);
                         //Dequeue if prior succeeeds
                         this.messageQueue.shift();
                         message.status = "SUCCESS";
@@ -104,13 +106,17 @@ class PlatformDaemonManager {
                             message.status = "WAITING FOR RESOURCES";
                             this.messageHistory.push(message);
                         } else{
+                            console.log(chalk.red(`[${this.name} Manager]]FAILURE`))
                             console.log(e.message);
+                            this.messageQueue.shift();
+                            message.status = "FAILED";
+                            this.messageHistory.push(message);
                         }
                     }
                 }
                 if(message.type === "START"){
                     try{
-                        this.spawnNewDaemon(message.body);
+                        await this.spawnNewDaemon(message.body);
                          //Dequeue if prior succeeeds
                         this.messageQueue.shift();
                         message.status = "SUCCESS";
@@ -119,6 +125,7 @@ class PlatformDaemonManager {
                         if(e instanceof GuaranteeResourceAllocationError){
                             message.status = "WAITING FOR RESOURCES";
                         } else{
+                            console.log(chalk.red(`[${this.name} Manager]]FAILURE`))
                             console.log(e.message);
                             this.messageQueue.shift();
                             message.status = "FAILED";
@@ -208,22 +215,23 @@ class PlatformDaemonManager {
      * For more information, see addMessageToQueue
      * @param {Object} parameters
      */
-    spawnNewDaemon(parameters) {
+    async spawnNewDaemon(parameters) {
         //Try allocations. If we fail, we deallocate and throw an error
         if (this.daemons.get(parameters.processID)) {
             throw new AlreadyRegisteredError(chalk.red(`Daemon with process ID ${parameters.processID} is already registered`));
         }
-        
-        let ports = [];
+        let tier, resources, ports;
         try{
-            ports = this.resourceMonitor.allocateProcess(parameters);
+            tier = await this.database.getUserTier(parameters.processID);
+            resources = await this.database.getTierResources(tier);
+            resources.processID = parameters.processID; //Terrible ik
+            ports = await this.resourceMonitor.allocateProcess(resources);
         } catch(e){
             throw e;
         }
         //Allocations succeed, move on.
         //Create new daemon with the guarantee blocks asssigned to it based on its tier
-        
-        const daemon = new PlatformDaemon(ports, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockCPU, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockMemory, parameters.processID, this.database.getTierResources(this.database.getUserTier(parameters.processID)).time, this.database.getTierResources(this.database.getUserTier(parameters.processID)).time/3, this.name);
+        const daemon = new PlatformDaemon(ports, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockCPU, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockMemory, parameters.processID, resources.time, resources.time/3, this.name);
         daemon.startMonitoring(parameters.interval);
         this.registerDaemon(parameters.processID, daemon);
 
@@ -257,7 +265,6 @@ class PlatformDaemonManager {
             //Convert blocks to cpu and memory
             let cpu = blocks * this.blockCPU;
             let memory = blocks * this.blockMemory;
-            console.log("Blocks: " + blocks + " CPU: " + cpu + " Memory: " + memory);
             this.daemons.get(processID).setResourceLimits(cpu, memory);
         } else {
             throw new DaemonNotFoundError(`No daemon found with process ID ${processID}`);
@@ -265,12 +272,12 @@ class PlatformDaemonManager {
     }
 
     //Try to allocate overload blocks to a process
-    allocateOverloadBlocks(processID) {
+    async allocateOverloadBlocks(processID) {
         if (this.daemons.get(processID)) {
             //Try allocate, catch and pass through error if failed
             try{
                 //Allocate overload blocks
-                this.resourceMonitor.allocateBlocks(false, processID);
+                await this.resourceMonitor.allocateBlocks(false, processID);
                 //Set resources
                 this.setProcessResources(processID, this.resourceMonitor.usage.get(processID).guaranteed + this.resourceMonitor.usage.get(processID).overload);
                 //Enable overload in process so its internal timer begins
@@ -324,7 +331,7 @@ class PlatformDaemonManager {
     unregisterDaemon(processID) {
       if (this.daemons.get(processID)) {
           this.daemons.delete(processID);
-          console.log(`Daemon unregistered with process ID ${processID}`);
+          console.log(chalk.gray(`[${this.name} Manager]Daemon unregistered with process ID ${processID}`));
       } else {
           throw new DaemonNotFoundError(`No daemon found with process ID ${processID} for unregistering`);
       }
@@ -359,8 +366,8 @@ class PlatformResourceMonitor extends EventEmitter {
     displayUsage() {
         const tiers = this.database.getTierIDs();
         tiers.forEach(tier => {
-            const users = Array.from(this.usage).filter((id) => {
-                this.database.getUserTier(id) === tier;
+            const users = Array.from(this.usage).filter(async (id) => {
+                await this.database.getUserTier(id) === tier;
             });
             console.log(chalk.cyan(`Tier ${tier} usage:`));
             users.forEach((id) => {
@@ -376,15 +383,14 @@ class PlatformResourceMonitor extends EventEmitter {
 
     //display Usage but return everything as a JSON object
     displayUsageJSON() {
-        console.log(JSON.stringify(Array.from(this.usage)))
         return Array.from(this.usage);
     }
 
-    allocateProcess(parameters) {
+    async allocateProcess(parameters) {
         let ports = [];
         try{
             ports = this.allocatePorts(parameters.ports, parameters.processID);
-            this.allocateBlocks(true, parameters.processID);
+            await this.allocateBlocks(true, parameters.processID);
         } catch(e){
             //If we fail to allocate, we deallocate the ports and throw an error
             try{
@@ -394,7 +400,7 @@ class PlatformResourceMonitor extends EventEmitter {
             }
             throw e;
         }
-        console.log(chalk.green(`[${this.name} Resource Monitor] Process ID ${parameters.processID} allocated ${parameters.ports} ports and ${this.database.getTierResources(this.database.getUserTier(parameters.processID)).guarantee} blocks`));
+        console.log(chalk.green(`[${this.name} Resource Monitor] Process ID ${parameters.processID} allocated ${parameters.ports} ports and ${parameters.guaranteed} blocks`));
         return ports;
     }
 
@@ -430,24 +436,77 @@ class PlatformResourceMonitor extends EventEmitter {
         }
     }
 
+
+    async canAllocateResources(processID, spawnBlocks) {
+        const userTier = await this.database.getUserTier(processID);
+        const tiers = await this.database.getAllTiers();
+        let blocksPerTier = this.blocksPerTier.slice();
+    
+        // Deduct guaranteed blocks from tiers based on current allocations
+        for (const [key, value] of this.usage) {
+            const tier = await this.database.getUserTier(key);
+            blocksPerTier[tier - 1] -= value.guaranteed;
+        }
+    
+        // Temporarily deduct spawn blocks for the new process from its tier
+        blocksPerTier[userTier - 1] -= spawnBlocks;
+    
+        // Check if temporary deduction resulted in negative blocks, indicating insufficient resources
+        if (blocksPerTier[userTier - 1] < 0) return false;
+    
+        // Adjust overload blocks across tiers, starting from the lowest tier
+        for (let tier = tiers.length; tier >= 1; tier--) {
+            for (const [key, value] of this.usage) {
+                const userCurrentTier = await this.database.getUserTier(key);
+                if (userCurrentTier <= tier) {
+                    // If a user's tier is equal or lower, consider their overload usage
+                    blocksPerTier[tier - 1] -= value.overload;
+    
+                    // If deducing overload blocks results in negative, attempt to pull from lower tiers if available
+                    if (blocksPerTier[tier - 1] < 0 && tier < tiers.length) {
+                        // Attempt to pull from a lower tier
+                        for (let lowerTier = tier + 1; lowerTier <= tiers.length; lowerTier++) {
+                            if (blocksPerTier[lowerTier - 1] + blocksPerTier[tier - 1] >= 0) {
+                                // If lower tier can cover the deficit, adjust block counts accordingly
+                                blocksPerTier[lowerTier - 1] += blocksPerTier[tier - 1];
+                                blocksPerTier[tier - 1] = 0; // Reset the current tier's overload to 0 as it's covered by a lower tier
+                                break; // Break after covering the deficit
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    
+        // If any tier ends up with negative blocks, allocation is not possible
+        for (let tier = 1; tier <= tiers.length; tier++) {
+            if (blocksPerTier[tier - 1] < 0) {
+                return false;
+            }
+        }
+    
+        // If the function hasn't returned false by now, allocation is possible
+        return true;
+    }
+
     /**
      * If we set isSpawn to true, we are allocating blocks for a new process. If false, we are allocating blocks for overload.
      */
-    allocateBlocks(isSpawn = false, processID) {
-        const userTierInfo = this.database.getTierResources(this.database.getUserTier(processID));
+    async allocateBlocks(isSpawn = false, processID) {
+        const userTierInfo = await this.database.getTierResources(await this.database.getUserTier(processID));
         if (!userTierInfo) {
             throw new ResourceNotFoundError(`User tier information for process ID ${processID} not found.`);
         }
 
         // For spawning, allocate all G blocks. Successful spawn will return processID.
         if (isSpawn) {
-            let blocksToAllocate = userTierInfo.guarantee;
+            let blocksToAllocate = userTierInfo.guaranteed;
             // Check if sufficient blocks are available in user tier
             
             //Calculate blocks used by same tier users
             let sameTierUsers = Array.from(this.usage)
-            .filter(([key, _]) => 
-                this.database.getUserTier(processID) === this.database.getUserTier(key)
+            .filter(async ([key, _]) => 
+                await this.database.getUserTier(processID) === await this.database.getUserTier(key)
             )
             .map(([key, _]) => key);
             let blocksUsedBySameTier = 0;
@@ -455,11 +514,12 @@ class PlatformResourceMonitor extends EventEmitter {
                 blocksUsedBySameTier += this.usage.get(id).guaranteed;
                 blocksUsedBySameTier += this.usage.get(id).overload;
             });
-            //console.log(`Total blocks in this tier: ${this.blocksPerTier[this.database.getUserTier(processID)-1]}. Blocks being used by same tier users: ${blocksUsedBySameTier}. Blocks to allocate: ${blocksToAllocate}. Blocks available: ${this.blocksPerTier[this.database.getUserTier(processID)-1] - blocksUsedBySameTier}. We need more blocks than available: ${blocksToAllocate > this.blocksPerTier[this.database.getUserTier(processID)-1] - blocksUsedBySameTier}`);
-            //If we do not have enough resources, we allocate overload blocks
-            if (this.blocksPerTier[this.database.getUserTier(processID)-1] - blocksUsedBySameTier < blocksToAllocate) {
-                let sameTierUsersInOverload = this.overloadDeallocationQueue.filter((id) => 
-                    this.database.getUserTier(processID) === this.database.getUserTier(id)
+            
+
+
+            if (this.blocksPerTier[await this.database.getUserTier(processID)-1] - blocksUsedBySameTier < blocksToAllocate && this.canAllocateResources(processID,blocksToAllocate)) {
+                let sameTierUsersInOverload = this.overloadDeallocationQueue.filter(async (id) => 
+                    await this.database.getUserTier(processID) === await this.database.getUserTier(id)
                 )
                 if(sameTierUsersInOverload.length == 0){
                     throw new GuaranteeResourceAllocationError(`Not enough blocks available to spawn process ID ${processID}`);
@@ -474,7 +534,7 @@ class PlatformResourceMonitor extends EventEmitter {
                     if(blocksToAllocate > 0){
                         throw new GuaranteeResourceAllocationError(`Not enough blocks available to spawn process ID ${processID}`);
                     } else {
-                        this.usage.set(processID, { guaranteed: userTierInfo.guarantee, overload: 0 });
+                        this.usage.set(processID, { guaranteed: userTierInfo.guaranteed, overload: 0 });
                         return processID;
                     }
                 }
@@ -488,8 +548,8 @@ class PlatformResourceMonitor extends EventEmitter {
             // Check if sufficient blocks are available in user tier or below
             //Calculate blocks used by same tier users or lower tier users by calling getTierIDs, filter by tiers lower than user tier.
             let sameOrLowerUsers = Array.from(this.usage)
-            .filter(([key, _]) => {
-                this.database.getUserTier(processID) >= this.database.getUserTier(key);
+            .filter(async ([key, _]) => {
+                await this.database.getUserTier(processID) >= await this.database.getUserTier(key);
             })
             .map(([key, _]) => key);
             //Calculate blocks used by users whose tiers are in usableTiers
@@ -499,9 +559,12 @@ class PlatformResourceMonitor extends EventEmitter {
                 blocksUsedByUsableTiers += this.usage.get(id).overload;
             });
             //Do we have enough?
+            console.log(`WE HAVE ENOUGH BLOCKS: ${this.blocks - blocksUsedByUsableTiers >= blocksToAllocate}, ${this.blocks}, ${blocksUsedByUsableTiers}, ${blocksToAllocate}`)
+            console.log(sameOrLowerUsers);
+            console.log(blocksUsedByUsableTiers);
             if (this.blocks - blocksUsedByUsableTiers < blocksToAllocate) {
-                let sameOrLowerUsersInOverload = this.overloadDeallocationQueue.filter((id) => {
-                    this.database.getUserTier(processID) >= this.database.getUserTier(id);
+                let sameOrLowerUsersInOverload = this.overloadDeallocationQueue.filter(async (id) => {
+                    await this.database.getUserTier(processID) >= await this.database.getUserTier(id);
                 });
                 if(sameOrLowerUsersInOverload.length == 0){
                     throw new OverloadResourceAllocationError(`Not enough blocks available to allocate overload for process ID ${processID}`);
@@ -510,7 +573,6 @@ class PlatformResourceMonitor extends EventEmitter {
                     while(sameOrLowerUsersInOverload.length > 0 && blocksToAllocate > 0){
                         blocksToAllocate = this.deallocateOverloadBlocks(sameOrLowerUsersInOverload[0],blocksToAllocate);
                         sameOrLowerUsersInOverload.shift();
-                        console.log(sameOrLowerUsersInOverload);
                     }
                     //If we could not deallocate enough blocks, we throw an error
                     if(blocksToAllocate > 0){
@@ -552,84 +614,72 @@ class PlatformResourceMonitor extends EventEmitter {
     }
 }
 
-//Class to mock a database, for testing purposes. Holds information about how many compute blocks are allowed for each subscription tier's user. There are 3 tiers:
-//1. 20 Guarantee, 10 overload, 30 seconds of overload time
-//2. 10 Guarantee, 5 overload 10 seconds of overload time
-//3. 5 Guarantee, No overload, no overload time
-//This class should hold the tiers in one map with the information, and users in another map with a parameter for their tiers
+
 class DatabaseSystem {
     constructor() {
-        this.tiers = new Map();
-        this.users = new Map();
-        //Add tiers and users
-        this.addTier(1, 20, 10, 30);
-        this.addTier(2, 10, 5, 10);
-        this.addTier(3, 5, 0, 0);
-        this.addUser("user0", 1);
-        this.addUser("user1", 1);
-        this.addUser("user2", 2);
-        this.addUser("user3", 2);
-        this.addUser("user4", 2);
-        this.addUser("user5", 3);
-        this.addUser("user6", 3);
-        this.addUser("user7", 3);
-        this.addUser("user8", 3);
-        this.addUser("user9", 3);
+        this.query = util.promisify(db.query).bind(db);
 
-        //Create a map of existing models. Let there be 3 models. Let fields include minimum specs, name, filepath, and a unique ID
-        this.models = new Map();
-        //Model 1 : Euclid
-        this.addModel(1, "Euclid", "./Euclid", 2, 400);
-        //Model 2 : Pythagoras
-        this.addModel(2, "Pythagoras", "./Pythagoras", 2, 500);
-        //Model 3 : Archimedes
-        this.addModel(3, "Archimedes", "./Archimedes", 4, 1200);
+        //Add tiers automatiically
+        //tier 1 = 20 Guarantee, 10 Overload, 60 seconds uptime, 10 seconds overload time
+        //tier 2 = 30 Guarantee, 15 Overload, 45 seconds uptime, 5 seconds overload time
+        //tier 3 = 40 Guarantee, 20 Overload, 35 seconds uptime, 0 seconds overload time
+        //Add to db via sql
+        const query = `INSERT INTO tiers (TierLevel, Guarantee, Overload, Uptime, OverloadUptime) VALUES (1, 20, 10, 60, 10), (2, 30, 15, 45, 5), (3, 40, 20, 35, 0)`;
+        db.query(query, (err, results) => {
+            if (err) {
+                console.error('Error adding tiers:', err.code);
+            } else {
+                console.log('Tiers added successfully');
+            }
+        });
     }
 
-    addModel(modelID, name, filepath, cpu, memory) {
-        this.models.set(modelID, { name, filepath, cpu, memory });
+    async getUserTier(username) {
+        const query = 'SELECT tier FROM users WHERE username = ?';
+        try {
+            const results = await this.query(query, [username]);
+            if (results.length > 0) { 
+                return results[0].tier;
+            } else {
+                throw new Error('User not found');
+            }
+        } catch (err) {
+            throw err;
+        }
     }
 
-    getModel(modelID) {
-        return this.models.get(modelID);
+    async getTierResources(tier) {
+        const query = 'SELECT Guarantee, Overload, Uptime, ports FROM tiers WHERE TierLevel = ?';
+        try {
+            const results = await this.query(query, [tier]);
+            if (results.length > 0) {
+                //Convert from rowdatapacket to object where Guarantee param becomes guarantee and Overload becomes overload
+                let resources = {guaranteed: results[0].Guarantee, overload: results[0].Overload, time: results[0].Uptime, ports: results[0].ports};
+                return resources;
+
+            } else {
+                throw new Error('Tier not found');
+            }
+        } catch (err) {
+            throw err;
+        }
     }
 
-    getAllModels() {
-        let models = Array.from(this.models);
-        return models;
+    async getAllTiers(){
+        const query = 'SELECT * FROM tiers';
+        try {
+            const results = await this.query(query);
+            if (results.length > 0) {
+                return results;
+            } else {
+                throw new Error('Tiers not found');
+            }
+        } catch (err) {
+            throw err;
+        }
     }
-
-    addTier(tier, guarantee, overload, time) {
-        this.tiers.set(tier, { guarantee, overload, time });
-    }
-
-    addUser(username, tier) {
-        this.users.set(username, tier);
-    }
-
-    //add model
-    addModel(modelID, name, filepath, cpu, memory) {
-        this.models.set(modelID, { name, filepath, cpu, memory });
-    }
-
-    //get model
-    getModel(modelID) {
-        return this.models.get(modelID);
-    }
-
-    getUserTier(username) {
-        return this.users.get(username);
-    }
-
-    getTierResources(tier) {
-        return this.tiers.get(tier);
-    }
-
-    getTierIDs() {
-        return Array.from(this.tiers.keys());
-    }
-
 }
+
 
 //ERRORS because proper error coding makes this so much easier
 class AlreadyRegisteredError extends Error {
