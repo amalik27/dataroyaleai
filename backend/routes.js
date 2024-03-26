@@ -10,7 +10,18 @@ const userController = require('./controllers/userController');
 const competitionController = require('./controllers/competitionController'); 
 const { get } = require('http');
 const courseController = require('./controllers/courseController');
-const paymentController = require('./controllers/paymentController')
+const paymentController = require('./controllers/paymentController');
+const {PlatformDaemonManager,getSystemState} = require('../api-platform/platformManager.js');
+const {AthenaManager} = require('../api-platform/athenaManager.js');
+const {Container} = require('../api-platform/platformDaemon');
+var chalk = require(`chalk`);
+
+let Prometheus = new PlatformDaemonManager(4,4000,500,blocksPerTier = [40, 30, 50]);
+Prometheus.startMonitoring(1000);
+let Athena = new AthenaManager(4,4000,500,blocksPerTier = [40, 40, 40]);
+Athena.startMonitoring(1000);
+
+
 
 function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
@@ -95,8 +106,6 @@ function processRequest(req, res){
                     res.end(JSON.stringify({ success: false, message: error }));
                 }
             });
-
-
 
         } else if (req.method === 'PATCH'){
             // Update Competition Details
@@ -454,12 +463,417 @@ function processRequest(req, res){
                 res.end(JSON.stringify({ success: true }));
             });
         }
-    } else {
+    } //api platform
+    else if (pathname.includes("/prometheus/displayUsage")) {
+        const displayUsageRegex = /\/manager\/displayUsage(?:\?.*?)?/;
+        const match = path.match(displayUsageRegex);
+        if (req.method === 'GET') {
+            try {
+                const result = getSystemState(Prometheus);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result));
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('500 Internal Server Error: ' + error.message);
+            }
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/prometheus/addMessage")) {
+        const addMessageRegex = /\/manager\/addMessage(?:\?.*?)?/;
+        const match = path.match(addMessageRegex);
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', () => {
+                try {
+                    console.log(body);
+                    const { message } = JSON.parse(body);
+                    if (!message) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Message is required.');
+                        return;
+                    }
+                    const id =Prometheus.addMessageToQueue(message);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ messageID: id }));
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/prometheus/messageStatus")) {
+        const messageStatusRegex = /\/manager\/messageStatus(?:\?.*?)?/;
+        const match = path.match(messageStatusRegex);
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', () => {
+                try {
+                    const { messageID } = JSON.parse(body);
+                    if (!messageID) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Message ID is required.');
+                        return;
+                    }
+                    const status =Prometheus.fetchMessageStatus(messageID);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(status));
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/prometheus/startContainer")) {
+        const startContainerRegex = /\/manager\/startContainer(?:\?.*?)?/;
+        const match = path.match(startContainerRegex);
+        if (req.method === 'POST') {
+            let postData = '';
+            req.on('data', (chunk) => {
+                postData += chunk.toString();
+            });
+            req.on('end', () => {
+                try {
+                    const { message } = JSON.parse(postData);
+                    if (!message || !message.processID || !message.body) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Complete message with processID and body is required.');
+                        return;
+                    }
+                    const { processID, body } = message;
+                    const { cpus, memory, containerID, model } = body;
+                    const container = new Container(cpus, memory, containerID, model);
+                    console.log(container.toString());
+                    Prometheus.initializeContainer(processID, container);
+                    res.writeHead(200, { 'Content-Type': 'text/plain' });
+                    res.end('Container initialization started.');
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/prometheus/forward")) {
+        const forwardRegex = /\/manager\/forward(?:\?.*?)?/;
+        const match = path.match(forwardRegex);
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                try {
+                    const { processID, containerID, body } = JSON.parse(body);
+                    if (!processID || !containerID || !body) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Process ID, Container ID, and Body are required.');
+                        return;
+                    }
+                    console.log(`Forwarding request to container ${containerID} for process ${processID}.`);
+                    const data = awaitPrometheus.forward(processID, containerID, body);
+                    console.log(data);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(data));
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/prometheus/models")) {
+        const modelsRegex = /\/manager\/models(?:\?.*?)?/;
+        const match = path.match(modelsRegex);
+        if (req.method === 'GET') {
+            try {
+                const models =Prometheus.database.getAllModels();
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(models));
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('500 Internal Server Error: ' + error.message);
+            }
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/prometheus/kill")) {
+        const killRegex = /\/manager\/kill(?:\?.*?)?/;
+        const match = path.match(killRegex);
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', () => {
+                try {
+                    const { processID } = JSON.parse(body);
+                    if (!processID) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Process ID is required.');
+                        return;
+                    }
+                   Prometheus.killProcessDaemon(processID);
+                    res.writeHead(200, { 'Content-Type': 'text/plain' });
+                    res.end('Process killed.');
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/prometheus/health")) {
+        const healthRegex = /\/manager\/health(?:\?.*?)?/;
+        const match = path.match(healthRegex);
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                try {
+                    const { processID, containerID } = JSON.parse(body);
+                    if (!processID || !containerID) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Process ID and Container ID are required.');
+                        return;
+                    }
+                    const health = await Prometheus.healthCheck(processID, containerID);
+                    console.log(health);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(health));
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/prometheus/queue")) {
+        const queueRegex = /\/manager\/queue(?:\?.*?)?/;
+        const match = path.match(queueRegex);
+        if (req.method === 'GET') {
+            try {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(Prometheus.queue));
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('500 Internal Server Error: ' + error.message);
+            }
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/athena/displayUsage")) {
+        const athenaUsageRegex = /\/athena\/displayUsage(?:\?.*?)?/;
+        const match = path.match(athenaUsageRegex);
+        if (req.method === 'GET') {
+            try {
+                const result = getSystemState(AthenaManagerInstance);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result));
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('500 Internal Server Error: ' + error.message);
+            }
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/athena/addMessage")) {
+        const addMessageRegex = /\/athena\/addMessage(?:\?.*?)?/;
+        const match = path.match(addMessageRegex);
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', () => {
+                try {
+                    const { message } = JSON.parse(body);
+                    if (!message) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Message is required.');
+                        return;
+                    }
+                    const id =Athena.addMessageToQueue(message);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ messageID: id }));
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/athena/database")) {
+        const databaseRegex = /\/athena\/database(?:\?.*?)?/;
+        const match = path.match(databaseRegex);
+        if (req.method === 'GET') {
+            try {
+                const dbState =Athena.databaseSystem.getDBState();
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(dbState));
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('500 Internal Server Error: ' + error.message);
+            }
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/athena/database/addCompetition")) {
+        const addCompetitionRegex = /\/athena\/database\/addCompetition(?:\?.*?)?/;
+        const match = path.match(addCompetitionRegex);
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', () => {
+                try {
+                    const { competitionID, competitionName, competitionDescription, competitionDataset } = JSON.parse(body);
+                    if (!competitionID || !competitionName || !competitionDescription || !competitionDataset) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Competition ID, name, description, and dataset are required.');
+                        return;
+                    }
+                   Athena.databaseSystem.createCompetition(competitionID, competitionName, competitionDescription, competitionDataset);
+                    res.writeHead(200, { 'Content-Type': 'text/plain' });
+                    res.end('Competition added.');
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/athena/database/addUserSubmission")) {
+        const addUserSubmissionRegex = /\/athena\/database\/addUserSubmission(?:\?.*?)?/;
+        const match = path.match(addUserSubmissionRegex);
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', () => {
+                try {
+                    const { competitionID, userID, filePath } = JSON.parse(body);
+                    if (!competitionID || !userID || !filePath) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Competition ID, user ID, and file path are required.');
+                        return;
+                    }
+                   Athena.databaseSystem.addUserSubmission(competitionID, userID, filePath);
+                    res.writeHead(200, { 'Content-Type': 'text/plain' });
+                    res.end('User submission added.');
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/athena/database/addScoreToLeaderboard")) {
+        const addScoreToLeaderboardRegex = /\/athena\/database\/addScoreToLeaderboard(?:\?.*?)?/;
+        const match = path.match(addScoreToLeaderboardRegex);
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', () => {
+                try {
+                    const { competitionID, userID, score } = JSON.parse(body);
+                    if (!competitionID || !userID || !score) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Competition ID, user ID, and score are required.');
+                        return;
+                    }
+                   Athena.databaseSystem.addScoreToLeaderboard(competitionID, userID, score);
+                    res.writeHead(200, { 'Content-Type': 'text/plain' });
+                    res.end('Score added to leaderboard.');
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/athena/database/getLeaderboard")) {
+        const getLeaderboardRegex = /\/athena\/database\/getLeaderboard(?:\?.*?)?/;
+        const match = path.match(getLeaderboardRegex);
+        if (req.method === 'GET') {
+            const { competitionID } = req.query;
+            if (!competitionID) {
+                res.writeHead(400, { 'Content-Type': 'text/plain' });
+                res.end('Competition ID is required.');
+                return;
+            }
+            try {
+                const leaderboard =Athena.databaseSystem.getLeaderboard(competitionID);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(leaderboard));
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('500 Internal Server Error: ' + error.message);
+            }
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }     
+    else {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, message: 'Endpoint Not Found' }));
     }    
 }
-
 module.exports = {
     processRequest
 };

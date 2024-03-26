@@ -6,9 +6,9 @@
 const mysql = require('mysql');
 
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root', // changed to work locally
-    password: 'root', // changed to work locally
+    host: '172.25.144.1',
+    user: 'tester', // changed to work locally
+    password: 'tester', // changed to work locally
     database: 'swe2024',
     port: '3306' // changed to work locally
 });
