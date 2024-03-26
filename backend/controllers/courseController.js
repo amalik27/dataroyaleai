@@ -2,7 +2,7 @@
  * @Author: Nikita Filippov <nikfilippov1@gmail.com>
  * @Description: Module containing functions related to course management and user progress tracking in a learning management system.
  * @Author: Neha Murthy <nnm53@scarletmail.rutgers.edu>
- * @Description: Functions (getCourseDetailsById, markCourseCompletion)
+ * @Description: Functions (getCourseDetailsById, markCourseCompletion,readCompletedCoursesByApiToken,readInProgressCoursesByApiToken,getTotalCourseCount )
  */
 
 const db = require('../db');
