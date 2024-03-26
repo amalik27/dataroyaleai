@@ -32,7 +32,9 @@ class AthenaDaemon extends PlatformDaemon {
     
         const labels = csvResults.map(row => row[columnNamesY]);        
         // Wrap the entire operation in a promise to be awaited
-        const score = await new Promise(async (resolve, reject) => {
+        let score;
+        
+        await new Promise(async (resolve, reject) => {
             await this.checkUntilHealthy(containerID, 10000, 6, async () => {
                 try {
                     shell.exec(`docker ps | grep ${containerID} | cut -f 1 -d ' '`, { silent: true }, (code, stdout, stderr) => {
@@ -59,10 +61,10 @@ class AthenaDaemon extends PlatformDaemon {
                     this.timeElapsed = (end - start) / 1000;
 
 
-                    const calculatedScore = this.model_performance_aggregate(predictions, labels, metrics);
+                    score = this.model_performance_aggregate(predictions, labels, JSON.parse(metrics));
                     
-                    console.log(`Final score ${metrics}: ${calculatedScore}`);
-                    resolve({ score: calculatedScore }); // Resolve the promise with the score
+                    console.log(`Final score ${metrics}: ${score}`);
+                    resolve({ score: score }); // Resolve the promise with the score
                 } catch (error) {
                     reject(error); // In case of error, reject the promise
                 }
@@ -71,7 +73,7 @@ class AthenaDaemon extends PlatformDaemon {
         this.stopDataRecording(containerID)
         
         
-        return {score:score}; // Return the awaited score from the promise
+        return score; // Return the awaited score from the promise
     }
 
 
@@ -153,10 +155,21 @@ class AthenaDaemon extends PlatformDaemon {
 
     //Aggregate performance calculator. Takes in predictions, labels, and metrics(plural). iterates through and collects the various metrics
     model_performance_aggregate(predictions, labels, metrics){
-        let results = {};
-        for (let i = 0; i < metrics.length; i++) {
-            results[metrics[i]] = this.model_performance(predictions, labels, metrics[i]);
-        }
+        //Metrics is a json object with the metrics as keys and the values as the metric weights. Therefore we need to access the keys and iterate through them
+        //Numerator are all positively correlated values
+        let num = 0;
+        let den = 1;
+        Object.keys(metrics).forEach((key) => {
+            let metric = key;
+            let weight = metrics[key];
+            console.log(metric,weight);
+            if(metric=='speed'|| metric == 'accuracy' || metric == 'precision' || metric == 'recall' || metric == 'f1'){
+                num+= this.model_performance(predictions, labels, metric) * weight;
+            } else {    
+                den+= this.model_performance(predictions, labels, metric) * weight;
+            }
+        });
+        return num/den
     }
 
     //calculate performance

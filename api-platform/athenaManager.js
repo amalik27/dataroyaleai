@@ -29,7 +29,7 @@ class AthenaManager extends PlatformDaemonManager {
                         if(e instanceof GuaranteeResourceAllocationError){
                             message.status = "WAITING FOR RESOURCES";
                         } else{
-                            console.log(e.message);
+                            console.log(chalk.red(e.message));
                             this.messageQueue.shift();
                             message.status = "FAILED";
                             this.messageHistory.push(message);
@@ -38,20 +38,21 @@ class AthenaManager extends PlatformDaemonManager {
                     
                 } else if(message.type === "EVALUATE"){
                     try{
+                    this.messageQueue.shift();
                     await this.initializeContainer(message.body.processID,message.body);
                     //Create body mapper....somehow
 
                     
 
 
-                    await this.evaluateModel(message.body.processID, message.body.competitionID,await this.database.getCompetitionDataset(message.body.competitionID), message.body.containerID, message.body.inputs, message.body.outputs, message.body.metric);
+                    await this.evaluateModel(message.body.processID, message.body.userID,await this.database.getCompetitionDataset(message.body.processID), message.body.containerID, message.body.inputs, message.body.outputs, message.body.metric);
 
-                    this.messageQueue.shift();
+                    
                     message.status = "SUCCESS";
                     this.messageHistory.push(message);
                     }
                     catch (e){
-                        console.log(e.message);
+                        console.log(chalk.red(e.message));
                         this.messageQueue.shift();
                         message.status = "FAILED";
                         this.messageHistory.push(message);
@@ -96,7 +97,7 @@ class AthenaManager extends PlatformDaemonManager {
             container.cpu = daemon.containerStack.getMaxCPU();
             container.memory = daemon.containerStack.getMaxMemory();
             //Get user submission from database
-            let userSubmission = await this.database.getUserSubmissions(container.competitionID, container.userID);
+            let userSubmission = await this.database.getUserSubmissions(container.processID, container.userID);
             container.model = userSubmission;
             this.daemons.get(processID).initializeContainer(container);
         } else {
@@ -105,21 +106,26 @@ class AthenaManager extends PlatformDaemonManager {
      }
 
     //New method for initializing container and immediately beginning evaluation
-    async evaluateModel(processID, competitionID, filePath, containerID, columnNameX, columnNameY) {
+    async evaluateModel(processID, userID, filePath, containerID, columnNameX, columnNameY) {
+
         // Check if the daemon exists
         if (!this.daemons.has(processID)) {
             throw new DaemonNotFoundError(`Daemon ${processID} does not exist`);
         }
-    
+
+
+        let metrics = await this.database.getCompetitionMetrics(processID);
         // Get reference to the daemon
         const daemon = this.daemons.get(processID);
         // Begin inferences and wait for the score
-        const {score, AstatsData} = await daemon.evaluateModel(filePath, containerID, columnNameX, columnNameY).then(score => {
+        const {score, AstatsData} = await daemon.evaluateModel(filePath, containerID, columnNameX, columnNameY,metrics).then(score => {
+            this.killContainer(processID, containerID);
+
             // Log the score
-            console.log(`Score for ${processID}: ${score.score}`);
+            console.log(`Score for ${processID}: ${score}`);
             
             // Add score to leaderboard
-            this.database.addScoreToLeaderboard(competitionID, processID, score);
+            this.database.addScoreToLeaderboard(processID, userID, parseFloat(score));
         
             // Return the score to the caller
             return score;
@@ -190,6 +196,12 @@ class AthenaDatabaseSystem extends DatabaseSystem {
         return results.length ? results[0].file_path : null;
     }
 
+    async getCompetitionMetrics(id) {
+        const sql = "SELECT metrics FROM Competitions WHERE id = ?";
+        const results = await this.query(sql, [id]);
+        return results.length ? results[0].metrics : null;
+    }
+
     async addUserSubmission(comp_id, user_id, file_path) {
         // Adjusted to match the Submissions table schema.
         // Note: Assuming `score` is to be updated separately.
@@ -198,9 +210,9 @@ class AthenaDatabaseSystem extends DatabaseSystem {
     }
 
     async addScoreToLeaderboard(comp_id, user_id, score) {
-        // Note: Assuming Leaderboard updates or inserts are handled externally since PRIMARY KEY is `user_id`.
-        const sql = "INSERT INTO Leaderboard (comp_id, user_id, score) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE score = ?";
-        await this.query(sql, [comp_id, user_id, score, score]);
+        // Find submissions where comp_id and user_id match, then update score in SUBMISSIONS table
+        const sql = "UPDATE Submissions SET score = ? WHERE comp_id = ? AND user_id = ?"
+        await this.query(sql, [score, comp_id, user_id]);
     }
 
     async getLeaderboard(comp_id) {

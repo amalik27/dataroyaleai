@@ -294,7 +294,7 @@ class PlatformDaemonManager {
     //Kill container in daemon
     async killContainer(processID,containerID) {
         if (this.daemons.get(processID)) {
-            return await this.daemons.get(processID).killContainer(containerID);
+            return await this.daemons.get(processID).killContainers([{containerID:containerID}]);
         } else {
             throw new DaemonNotFoundError(`No daemon found with process ID ${processID}`);
         }
