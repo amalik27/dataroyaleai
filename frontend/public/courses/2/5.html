@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 5: Advanced AI Models and Future Trends</title>
+    <meta name="course-id" content="1">
+    <meta name="course-name" content="Introduction to AI">
+    <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
+</head>
+<body>
+    <h1>Lesson 5: Advanced AI Models and Future Trends</h1>
+    <p>In this final lesson, we'll explore advanced AI models such as recurrent neural networks, convolutional neural networks, and discuss future trends in AI.</p>
+    <p>Recurrent neural networks (RNNs) are designed to process sequential data by maintaining a state vector that captures information about previous inputs.</p>
+    <p>They are widely used in natural language processing, time series analysis, and other tasks involving sequential data.</p>
+    <p>Convolutional neural networks (CNNs) are specialized for processing grid-like data, such as images or audio spectrograms.</p>
+    <p>They consist of convolutional layers that extract features from the input data and pooling layers that reduce the dimensionality of the feature maps.</p>
+    <p>Advanced AI models are pushing the boundaries of what is possible in areas such as image generation, language translation, and autonomous decision-making.</p>
+    <p>Future trends in AI include the development of explainable AI, which aims to make AI systems more transparent and interpretable, and the integration of AI with other emerging technologies such as blockchain and the Internet of Things.</p>
+    <p>Thank you for completing our course on AI models!</p>
+    <p>When creating datasets for AI applications, various tools and techniques can be utilized to collect, annotate, and preprocess data:</p>
+    <ul>
+        <li><strong>Data Collection Platforms:</strong> Online platforms like Amazon Mechanical Turk, CrowdFlower, or specialized APIs for collecting labeled data.</li>
+        <li><strong>Data Labeling Tools:</strong> Software tools such as LabelImg, Labelbox, or Supervisely for annotating images, videos, or text data.</li>
+        <li><strong>Data Augmentation Libraries:</strong> Python libraries like Augmentor, imgaug, or TensorFlow Data Augmentation Toolkit for generating additional training data through transformations.</li>
+        <li><strong>Data Preprocessing Software:</strong> Tools like pandas, scikit-learn, or TensorFlow Data Validation for cleaning, transforming, and preparing data for model training.</li>
+    </ul>
+    <p>By leveraging these tools and techniques, AI practitioners can efficiently create high-quality datasets to train and evaluate their AI models.</p>
+    <p>Go back to <a href="4.html" id="lesson4">Lesson 4</a></p>
+
+    <script>
+        // Add event listener for Lesson 4 link
+        document.getElementById("lesson4").addEventListener("click", function(event) {
+            // Prevent the default behavior of the anchor element
+            event.preventDefault();
+
+            // Function to make a PATCH request
+            function updateCourseProgress() {
+                // Retrieve the api_token from the current URL
+                var apiToken = getQueryParamValue("api_token");
+                
+                // Check if apiToken exists
+                if (!apiToken) {
+                    console.error("API token not available in the URL.");
+                    return;
+                }
+                
+                // Construct the PATCH URL with the extracted apiToken
+                var url = "http://localhost:3000/course?api_token=" + apiToken + "&course=2&page=4";
+                
+                // Configure the request
+                var options = {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                // Make the PATCH request
+                fetch(url, options)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Course progress updated successfully:', data);
+                    })
+                    .catch(error => {
+                        console.error('There was a problem updating course progress:', error);
+                    });
+                    window.location.href = url
+            }
+            
+            // Call the function to make the PATCH request
+            updateCourseProgress();
+            
+        });
+        
+        // Function to extract query parameter from URL
+        function getQueryParamValue(param) {
+            var urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+    </script>
+
+</body>
+</html>

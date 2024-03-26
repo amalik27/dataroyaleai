@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 1: Introduction to AI</title>
+    <meta name="course-id" content="1">
+    <meta name="course-name" content="Introduction to AI">
+    <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
+</head>
+<body>
+    <h1>Lesson 1: Introduction to AI</h1>
+    <p>Welcome to Lesson 1 of our course on AI models!</p>
+    <p>In this lesson, we'll cover the basics of artificial intelligence and its importance in various fields.</p>
+    <p>Artificial Intelligence (AI) is a branch of computer science that aims to create intelligent machines capable of mimicking human behavior and cognition.</p>
+    <p>The goal of AI is to enable machines to perform tasks that traditionally require human intelligence, such as learning, reasoning, problem-solving, perception, and language understanding.</p>
+    <p>AI has numerous applications across various industries, including healthcare, finance, transportation, entertainment, and more.</p>
+    <p>Advancements in AI have led to the development of autonomous vehicles, virtual personal assistants, medical diagnosis systems, and other innovative technologies.</p>
+    <p>AI is driven by algorithms that process large amounts of data to identify patterns, make predictions, and optimize outcomes.</p>
+    <p>In this course, we'll explore different types of AI models and their applications in real-world scenarios.</p>
+    <p>Proceed to <a href="#" id="lesson2">Lesson 2</a></p>
+
+    <script>
+        // Add event listener for Lesson 2 link
+        document.getElementById("lesson2").addEventListener("click", function(event) {
+            handleLessonLinkClick(event, 2);
+        });
+        
+        function handleLessonLinkClick(event, lessonNumber) {
+            // Prevent the default behavior of the anchor element
+            event.preventDefault();
+            
+            // Retrieve the apiToken and courseId values dynamically from the current URL
+            var apiToken = getQueryParamValue("api_token");
+            var courseId = getQueryParamValue("course");
+        
+            // Check if the values are valid
+            if (!apiToken || !courseId) {
+                console.error("API token or course ID not available in the URL.");
+                return; // Stop further execution if the values are not available
+            }
+            
+            // Construct the URL with the retrieved values and the lesson number
+            var pageNumber = lessonNumber;
+            var url = "http://localhost:3000/course?api_token=" + apiToken + "&course=" + courseId + "&page=" + pageNumber;
+            
+            // Call function to make the PATCH request
+            updateCourseProgress(url);
+            window.location.href = url
+        }
+        
+        function getQueryParamValue(param) {
+            // Get the query parameters from the current URL
+            var urlParams = new URLSearchParams(window.location.search);
+            // Retrieve the value of the specified parameter
+            return urlParams.get(param);
+        }
+        
+        // Function to make a PATCH request
+        function updateCourseProgress(url) {
+            // Configure the request
+            var options = {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            // Make the PATCH request
+            fetch(url, options)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Course progress updated successfully:', data);
+                    // Optionally, you can redirect the user after the PATCH request is completed
+                    window.location.href = url;
+                })
+                .catch(error => {
+                    console.error('There was a problem updating course progress:', error);
+                });
+        }
+    </script>
+
+</body>
+</html>

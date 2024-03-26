@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 4: Introduction to AI Models</title>
+    <meta name="course-id" content="2">
+    <meta name="course-name" content="Introduction to Datasets">
+    <meta name="course-description" content="This course will introduce you to the basics of Introduction to Datasets.">
+</head>
+<body>
+    <h1>Lesson 4: Introduction to AI Models</h1>
+    <p>Now that we've covered the basics, let's explore various AI models used in different applications.</p>
+    <p>AI models are mathematical representations of real-world processes that enable computers to make predictions or decisions.</p>
+    <p>Decision trees are a type of AI model used for classification and regression tasks. They partition the input space into regions and make predictions based on the majority class or average value within each region.</p>
+    <p>Support vector machines are another type of AI model used for classification and regression. They find the optimal hyperplane that separates the input data into different classes or predicts continuous outcomes.</p>
+    <p>Other popular AI models include k-nearest neighbors, naive Bayes, and random forests, each with its strengths and weaknesses.</p>
+    <p>Understanding AI models is essential for selecting the appropriate model for a given task and optimizing its performance.</p>
+    <p>In addition to exploring AI models, let's dive deeper into datasets, understanding their role and importance in the development and evaluation of AI models:</p>
+    <ul>
+        <li><strong>Data Collection:</strong> Strategies for collecting diverse and representative datasets to ensure model generalization and robustness.</li>
+        <li><strong>Data Labeling:</strong> Techniques for annotating and labeling data to provide supervision for supervised learning tasks.</li>
+        <li><strong>Data Bias:</strong> Identification and mitigation of bias in datasets to prevent unfair or discriminatory model behavior.</li>
+        <li><strong>Data Privacy:</strong> Considerations for handling sensitive or personal data in compliance with privacy regulations and ethical standards.</li>
+    </ul>
+    <p>By understanding these aspects of datasets, AI practitioners can effectively leverage data to build reliable and ethical AI models.</p>
+    <p>
+        Proceed to <a href="5.html" id="lesson5">Lesson 5</a> |
+        Go back to <a href="3.html" id="lesson3">Lesson 3</a>
+    </p>
+    
+    <script>
+        // Add event listener for Lesson 5 link
+        document.getElementById("lesson5").addEventListener("click", function(event) {
+            handleLessonLinkClick(event, 5);
+        });
+        
+        // Add event listener for Lesson 3 link
+        document.getElementById("lesson3").addEventListener("click", function(event) {
+            handleLessonLinkClick(event, 3);
+        });
+        
+        function handleLessonLinkClick(event, lessonNumber) {
+            // Prevent the default behavior of the anchor element
+            event.preventDefault();
+            
+            // Retrieve the apiToken and courseId values dynamically from the current URL
+            var apiToken = getQueryParamValue("api_token");
+            var courseId = getQueryParamValue("course");
+        
+            // Check if the values are valid
+            if (!apiToken || !courseId) {
+                console.error("API token or course ID not available in the URL.");
+                return; // Stop further execution if the values are not available
+            }
+            
+            // Construct the URL with the retrieved values and the lesson number
+            var pageNumber = lessonNumber;
+            var url = "http://localhost:3000/course?api_token=" + apiToken + "&course=" + courseId + "&page=" + pageNumber;
+            
+            // Call function to make the PATCH request
+            updateCourseProgress(url);
+            window.location.href = url
+        }
+        
+        function getQueryParamValue(param) {
+            // Get the query parameters from the current URL
+            var urlParams = new URLSearchParams(window.location.search);
+            // Retrieve the value of the specified parameter
+            return urlParams.get(param);
+        }
+        
+        // Function to make a PATCH request
+        function updateCourseProgress(url) {
+            // Configure the request
+            var options = {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            // Make the PATCH request
+            fetch(url, options)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Course progress updated successfully:', data);
+                    // Optionally, you can redirect the user after the PATCH request is completed
+                    window.location.href = url;
+                })
+                .catch(error => {
+                    console.error('There was a problem updating course progress:', error);
+                });
+        }
+        </script>
+    
+</body>
+</html>
