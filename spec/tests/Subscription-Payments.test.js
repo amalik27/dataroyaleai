@@ -1,7 +1,8 @@
 const request = require('supertest');
 const server = require('../../backend/server');
+const { checkEmail, send_mail } = require('../../backend/utils/notificationUtils')
 
-function test_suite() {
+function payment_suite() {
     test('GET Test Endpoint / with 200, json', async () => {
         let return_obj = { success: true, message: "Hi \ud83d\ude00" }
         const response = await request(server).get('/').send();
@@ -95,8 +96,31 @@ function test_suite() {
         expect(response.body).toStrictEqual(return_obj)
     });
 }
+function email_suite() {
+    test('Check Email: Success', async () => {
+        let email = "mg@gmail.com"
+        let result = await checkEmail(email)
+        expect(result).toBeTruthy()
+    });
+    test('Check Email: No @ symbol', async () => {
+        let email = "mggmail.com"
+        let result = await checkEmail(email)
+        expect(result).toBeFalsy()
+    });
+    test('Check Email: No .', async () => {
+        let email = "mg@gmailcom"
+        let result = await checkEmail(email)
+        expect(result).toBeFalsy()
+    });
+    test('Empty Email', async () => {
+        let email = ""
+        let result = await checkEmail(email)
+        expect(result).toBeFalsy()
+    });
+}
 
 describe('NodeJS Endpoints', () => {
-    test_suite()
-
+    payment_suite()
+    email_suite()
+    server.close()
 });

@@ -19,6 +19,7 @@
     "http": "^0.0.1-security",
     "jsdom": "^24.0.0",
     "mysql": "^2.18.1",
+    "node-mailjet": "^6.0.5",
     "stripe": "^14.21.0",
     "url": "^0.11.3"
   }

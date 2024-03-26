@@ -1,6 +1,7 @@
 const mysql = require('mysql');
 
-const connection = mysql.createConnection({
+async function test() {
+const connection = await mysql.createConnection({
     host: 'localhost',
     user: 'tester',
     password: 'tester',
@@ -8,12 +9,14 @@ const connection = mysql.createConnection({
     port: '8889'
 });
 
-connection.connect((err) => {
-    if (err) {
-        console.error('Error connecting to database: ' + err.stack);
-        return;
-    }
-    console.log('Connected to database as id ' + connection.threadId);
-});
+    connection.connect((err) => {
+        if (err) {
+            console.error('Error connecting to database: ' + err.stack);
+            return;
+        }
+        console.log('Connected to database as id ' + connection.threadId);
+    });
 
-module.exports = connection;
+    module.exports = connection;
+}
+test();
