@@ -99,6 +99,11 @@ class AthenaManager extends PlatformDaemonManager {
             //Get user submission from database
             let userSubmission = await this.database.getUserSubmissions(container.processID, container.userID);
             container.model = userSubmission;
+            
+            this.daemons.get(processID).queue.push(container.containerID);
+            while(this.daemons.get(processID).queue[0] != container.containerID){
+                await new Promise(resolve => setTimeout(resolve, 10000));
+            }
             this.daemons.get(processID).initializeContainer(container);
         } else {
             throw new DaemonNotFoundError(`No daemon found with process ID ${processID}`);
@@ -119,8 +124,6 @@ class AthenaManager extends PlatformDaemonManager {
         const daemon = this.daemons.get(processID);
         // Begin inferences and wait for the score
         const {score, AstatsData} = await daemon.evaluateModel(filePath, containerID, columnNameX, columnNameY,metrics).then(score => {
-            this.killContainer(processID, containerID);
-
             // Log the score
             console.log(`Score for ${processID}: ${score}`);
             

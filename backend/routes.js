@@ -10,7 +10,18 @@ const userController = require('./controllers/userController');
 const competitionController = require('./controllers/competitionController'); 
 const { get } = require('http');
 const courseController = require('./controllers/courseController');
-const paymentController = require('./controllers/paymentController')
+const paymentController = require('./controllers/paymentController');
+const {PlatformDaemonManager,getSystemState} = require('../api-platform/platformManager.js');
+const {AthenaManager} = require('../api-platform/athenaManager.js');
+const {Container} = require('../api-platform/platformDaemon');
+var chalk = require(`chalk`);
+
+let Prometheus = new PlatformDaemonManager(4,4000,500,blocksPerTier = [40, 30, 50]);
+Prometheus.startMonitoring(1000);
+let Athena = new AthenaManager(4,4000,500,blocksPerTier = [40, 40, 40]);
+Athena.startMonitoring(1000);
+
+
 
 function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
@@ -453,12 +464,12 @@ function processRequest(req, res){
             });
         }
     } //api platform
-    else if (pathname.includes("/manager/displayUsage")) {
+    else if (pathname.includes("/prometheus/displayUsage")) {
         const displayUsageRegex = /\/manager\/displayUsage(?:\?.*?)?/;
         const match = path.match(displayUsageRegex);
         if (req.method === 'GET') {
             try {
-                const result = getSystemState(manager);
+                const result = getSystemState(Prometheus);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(result));
             } catch (error) {
@@ -470,7 +481,7 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/manager/addMessage")) {
+    else if (pathname.includes("/prometheus/addMessage")) {
         const addMessageRegex = /\/manager\/addMessage(?:\?.*?)?/;
         const match = path.match(addMessageRegex);
         if (req.method === 'POST') {
@@ -480,13 +491,14 @@ function processRequest(req, res){
             });
             req.on('end', () => {
                 try {
+                    console.log(body);
                     const { message } = JSON.parse(body);
                     if (!message) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Message is required.');
                         return;
                     }
-                    const id = manager.addMessageToQueue(message);
+                    const id =Prometheus.addMessageToQueue(message);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ messageID: id }));
                 } catch (error) {
@@ -499,7 +511,7 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/manager/messageStatus")) {
+    else if (pathname.includes("/prometheus/messageStatus")) {
         const messageStatusRegex = /\/manager\/messageStatus(?:\?.*?)?/;
         const match = path.match(messageStatusRegex);
         if (req.method === 'POST') {
@@ -515,7 +527,7 @@ function processRequest(req, res){
                         res.end('Message ID is required.');
                         return;
                     }
-                    const status = manager.fetchMessageStatus(messageID);
+                    const status =Prometheus.fetchMessageStatus(messageID);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify(status));
                 } catch (error) {
@@ -528,17 +540,17 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/manager/startContainer")) {
+    else if (pathname.includes("/prometheus/startContainer")) {
         const startContainerRegex = /\/manager\/startContainer(?:\?.*?)?/;
         const match = path.match(startContainerRegex);
         if (req.method === 'POST') {
-            let body = '';
+            let postData = '';
             req.on('data', (chunk) => {
-                body += chunk.toString();
+                postData += chunk.toString();
             });
             req.on('end', () => {
                 try {
-                    const { message } = JSON.parse(body);
+                    const { message } = JSON.parse(postData);
                     if (!message || !message.processID || !message.body) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Complete message with processID and body is required.');
@@ -548,12 +560,12 @@ function processRequest(req, res){
                     const { cpus, memory, containerID, model } = body;
                     const container = new Container(cpus, memory, containerID, model);
                     console.log(container.toString());
-                    manager.initializeContainer(processID, container);
+                    Prometheus.initializeContainer(processID, container);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
                     res.end('Container initialization started.');
                 } catch (error) {
                     res.writeHead(500, { 'Content-Type': 'text/plain' });
-                    res.end('500 Internal Server Error: ' + error.message);
+                    res.end('500 Internal Server Error: ' + error);
                 }
             });
         } else {
@@ -561,7 +573,7 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/manager/forward")) {
+    else if (pathname.includes("/prometheus/forward")) {
         const forwardRegex = /\/manager\/forward(?:\?.*?)?/;
         const match = path.match(forwardRegex);
         if (req.method === 'POST') {
@@ -578,7 +590,7 @@ function processRequest(req, res){
                         return;
                     }
                     console.log(`Forwarding request to container ${containerID} for process ${processID}.`);
-                    const data = await manager.forward(processID, containerID, body);
+                    const data = awaitPrometheus.forward(processID, containerID, body);
                     console.log(data);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify(data));
@@ -592,12 +604,12 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/manager/models")) {
+    else if (pathname.includes("/prometheus/models")) {
         const modelsRegex = /\/manager\/models(?:\?.*?)?/;
         const match = path.match(modelsRegex);
         if (req.method === 'GET') {
             try {
-                const models = manager.database.getAllModels();
+                const models =Prometheus.database.getAllModels();
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(models));
             } catch (error) {
@@ -609,7 +621,7 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/manager/kill")) {
+    else if (pathname.includes("/prometheus/kill")) {
         const killRegex = /\/manager\/kill(?:\?.*?)?/;
         const match = path.match(killRegex);
         if (req.method === 'POST') {
@@ -625,7 +637,7 @@ function processRequest(req, res){
                         res.end('Process ID is required.');
                         return;
                     }
-                    manager.killProcessDaemon(processID);
+                   Prometheus.killProcessDaemon(processID);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
                     res.end('Process killed.');
                 } catch (error) {
@@ -638,7 +650,7 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/manager/health")) {
+    else if (pathname.includes("/prometheus/health")) {
         const healthRegex = /\/manager\/health(?:\?.*?)?/;
         const match = path.match(healthRegex);
         if (req.method === 'POST') {
@@ -654,7 +666,7 @@ function processRequest(req, res){
                         res.end('Process ID and Container ID are required.');
                         return;
                     }
-                    const health = await manager.healthCheck(processID, containerID);
+                    const health = await Prometheus.healthCheck(processID, containerID);
                     console.log(health);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify(health));
@@ -668,13 +680,13 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/manager/queue")) {
+    else if (pathname.includes("/prometheus/queue")) {
         const queueRegex = /\/manager\/queue(?:\?.*?)?/;
         const match = path.match(queueRegex);
         if (req.method === 'GET') {
             try {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(manager.queue));
+                res.end(JSON.stringify(Prometheus.queue));
             } catch (error) {
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
                 res.end('500 Internal Server Error: ' + error.message);
@@ -717,7 +729,7 @@ function processRequest(req, res){
                         res.end('Message is required.');
                         return;
                     }
-                    const id = AthenaManagerInstance.addMessageToQueue(message);
+                    const id =Athena.addMessageToQueue(message);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ messageID: id }));
                 } catch (error) {
@@ -735,7 +747,7 @@ function processRequest(req, res){
         const match = path.match(databaseRegex);
         if (req.method === 'GET') {
             try {
-                const dbState = AthenaManagerInstance.databaseSystem.getDBState();
+                const dbState =Athena.databaseSystem.getDBState();
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(dbState));
             } catch (error) {
@@ -763,7 +775,7 @@ function processRequest(req, res){
                         res.end('Competition ID, name, description, and dataset are required.');
                         return;
                     }
-                    AthenaManagerInstance.databaseSystem.createCompetition(competitionID, competitionName, competitionDescription, competitionDataset);
+                   Athena.databaseSystem.createCompetition(competitionID, competitionName, competitionDescription, competitionDataset);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
                     res.end('Competition added.');
                 } catch (error) {
@@ -792,7 +804,7 @@ function processRequest(req, res){
                         res.end('Competition ID, user ID, and file path are required.');
                         return;
                     }
-                    AthenaManagerInstance.databaseSystem.addUserSubmission(competitionID, userID, filePath);
+                   Athena.databaseSystem.addUserSubmission(competitionID, userID, filePath);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
                     res.end('User submission added.');
                 } catch (error) {
@@ -821,7 +833,7 @@ function processRequest(req, res){
                         res.end('Competition ID, user ID, and score are required.');
                         return;
                     }
-                    AthenaManagerInstance.databaseSystem.addScoreToLeaderboard(competitionID, userID, score);
+                   Athena.databaseSystem.addScoreToLeaderboard(competitionID, userID, score);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
                     res.end('Score added to leaderboard.');
                 } catch (error) {
@@ -845,7 +857,7 @@ function processRequest(req, res){
                 return;
             }
             try {
-                const leaderboard = AthenaManagerInstance.databaseSystem.getLeaderboard(competitionID);
+                const leaderboard =Athena.databaseSystem.getLeaderboard(competitionID);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(leaderboard));
             } catch (error) {

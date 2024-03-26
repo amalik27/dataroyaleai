@@ -211,6 +211,7 @@ class PlatformDaemon extends EventEmitter{
    * 
    */
   initializeContainer(container, silent = true) {
+
     console.log(chalk.green(`[${this.#name} Daemon - ${this.processID}] Starting Container...`));
 
     if (this.containerStack.exists(container.containerID)) {
@@ -220,7 +221,7 @@ class PlatformDaemon extends EventEmitter{
 
     this.containerStack.push(container);
     // Building the Docker container
-    let buildResult = shell.exec(`docker build -t ${container.containerID} ./${container.model}`, { silent: silent });
+    let buildResult = shell.exec(`docker build -t ${container.containerID} ${container.model}`, { silent: silent });
     if (buildResult.code !== 0) {
       throw new Error(chalk.red(`Failed to build container ${container.containerID} with exit code ${buildResult.code}: ${buildResult.stderr}`));
       return; // Exit if build fails

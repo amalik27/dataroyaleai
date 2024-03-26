@@ -37,6 +37,15 @@ CREATE TABLE `tiers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Dumping data for table `tiers`
+--
+
+INSERT INTO `tiers` (`TierLevel`, `Guarantee`, `Overload`, `Uptime`, `OverloadUptime`, `ports`) VALUES
+(1, 20, '10', '60', '10', 5),
+(2, 30, '15', '45', '5', 3),
+(3, 40, '20', '35', '0', 1);
+
+--
 -- Indexes for dumped tables
 --
 

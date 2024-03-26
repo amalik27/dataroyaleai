@@ -11,11 +11,14 @@ class AthenaDaemon extends PlatformDaemon {
         super( port, maxCPU, maxMemory, processID, maxUptime,0,"Athena");
         this.dataRecording = false;
         this.dataRecordingInterval = 0;
-
+        this.queue = [];
         
     }
 
     async evaluateModel(filePath, containerID, columnNamesX, columnNamesY,metrics) {
+        while(this.queue[0] != containerID){
+            //Wait for some time
+        }
         const results = [];
         const readStream = fs.createReadStream(filePath);
         this.dataRecording = true;
@@ -56,6 +59,9 @@ class AthenaDaemon extends PlatformDaemon {
 
                         return out;
                     }));
+                    this.stopDataRecording(containerID)
+                    await this.killContainers([{containerID:containerID}]);
+                    this.queue.shift();
                     //Stop Timer
                     const end = new Date();
                     this.timeElapsed = (end - start) / 1000;
@@ -70,7 +76,6 @@ class AthenaDaemon extends PlatformDaemon {
                 }
             });
         });
-        this.stopDataRecording(containerID)
         
         
         return score; // Return the awaited score from the promise
