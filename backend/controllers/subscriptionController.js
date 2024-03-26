@@ -22,6 +22,9 @@
 var sql2 = "SELECT * FROM subscription_database";
 var tableAsString = "";
 const db = require('../db');
+
+//have user determine what they want to do with the database/progrm:
+function selectOption(input, req, res){
     db.query(sql2, (err, rows)=>{
         if (err) {
             console.error(`Error executing query: ${err.message}`);
@@ -29,11 +32,6 @@ const db = require('../db');
         }
         tableAsString = Object.entries(rows);
     });
-
-
-
-//have user determine what they want to do with the database/progrm:
-function selectOption(input, req, res){
     var parseInput = JSON.parse(input); //insert method for acquiring input from postman
     let tempSubscriber = new Object;
     switch (parseInput.request.select){
