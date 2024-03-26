@@ -41,7 +41,6 @@ class AthenaDaemon extends PlatformDaemon {
                             return reject(new Error(`Error finding running container for tag: ${containerID}`));
                         }
                         const DOCKERID = stdout.trim();
-                        console.log(DOCKERID);
                         this.dataRecordingInterval = 1;
                         this.getContainerStats(DOCKERID);
                     });

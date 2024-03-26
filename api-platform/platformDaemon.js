@@ -179,7 +179,6 @@ class PlatformDaemon extends EventEmitter{
    * As the name implies, it gets the port that a particular container operates on when given its unique ID
    */
   getPortByID(containerID) {
-    console.log(this.portMap);
     // Check if the containerID is present in the portMap
     if (this.portMap.has(Number(containerID))) {
         // Return the port assigned to the containerID
