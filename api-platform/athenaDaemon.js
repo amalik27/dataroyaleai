@@ -49,7 +49,11 @@ class AthenaDaemon extends PlatformDaemon {
 
                     const predictions = await Promise.all(csvResults.map(row => {
                         const body = this.bodyMapper(row, columnNamesX, columnNamesY).inputs;
-                        return this.forward({ containerID, body }).then(response => JSON.parse(response).result);
+
+
+                        let out = this.forward({ containerID, body }).then(response => JSON.parse(response).result);
+
+                        return out;
                     }));
                     const calculatedScore = this.model_performance(predictions, labels, metric);
                     console.log(`Final score ${metric}: ${calculatedScore}`);
@@ -106,6 +110,9 @@ class AthenaDaemon extends PlatformDaemon {
         };
     }
     
+    
+
+
     
 
     async checkUntilHealthy(containerTag, retryInterval = 10000,attempts = 5, fn) {
