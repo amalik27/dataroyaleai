@@ -24,6 +24,6 @@ All worries, complaints, errors, annoyances, and tribulations will only be accep
 
  ## Set Up API Platform
  (MUST BE WORKING ON LINUX MACHINE) UBUNTU PREFERRED
--Import tiers.sql file into php myadmin
--Verify that the 3 rows are correct inside the tiers.sql file
--Install docker - if docker is not started put command (sudo systemctl start docker) or (sudo service docker start)
+-Import ```tiers.sql``` file into php myadmin
+-Verify that the 3 rows are correct inside the ```tiers.sql``` file
+-Install docker - if docker is not started put command (```sudo systemctl start docker```) or (```sudo service docker start```)
