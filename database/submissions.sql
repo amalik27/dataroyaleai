@@ -30,7 +30,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `submissions` (
   `comp_id` int(11) NOT NULL,
   `submission_id` int(11) NOT NULL,
-  `score` decimal(10,0),
+  `score` double,
   `file_path` varchar(512),
   `user_id` int(30) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
