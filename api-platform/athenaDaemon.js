@@ -19,7 +19,7 @@ class AthenaDaemon extends PlatformDaemon {
         const results = [];
         const readStream = fs.createReadStream(filePath);
         this.dataRecording = true;
-    
+        
         const readCSV = new Promise((resolve, reject) => {
             readStream
                 .pipe(csv())
@@ -30,8 +30,7 @@ class AthenaDaemon extends PlatformDaemon {
     
         const csvResults = await readCSV; // Now this contains the results directly
     
-        const labels = csvResults.map(row => row[columnNamesY]);
-    
+        const labels = csvResults.map(row => row[columnNamesY]);        
         // Wrap the entire operation in a promise to be awaited
         const score = await new Promise(async (resolve, reject) => {
             await this.checkUntilHealthy(containerID, 10000, 6, async () => {
@@ -41,18 +40,22 @@ class AthenaDaemon extends PlatformDaemon {
                             return reject(new Error(`Error finding running container for tag: ${containerID}`));
                         }
                         const DOCKERID = stdout.trim();
-                        console.log(DOCKERID);
                         this.dataRecordingInterval = 1;
                         this.getContainerStats(DOCKERID);
                     });
 
-
+                    
                     const predictions = await Promise.all(csvResults.map(row => {
                         const body = this.bodyMapper(row, columnNamesX, columnNamesY).inputs;
                         return this.forward({ containerID, body }).then(response => JSON.parse(response).result);
                     }));
                     const calculatedScore = this.model_performance(predictions, labels, metric);
+                    
                     console.log(`Final score ${metric}: ${calculatedScore}`);
+                    //clearInterval(this.dataRecordingIntervalId);
+                    
+                    let AstatsData = this.statsData;
+                    console.log(AstatsData)
                     resolve({ score: calculatedScore }); // Resolve the promise with the score
                 } catch (error) {
                     reject(error); // In case of error, reject the promise
@@ -62,8 +65,7 @@ class AthenaDaemon extends PlatformDaemon {
         this.stopDataRecording(containerID)
         
         
-
-        return {score:score, statsData:0}; // Return the awaited score from the promise
+        return {score:score, statsData:this.statsData}; // Return the awaited score from the promise
     }
 
 
@@ -76,7 +78,7 @@ class AthenaDaemon extends PlatformDaemon {
 
     async getContainerStats(containerID) {
         console.log("Getting container stats....");
-        let statsData = []; // Variable to store CPU and memory usage data
+        this.statsData = []; // Variable to store CPU and memory usage data
         let intervalId; // Variable to hold the interval ID
         // Function to fetch container stats and store them in statsData array
         const fetchStats = () => {
@@ -88,17 +90,18 @@ class AthenaDaemon extends PlatformDaemon {
                 clearInterval(intervalId); // Stop the interval if an error occurs
                 return;
             }
+    
 
             let stats = output.stdout.split(' ');
             let cpuUsage = stats[0];
             let memoryUsage = stats[1];
             console.log(`CPU Usage: ${cpuUsage}, Memory Usage: ${memoryUsage}`);
-            statsData.push({ cpuUsage, memoryUsage }); // Store CPU and memory usage data
+            this.statsData.push({ cpuUsage, memoryUsage }); // Store CPU and memory usage data
         };
     
         // Start fetching container stats every 1 second
-        intervalId = setInterval(fetchStats, this.dataRecordingInterval);
-    
+        this.dataRecordingIntervalId = setInterval(fetchStats, this.dataRecordingInterval);
+           
         // Return a function to stop the interval and return the collected stats
         return () => {
             clearInterval(intervalId); // Stop the interval
