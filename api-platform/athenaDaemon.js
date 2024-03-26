@@ -113,11 +113,6 @@ class AthenaDaemon extends PlatformDaemon {
         };
     }
     
-    
-
-
-    
-
     async checkUntilHealthy(containerTag, retryInterval = 10000,attempts = 5, fn) {
         if(attempts){
             try {

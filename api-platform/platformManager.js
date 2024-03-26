@@ -582,7 +582,7 @@ class DatabaseSystem {
         this.addModel(1, "Euclid", "./Euclid", 2, 400);
         //Model 2 : Pythagoras
         this.addModel(2, "Pythagoras", "./Pythagoras", 2, 500);
-        //Model 3 : Euclid
+        //Model 3 : Archimedes
         this.addModel(3, "Archimedes", "./Archimedes", 4, 1200);
     }
 

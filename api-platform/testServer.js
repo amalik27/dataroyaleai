@@ -79,7 +79,6 @@ app.get('/manager/models', (req, res) => {
     res.json(manager.database.getAllModels());
 });
 
-
 //Kill endpoint
 app.post('/manager/kill', (req, res) => {
     const { processID } = req.body;
