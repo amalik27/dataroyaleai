@@ -175,6 +175,7 @@ async function markCourseCompletion(api_token, course_id) {
         throw error;
     }
 }
+
 //Function for users to see their completed courses
 async function readCompletedCoursesByApiToken(api_token) {
     try {
@@ -251,4 +252,5 @@ module.exports = {
     readCompletedCoursesByApiToken,
     readInProgressCoursesByApiToken,
     getTotalCourseCount
+    markCourseCompletion
 };

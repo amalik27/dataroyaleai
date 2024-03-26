@@ -11,8 +11,6 @@ userController.db = mockDb;
 
 const passwordUtils = require('../../backend/utils/passwordUtils.js'); 
 
-
-
 describe('registerUser function', () => {
     let mockZxcvbn;
     let mockPasswordUtils;
@@ -35,8 +33,6 @@ it('should not register a new user with weak password', async () => {
         await expectAsync(userController.registerUser(username, email, password, role)).toBeRejectedWithError('Weak password'); 
     });
 
-    
-
 //Test Case 2 : Show throw error if email is invalid  
  it('should throw an error if email is not valid', async () => {
         const username = 'testuser';
@@ -48,8 +44,6 @@ it('should not register a new user with weak password', async () => {
 
         await expectAsync(userController.registerUser(username, email, password, role)).toBeRejectedWithError('Invalid email address');
     });
-
-   
 });
 
 // Test Case 3 : Checks if creating a new user is done successfully 
@@ -182,6 +176,7 @@ it('should generate a random string of specified length', () => {
         expect(randomString).toBeDefined();
         expect(randomString.length).toEqual(length);
     });
+
 //Test Case 9 : Should be randomized and giving different strings
     it('should generate a different string on each call', () => {
         const length = 10;
@@ -189,6 +184,7 @@ it('should generate a random string of specified length', () => {
         const randomString2 = userController.generateRandomString(length);
         expect(randomString1).not.toEqual(randomString2);
     });
+
 // Test Case 10 : Should generate alphanumeric characters, no special characters
     it('should generate a string containing only alphanumeric characters', () => {
         const length = 10;
@@ -196,6 +192,7 @@ it('should generate a random string of specified length', () => {
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
         expect(alphanumericRegex.test(randomString)).toBeTrue();
     });
+
 // Test Case 11 : Should throw error if a length 0 string or less is created
     it('should throw an error when length is less than or equal to 0', () => {
         expect(() => generateRandomString(-1)).toThrowError();
@@ -248,12 +245,11 @@ describe('updateEmail function', () => {
 
         const result = await userController.updateEmail(userId, newEmail);
 
-        // 
         expect(result).toEqual({ success: true, message: 'The new email given was updated successfully' });
     });
 });
 
- // Test Case 14 : Delete user information through ID number
+// Test Case 14 : Delete user information through ID number
 describe('deleteUserById function', () => {
     let userId;
 
@@ -268,8 +264,6 @@ describe('deleteUserById function', () => {
         expect(result.success).toBeTrue();
     });
 });
-
-//Tests PasswordUtils.js functions
 
 // Test Case 15 : Tests the functionality of encryptSHA1 function
 describe('encryptSHA1 function', () => {
