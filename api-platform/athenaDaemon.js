@@ -10,14 +10,15 @@ class AthenaDaemon extends PlatformDaemon {
     constructor( port, maxCPU, maxMemory, processID, maxUptime) {
         super( port, maxCPU, maxMemory, processID, maxUptime,0,"Athena");
         this.dataRecording = false;
-        this.eventEmitter = new EventEmitter();
+        this.dataRecordingInterval = 0;
+
+        
     }
 
     async evaluateModel(filePath, containerID, columnNamesX, columnNamesY, metric) {
         const results = [];
         const readStream = fs.createReadStream(filePath);
         this.dataRecording = true;
-        this.eventEmitter.emit('dataRecordingStarted')
     
         const readCSV = new Promise((resolve, reject) => {
             readStream
@@ -35,6 +36,17 @@ class AthenaDaemon extends PlatformDaemon {
         const score = await new Promise(async (resolve, reject) => {
             await this.checkUntilHealthy(containerID, 10000, 6, async () => {
                 try {
+                    shell.exec(`docker ps | grep ${containerID} | cut -f 1 -d ' '`, { silent: true }, (code, stdout, stderr) => {
+                        if (code !== 0 || stderr.trim()) {
+                            return reject(new Error(`Error finding running container for tag: ${containerID}`));
+                        }
+                        const DOCKERID = stdout.trim();
+                        console.log(DOCKERID);
+                        this.dataRecordingInterval = 1;
+                        this.getContainerStats(DOCKERID);
+                    });
+
+
                     const predictions = await Promise.all(csvResults.map(row => {
                         const body = this.bodyMapper(row, columnNamesX, columnNamesY).inputs;
                         return this.forward({ containerID, body }).then(response => JSON.parse(response).result);
@@ -47,24 +59,53 @@ class AthenaDaemon extends PlatformDaemon {
                 }
             });
         });
-        this.dataRecording = false;
-        this.eventEmitter.emit('dataRecordingStopped');
-        return score; // Return the awaited score from the promise
-    }
-    async getContainerStats(containerID) {
-        let command = `docker stats --no-stream --format "{{.CPUPerc}} {{.MemUsage}}" ${containerID}`;
-        let output = shell.exec(command, { silent: true });
-        if (output.code !== 0) {
-            console.error('Error executing docker stats command:', output.stderr);
-            return null;
-        }
+        this.stopDataRecording(containerID)
+        
+        
 
-        let stats = output.stdout.split(' ');
-        let cpuUsage = stats[0];
-        let memoryUsage = stats[1];
-        console.log(`CPU Usage: ${cpuUsage}, Memory Usage: ${memoryUsage}`);
-        return { cpuUsage, memoryUsage };
+        return {score:score, statsData:0}; // Return the awaited score from the promise
     }
+
+
+
+    stopDataRecording() {
+        this.dataRecordingInterval = 0;
+        clearInterval(this.dataRecordingIntervalId); // Stop the interval
+        this.emit('dataRecordingStopped');
+    }
+
+    async getContainerStats(containerID) {
+        console.log("Getting container stats....");
+        let statsData = []; // Variable to store CPU and memory usage data
+        let intervalId; // Variable to hold the interval ID
+        // Function to fetch container stats and store them in statsData array
+        const fetchStats = () => {
+            console.log("Fetch stats loop running....");
+            let command = `docker stats --no-stream --format "{{.CPUPerc}} {{.MemUsage}}" ${containerID}`;
+            let output = shell.exec(command, { silent: true });
+            if (output.code !== 0) {
+                console.error('Error executing docker stats command:', output.stderr);
+                clearInterval(intervalId); // Stop the interval if an error occurs
+                return;
+            }
+
+            let stats = output.stdout.split(' ');
+            let cpuUsage = stats[0];
+            let memoryUsage = stats[1];
+            console.log(`CPU Usage: ${cpuUsage}, Memory Usage: ${memoryUsage}`);
+            statsData.push({ cpuUsage, memoryUsage }); // Store CPU and memory usage data
+        };
+    
+        // Start fetching container stats every 1 second
+        intervalId = setInterval(fetchStats, this.dataRecordingInterval);
+    
+        // Return a function to stop the interval and return the collected stats
+        return () => {
+            clearInterval(intervalId); // Stop the interval
+            return statsData; // Return the collected stats
+        };
+    }
+    
     
 
     async checkUntilHealthy(containerTag, retryInterval = 10000,attempts = 5, fn) {

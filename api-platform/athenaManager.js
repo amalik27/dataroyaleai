@@ -118,7 +118,7 @@ class AthenaManager extends PlatformDaemonManager {
             console.log(`Score for ${processID}: ${score.score}`);
             
             // Add score to leaderboard
-            this.databaseSystem.addScoreToLeaderboard(competitionID, processID, score.score);
+            this.databaseSystem.addScoreToLeaderboard(competitionID, processID, score);
         
             // Return the score to the caller
             return score;
