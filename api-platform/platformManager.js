@@ -222,7 +222,7 @@ class PlatformDaemonManager {
         }
         //Allocations succeed, move on.
         //Create new daemon with the guarantee blocks asssigned to it based on its tier
-        const daemon = new PlatformDaemon(ports, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockCPU, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockMemory, parameters.processID, parameters.uptime, 3);
+        const daemon = new PlatformDaemon(ports, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockCPU, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockMemory, parameters.processID, parameters.uptime, 3, this.name);
         daemon.startMonitoring(parameters.interval);
         this.registerDaemon(parameters.processID, daemon);
 
@@ -343,6 +343,7 @@ class PlatformResourceMonitor extends EventEmitter {
         this.overloadDeallocationQueue = []; //Contains ProcessIDs
         this.usage = new Map(); // Tracks used blocks by processID
         this.database = database; // Reference to the DatabaseSystem
+        
         
         // Manage ports
         this.availablePorts = new Set();
@@ -572,6 +573,15 @@ class DatabaseSystem {
         this.addUser("user7", 3);
         this.addUser("user8", 3);
         this.addUser("user9", 3);
+
+        //Create a map of existing models. Let there be 3 models. Let fields include minimum specs, name, filepath, and a unique ID
+        this.models = new Map();
+        //Model 1 : Euclid
+        this.addModel(1, "Euclid", "./Euclid", 2, 4);
+        //Model 2 : Pythagoras
+        this.addModel(2, "Pythagoras", "./Pythagoras", 4, 8);
+        //Model 3 : Euclid
+        this.addModel(3, "Newton", "./Newton", 8, 16);
     }
 
     addTier(tier, guarantee, overload, time) {
@@ -580,6 +590,16 @@ class DatabaseSystem {
 
     addUser(username, tier) {
         this.users.set(username, tier);
+    }
+
+    //add model
+    addModel(modelID, name, filepath, cpu, memory) {
+        this.models.set(modelID, { name, filepath, cpu, memory });
+    }
+
+    //get model
+    getModel(modelID) {
+        return this.models.get(modelID);
     }
 
     getUserTier(username) {

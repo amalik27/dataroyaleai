@@ -113,7 +113,7 @@ class AthenaManager extends PlatformDaemonManager {
         const daemon = this.daemons.get(processID);
         
         // Begin inferences and wait for the score
-        const score = await daemon.evaluateModel(filePath, containerID, columnNameX, columnNameY, metric).then(score => {
+        await daemon.evaluateModel(filePath, containerID, columnNameX, columnNameY, metric).then(score => {
             // Log the score
             console.log(`Score for ${processID}: ${score.score}`);
             
