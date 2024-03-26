@@ -252,5 +252,4 @@ module.exports = {
     readCompletedCoursesByApiToken,
     readInProgressCoursesByApiToken,
     getTotalCourseCount
-    markCourseCompletion
 };
