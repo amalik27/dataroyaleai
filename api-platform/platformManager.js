@@ -634,6 +634,20 @@ class DatabaseSystem {
         });
     }
 
+    async validateUserAPIKey(apiKey,user) {
+        const query = 'SELECT username FROM users WHERE apiKey = ?';
+        try {
+            const results = await this.query(query, [apiKey]);
+            if (results.length > 0) {
+                return results[0].username==user;
+            } else {
+                throw new Error('API key not found');
+            }
+        } catch (err) {
+            throw err;
+        }
+    }
+
     async getUserTier(username) {
         const query = 'SELECT tier FROM users WHERE username = ?';
         try {

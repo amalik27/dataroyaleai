@@ -589,8 +589,14 @@ function processRequest(req, res){
                         res.end('Process ID, Container ID, and Body are required.');
                         return;
                     }
+                    if(!Prometheus.database.validateUserAPIKey(body.api_token)){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
+                        return;
+                    }
+
                     console.log(`Forwarding request to container ${containerID} for process ${processID}.`);
-                    const data = awaitPrometheus.forward(processID, containerID, body);
+                    const data = await Prometheus.forward(processID, containerID, body);
                     console.log(data);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify(data));
