@@ -1,45 +1,35 @@
-//Import athenaDaemon
-const AthenaDaemon = require("./athenaDaemon");
-const { Container } = require("./platformDaemon");
-const chalk = require('chalk');
 
-let daemon = new AthenaDaemon([5000],5,20000,'testDAemon',10000);
-daemon.startMonitoring(500);
+const {AthenaDatabaseSystem} = require('./athenaManager.js');
+const db = require('../backend/db.js');
+const util = require('util');
 
-process.on('SIGINT', () => {
-    console.log(chalk.red("[Prometheus] Shutdown signal recieved, performing cleanup."));   
-    daemon.shutdown();
-    // Exit with status code 0 (success)
-    process.exit(0);
-  });
+async function runEvaluations() {
+    const athenaDB = new AthenaDatabaseSystem();
 
-//Create a .csv file containing a sine wave with a little noise applied.
-filePath = "./TestDatasets/noisy_sine.csv";
-function bodyMapper(row, columnNameX, columnNameY) {
-    return {
-        angle: row[columnNameX],
-        y: row[columnNameY]
-    };
-}
-async function checkUntilHealthy(daemon, containerTag, retryInterval = 10000,attempts = 5, fn) {
-    if(attempts){
-        try {
-            const status = await daemon.checkContainerHealth(containerTag);
-            if (status.status=="healthy") {
-                console.log('Container is healthy.');
-                fn();
-            } else {
-                console.log('Container is not healthy yet. Retrying...');
-                setTimeout(() => checkUntilHealthy(daemon,containerTag, retryInterval,attempts-=1, fn), retryInterval, );
-            }
-        } catch (error) {
-            console.error('Error checking container health:', error);
-            setTimeout(() => checkUntilHealthy(daemon,containerTag, retryInterval,attempts-=1, fn));
-        }
-    } else{
-        console.log('Error checking container health:'); 
+    try {
+        console.log('Creating a competition...');
+        await athenaDB.createCompetition(1, 'Data Science Challenge', 'Predict the future.', 'dataset.csv');
+
+        console.log('Fetching competition dataset...');
+        const dataset = await athenaDB.getCompetitionDataset(1);
+        console.log(`Dataset: ${dataset}`);
+
+        console.log('Adding a user submission...');
+        await athenaDB.addUserSubmission(1, 'user123', 'submission.csv');
+
+        console.log('Adding score to leaderboard...');
+        await athenaDB.addScoreToLeaderboard(1, 'user123', 95.5);
+
+        console.log('Getting leaderboard...');
+        const leaderboard = await athenaDB.getLeaderboard(1);
+        console.log(leaderboard);
+
+        console.log('Getting user submissions...');
+        const submissions = await athenaDB.getUserSubmissions(1, 'user123');
+        console.log(submissions);
+    } catch (err) {
+        console.error('An error occurred:', err.message);
     }
 }
 
-daemon.initializeContainer(new Container(5,20000,'123','Euclid'));
-checkUntilHealthy(daemon,'123',10000,6,()=>daemon.evaluateModel(filePath,'123',bodyMapper,'X','Y'));
+runEvaluations();

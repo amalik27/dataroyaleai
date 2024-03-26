@@ -96,8 +96,6 @@ function processRequest(req, res){
                 }
             });
 
-
-
         } else if (req.method === 'PATCH'){
             // Update Competition Details
             let body = '';
@@ -459,7 +457,6 @@ function processRequest(req, res){
         res.end(JSON.stringify({ success: false, message: 'Endpoint Not Found' }));
     }    
 }
-
 module.exports = {
     processRequest
 };

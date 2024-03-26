@@ -1,7 +1,9 @@
 var shell = require('shelljs');
 var chalk = require("chalk");
 const EventEmitter = require('events');
-
+const mysql = require('mysql');
+const util = require('util');
+const db = require('../backend/db.js')
 const { PlatformDaemon , Container } = require('./platformDaemon');
 
 //Debug function for getting overall system state and packing it into a JSON object
@@ -548,54 +550,39 @@ class PlatformResourceMonitor extends EventEmitter {
         return totalUsed;
     }
 }
-
-//Class to mock a database, for testing purposes. Holds information about how many compute blocks are allowed for each subscription tier's user. There are 3 tiers:
-//1. 20 Guarantee, 10 overload, 30 seconds of overload time
-//2. 10 Guarantee, 5 overload 10 seconds of overload time
-//3. 5 Guarantee, No overload, no overload time
-//This class should hold the tiers in one map with the information, and users in another map with a parameter for their tiers
 class DatabaseSystem {
     constructor() {
-        this.tiers = new Map();
-        this.users = new Map();
-        //Add tiers and users
-        this.addTier(1, 20, 10, 30);
-        this.addTier(2, 10, 5, 10);
-        this.addTier(3, 5, 0, 0);
-        this.addUser("user0", 1);
-        this.addUser("user1", 1);
-        this.addUser("user2", 2);
-        this.addUser("user3", 2);
-        this.addUser("user4", 2);
-        this.addUser("user5", 3);
-        this.addUser("user6", 3);
-        this.addUser("user7", 3);
-        this.addUser("user8", 3);
-        this.addUser("user9", 3);
+        this.query = util.promisify(db.query).bind(db);
     }
 
-    addTier(tier, guarantee, overload, time) {
-        this.tiers.set(tier, { guarantee, overload, time });
+    async getUserTier(username) {
+        const query = 'SELECT tier FROM users WHERE username = ?';
+        try {
+            const results = await this.query(query, [username]);
+            if (results.length > 0) { 
+                return results[0].tier;
+            } else {
+                throw new Error('User not found');
+            }
+        } catch (err) {
+            throw err;
+        }
     }
 
-    addUser(username, tier) {
-        this.users.set(username, tier);
+    async getTierResources(tier) {
+        const query = 'SELECT Guarantee, Overload, Uptime FROM tiers WHERE tierLevel = ?';
+        try {
+            const results = await this.query(query, [tier]);
+            if (results.length > 0) {
+                return results[0];
+            } else {
+                throw new Error('Tier not found');
+            }
+        } catch (err) {
+            throw err;
+        }
     }
-
-    getUserTier(username) {
-        return this.users.get(username);
-    }
-
-    getTierResources(tier) {
-        return this.tiers.get(tier);
-    }
-
-    getTierIDs() {
-        return Array.from(this.tiers.keys());
-    }
-
 }
-
 //ERRORS because proper error coding makes this so much easier
 class AlreadyRegisteredError extends Error {
     constructor(message) {

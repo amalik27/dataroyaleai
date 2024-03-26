@@ -1,7 +1,9 @@
 const AthenaDaemon = require('./athenaDaemon');
 const { PlatformDaemonManager, DaemonNotFoundError, DatabaseSystem, GuaranteeResourceAllocationError } = require('./platformManager');
 const chalk = require('chalk');
-
+const util = require('util');
+const db = require('../backend/db.js')
+const mysql = require('mysql');
 //Inherit from PrometheusManager
 class AthenaManager extends PlatformDaemonManager {
     constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier) {
@@ -172,68 +174,46 @@ class AthenaManager extends PlatformDaemonManager {
 class AthenaDatabaseSystem extends DatabaseSystem {
     constructor() {
         super();
-        this.competitions = new Map();
-        this.userSubmissions = new Map();
-    }
-    //Get db state as json
-    getDBState() {
-        let comps = Array.from(this.competitions).slice();
-        //The leaderboards are maps, therefore convert to arrays
-        comps.forEach((comp) => {
-            comp[1].competitionLeaderboard = Array.from(comp[1].competitionLeaderboard);
-        });
-        return {
-            competitions: comps,
-            userSubmissions: Array.from(this.userSubmissions)
-        };
+        this.query = util.promisify(db.query).bind(db);
     }
 
-    //Create competition
-    createCompetition(competitionID, competitionName, competitionDescription,competitionDataset) {
-        this.competitions.set(competitionID, {
-            competitionName,
-            competitionDataset,
-            competitionDescription,
-            competitionLeaderboard: new Map()
-        });
+    async createCompetition(id, title, description, file_path) {
+        const sql = "INSERT INTO Competitions (id, title, description, file_path) VALUES (?, ?, ?, ?, ?)";
+        await this.query(sql, [id, title, description, file_path]);
     }
 
-    getCompetitionDataset(competitionID){
-        return this.competitions.get(competitionID).competitionDataset;
-    }   
-
-    //Add user submission
-    addUserSubmission(competitionID, userID, filePath) {
-        this.userSubmissions.set(filePath, {
-            competitionID,
-            userID
-        });
+    async getCompetitionDataset(id) {
+        const sql = "SELECT file_path FROM Competitions WHERE id = ?";
+        const results = await this.query(sql, [id]);
+        return results.length ? results[0].file_path : null;
     }
 
-    //Add score to leaderboard
-    addScoreToLeaderboard(competitionID, userID, score) {
-        const competition = this.competitions.get(competitionID);
-        competition.competitionLeaderboard.set(userID, score);
-        //Place into map
-        this.competitions.set(competitionID, competition);
+    async addUserSubmission(comp_id, user_id, file_path) {
+        // Adjusted to match the Submissions table schema.
+        // Note: Assuming `score` is to be updated separately.
+        const sql = "INSERT INTO Submissions (comp_id, user_id, file_path) VALUES (?, ?, ?)";
+        await this.query(sql, [comp_id, user_id, file_path]);
     }
 
-    //Get leaderboard
-    getLeaderboard(competitionID) {
-        const competition = this.competitions.get(competitionID);
-        return competition.competitionLeaderboard;
+    async addScoreToLeaderboard(comp_id, user_id, score) {
+        // Note: Assuming Leaderboard updates or inserts are handled externally since PRIMARY KEY is `user_id`.
+        const sql = "INSERT INTO Leaderboard (comp_id, user_id, score) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE score = ?";
+        await this.query(sql, [comp_id, user_id, score, score]);
     }
 
-    //Get user submissions
-    getUserSubmissions(competitionID, userID) {
-        const userSubmissions = [];
-        for (let [filePath, submission] of this.userSubmissions) {
-            if (submission.competitionID === competitionID && submission.userID === userID) {
-                userSubmissions.push(filePath);
-            }
-        }
-        return userSubmissions;
+    async getLeaderboard(comp_id) {
+        const sql = "SELECT user_id, score FROM Leaderboard WHERE comp_id = ? ORDER BY score DESC";
+        const results = await this.query(sql, [comp_id]);
+        return results;
+    }
+
+    async getUserSubmissions(comp_id, user_id) {
+        const sql = "SELECT file_path FROM Submissions WHERE comp_id = ? AND user_id = ?";
+        const results = await this.query(sql, [comp_id, user_id]);
+        return results.map(submission => submission.file_path);
     }
 }
+
+
 
 module.exports = { AthenaManager, AthenaDatabaseSystem };
