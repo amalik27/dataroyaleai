@@ -61,11 +61,11 @@ class PlatformDaemonManager {
         this.interval = null;
         // Initialize resource monitor with blocks and ports range
         this.database = new DatabaseSystem();
-        this.resourceMonitor = new PlatformResourceMonitor(blocksPerTier, portsAllowed,this.database);
+        this.resourceMonitor = new PlatformResourceMonitor(blocksPerTier, portsAllowed,this.database, this.name);
         //Listen for deallocation events
         this.resourceMonitor.on('overloadDeallocated', (processID,blocks) => {
             //We deallocate the blocks from the process
-            this.setProcessResources(processID, this.resourceMonitor.usage.get(processID).guaranteed + this.resourceMonitor.usage.get(processID).overload - blocks);
+            this.setProcessResources(processID, this.resourceMonitor.usage.get(processID).guaranteed);
             //We remove the process from the deallocation queue
             this.resourceMonitor.overloadDeallocationQueue = this.resourceMonitor.overloadDeallocationQueue.filter(id => id !== processID);
         });
@@ -222,7 +222,8 @@ class PlatformDaemonManager {
         }
         //Allocations succeed, move on.
         //Create new daemon with the guarantee blocks asssigned to it based on its tier
-        const daemon = new PlatformDaemon(ports, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockCPU, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockMemory, parameters.processID, parameters.uptime, 3, this.name);
+        
+        const daemon = new PlatformDaemon(ports, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockCPU, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockMemory, parameters.processID, this.database.getTierResources(this.database.getUserTier(parameters.processID)).time, this.database.getTierResources(this.database.getUserTier(parameters.processID)).time/3, this.name);
         daemon.startMonitoring(parameters.interval);
         this.registerDaemon(parameters.processID, daemon);
 
@@ -256,6 +257,7 @@ class PlatformDaemonManager {
             //Convert blocks to cpu and memory
             let cpu = blocks * this.blockCPU;
             let memory = blocks * this.blockMemory;
+            console.log("Blocks: " + blocks + " CPU: " + cpu + " Memory: " + memory);
             this.daemons.get(processID).setResourceLimits(cpu, memory);
         } else {
             throw new DaemonNotFoundError(`No daemon found with process ID ${processID}`);
@@ -577,11 +579,24 @@ class DatabaseSystem {
         //Create a map of existing models. Let there be 3 models. Let fields include minimum specs, name, filepath, and a unique ID
         this.models = new Map();
         //Model 1 : Euclid
-        this.addModel(1, "Euclid", "./Euclid", 2, 4);
+        this.addModel(1, "Euclid", "./Euclid", 2, 400);
         //Model 2 : Pythagoras
-        this.addModel(2, "Pythagoras", "./Pythagoras", 4, 8);
+        this.addModel(2, "Pythagoras", "./Pythagoras", 2, 500);
         //Model 3 : Euclid
-        this.addModel(3, "Newton", "./Newton", 8, 16);
+        this.addModel(3, "Archimedes", "./Archimedes", 4, 1200);
+    }
+
+    addModel(modelID, name, filepath, cpu, memory) {
+        this.models.set(modelID, { name, filepath, cpu, memory });
+    }
+
+    getModel(modelID) {
+        return this.models.get(modelID);
+    }
+
+    getAllModels() {
+        let models = Array.from(this.models);
+        return models;
     }
 
     addTier(tier, guarantee, overload, time) {

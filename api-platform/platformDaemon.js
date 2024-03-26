@@ -2,17 +2,9 @@ var shell = require('shelljs');
 var chalk = require(`chalk`);
 var http = require('http');
 const EventEmitter = require('events');
-const { default: container } = require('node-docker-api/lib/container');
-const { stdout } = require('process');
 const STARTING_PORT=5000;
-const portsAllowed = 101; // Define max number of ports from STARTING_PORT 
-const defaultMemory = 50;//mb of memory.
-const defaultCPU = .01;//cpus stat. More info read here: https://docs.docker.com/config/containers/resource_constraints/#cpu
-
 //While debugging, we don't want to see the logs. Comment this line to see logs
 //console.log = function() {};
-
-//TODO: Create new function using `docker container ls --format `table {{.ID}}\t{{.Names}}\t{{.Ports}}` -a` to return true or false if a given port is taken.
 
 
 /**
@@ -37,19 +29,18 @@ class PlatformDaemon extends EventEmitter{
   constructor( portsAllowed, maxCPU = .05, maxMemory = 300, processID, maxUptime,maxOverloadTime, name) {
         super();
         this.#name = name;
+        this.processID = processID;
         this.ports = new Set(portsAllowed);
         this.portMap = new Map();
         // this.containerQueue = new ContainerQueue(this.processID);
-        //console.log memory and cpu
-        console.log(`[${this.#name} Daemon - ${this.processID}] Max CPU: ${maxCPU.toFixed(3)}, Max Memory: ${maxMemory.toFixed(3)}`);
+        //console.log memory and cpu  
         this.containerStack = new ContainerStack(maxCPU, maxMemory,this.processID,name);
-        this.interval = null;
-        this.processID = processID;
+        this.interval = null; 
         this.maxUptime = maxUptime;
         this.#isOverload = false;
         this.maxOverloadTime = maxOverloadTime;
 
-
+        console.log(`[${this.#name} Daemon - ${this.processID}] Max CPU: ${maxCPU.toFixed(3)}, Max Memory: ${maxMemory.toFixed(3)}, Max Uptime: ${maxUptime} seconds, Max Overload Time: ${maxOverloadTime} seconds.`);
         console.log(`[${this.#name} Daemon - ${this.processID}] Initialized Daemon. ${this.#name} is watching for updates...`);
   }
 
@@ -243,8 +234,6 @@ class PlatformDaemon extends EventEmitter{
     let runResult = shell.exec(`docker run -d --memory=${container.memory}m --cpus=${container.cpu} -p ${port}:${STARTING_PORT} ${container.containerID}`, { silent: silent });
     if (runResult.code !== 0) {
       throw new Error(chalk.red(`Failed to start container ${container.containerID} with exit code ${runResult.code}: ${runResult.stderr}`));
-      this.removeContainerFromPortMap(container.containerID);
-      return; // Exit if run fails
     }
 
   

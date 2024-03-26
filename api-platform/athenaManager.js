@@ -115,7 +115,7 @@ class AthenaManager extends PlatformDaemonManager {
         // Begin inferences and wait for the score
         await daemon.evaluateModel(filePath, containerID, columnNameX, columnNameY, metric).then(score => {
             // Log the score
-            console.log(`Score for ${processID}: ${score.score}`);
+            console.log(`Score for ${processID}: ${JSON.stringify(score)}`);
             
             // Add score to leaderboard
             this.databaseSystem.addScoreToLeaderboard(competitionID, processID, score);
