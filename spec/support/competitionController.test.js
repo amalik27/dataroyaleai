@@ -212,3 +212,53 @@ describe("Competition Joining Testing", () => {
         expect(response.body).toEqual(expected);
     });
 });
+describe("Competition Updating testing", () => {
+    test("Successfully updates a competition", async () => {
+        const testData = {
+            deadline: "2024-06-13",
+            prize: 130,
+            userid: "123456"
+        
+        }
+        const expected = { success: true};
+        const response = await request.post("/competitions/update").send(testData).set("Content-Type", "application/json");
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toContain(expected);
+    });
+    test("Deadline has to be further away", async () => {
+        const testData = {
+            deadline: "2024-06-13",
+            newDeadline: "2024-06-12"
+        
+        }
+        const expected = { success: false};
+        const response = await request.post("/competitions/update").send(testData).set("Content-Type", "application/json");
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toContain(expected);
+    });
+    test("Prize has to be  has to be more than the original, but less than the amount in the organizer's account", async () => {
+            const testData = {
+                id: '123456',
+                deadline: '2024-06-13',
+                currentPrize: 120,
+                newPrize: 100
+            }
+        const expected = { success: false};
+        const response = await request.post("/competitions/update").send(testData).set("Content-Type", "application/json");
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toContain(expected);
+    });
+    test("Everything is able to be changed successfully", async () => {
+        const testData = {
+            id: '123456',
+            deadline: "2024-06-13",
+            newDeadline: "2024-06-24",
+            currentPrize: 120,
+            newPrize: 150
+        }
+    const expected = { success: false};
+    const response = await request.post("/competitions/update").send(testData).set("Content-Type", "application/json");
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain(expected);
+});
+});
