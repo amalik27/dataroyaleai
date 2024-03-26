@@ -6,11 +6,11 @@
 const mysql = require('mysql');
 
 const connection = mysql.createConnection({
-    host: 'localhost',
+    host: '172.25.144.1',
     user: 'tester', // changed to work locally
     password: 'tester', // changed to work locally
     database: 'swe2024',
-    port: '8999' // changed to work locally
+    port: '3306' // changed to work locally
 });
 
 connection.connect((err) => {
