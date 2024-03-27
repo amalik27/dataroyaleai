@@ -2,6 +2,8 @@
 <img src='https://github.com/Herxity/SWE2024/assets/34107608/1d779544-c823-4e7b-b249-07f2793e6651' width='250'>
 <br>
 <i>Group Project for 14:332:452 - Software Engineering</i>
+<b> Demo Videos </b>
+[Demo 1](https://www.youtube.com/watch?v=_E6fqzHvxds)
 
 ## Initial Setup Steps 
 - Open up an editor of your choice
