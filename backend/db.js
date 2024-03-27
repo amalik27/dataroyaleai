@@ -6,7 +6,7 @@
 const mysql = require('mysql');
 
 const connection = mysql.createConnection({
-    host: '172.25.144.1',
+    host: 'localhost',
     user: 'tester', // changed to work locally
     password: 'tester', // changed to work locally
     database: 'swe2024',
@@ -22,4 +22,3 @@ const connection = mysql.createConnection({
     });
 
     module.exports = connection;
-}
