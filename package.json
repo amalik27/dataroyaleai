@@ -6,7 +6,7 @@
   "scripts": {
     "server": "node backend/server.js",
     "test": "jasmine",
-    "payment-test": "jest"
+    "payment-test": "jest -- spec/tests/Subscription-Payments.test.js"
   },
   "devDependencies": {
     "jasmine": "5.1.0",

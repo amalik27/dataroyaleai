@@ -63,6 +63,7 @@ async function send_mail(sender_email, sender_name, receiver_email, receiver_nam
     });
 }
 
+send_mail("email@gmail.com", "John Appleseed", "Email@gmail.com", "Another P. Erson", "A Subject Line", "Test Notification", false)
 module.exports = {
     checkEmail,
     send_mail
