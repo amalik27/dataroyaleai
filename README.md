@@ -1,7 +1,13 @@
-# SWE2024
-Group Project for SWE
+# Data Royale 
+<img src='https://github.com/Herxity/SWE2024/assets/34107608/1d779544-c823-4e7b-b249-07f2793e6651' width='250'>
+<br>
+<i>Group Project for 14:332:452 - Software Engineering</i>
+<br>
+<b> Demo Videos </b>
+<br>
+<a href="https://www.youtube.com/watch?v=_E6fqzHvxds">Demo 1</a>
 
-## Quick Setup 
+## Initial Setup Steps 
 - Open up an editor of your choice
 - Make sure you have NPM, NodeJS, Git installed
 - Also install MAMP (https://www.mamp.info) for the Database
@@ -19,12 +25,14 @@ Group Project for SWE
 - Navigate to `http://localhost:3000/` in your browser and you should see your message.
 - Refer to the code in backend/routes and backend/controllers for more complex requests
 
+ ## Set Up API Platform
+ (MUST BE WORKING ON LINUX MACHINE, UBUNTU PREFERRED)
+- Import ```tiers.sql``` file into php myadmin
+- Verify that the 3 rows are correct inside the ```tiers.sql``` file
+- Install docker - if docker is not started put command (```sudo systemctl start docker```) or (```sudo service docker start```)
+- All file paths must be begin from root folder
+
+
+
 ## Note
 All worries, complaints, errors, annoyances, and tribulations will only be accepted in written form.
-
- ## Set Up API Platform
- (MUST BE WORKING ON LINUX MACHINE - UBUNTU PREFERRED
--Import ```tiers.sql``` file into php myadmin
--Verify that the 3 rows are correct inside the ```tiers.sql``` file
--Install docker - if docker is not started put command (```sudo systemctl start docker```) or (```sudo service docker start```)
-- All file paths must be begin from root folder
