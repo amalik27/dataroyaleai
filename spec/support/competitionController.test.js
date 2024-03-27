@@ -1,5 +1,5 @@
 const supertest = require("supertest");
-const server = require("./backend/server.js");
+const server = require("../../backend/server.js");
 const request = supertest(server);
 
 afterAll(() => {

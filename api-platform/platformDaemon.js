@@ -150,7 +150,6 @@ class PlatformDaemon extends EventEmitter{
     const portsArray = Array.from(this.ports);
     let hashIndex = containerID % portsArray.length;
     let port = portsArray[hashIndex];
-    
     // 2. Find an unclaimed port, incrementing by 1 on collision
     while (this.portMap.has(port)) {
         hashIndex = (hashIndex + 1) % portsArray.length;
@@ -229,7 +228,7 @@ class PlatformDaemon extends EventEmitter{
 
     //Let the errors, if any surface to monitoring chronjob
     let port = this.addToPortMap(parseInt(container.containerID)); 
-
+    console.log(port);
     
     // Running the Docker container
     let runResult = shell.exec(`docker run -d --memory=${container.memory}m --cpus=${container.cpu} -p ${port}:${STARTING_PORT} ${container.containerID}`, { silent: silent });
@@ -393,7 +392,6 @@ class PlatformDaemon extends EventEmitter{
         // Reject the promise on request error
         reject(`problem with request: ${e.message}`);
       });
-      console.log("API REQUEST COMPLETED");
       // End the request
       forwardReq.end();
     }).catch((error) => {
