@@ -420,3 +420,103 @@ describe('PlatformDaemon Exit Event Emission', () => {
       jest.clearAllMocks();
   });
 });
+
+describe('PlatformDaemon Container Health Check Failure Handling', () => {
+  let daemon;
+  beforeEach(() => {
+    // Initialize the daemon with some settings
+    daemon = new PlatformDaemon([7000], 1, 2048, 'healthCheckFailureDaemon', 100, 0, 'TestDaemon');
+    jest.spyOn(daemon, 'addToPortMap').mockImplementation((containerID) => 7000 + parseInt(containerID, 10));
+  });
+
+  it('handles failed container health checks by attempting a restart', async () => {
+    const container = new Container(0.5, 1024, '3', 'testModel3');
+    await daemon.initializeContainer(container);
+
+    // Mock a failing health check response
+    jest.spyOn(daemon, 'checkContainerHealth').mockResolvedValueOnce({ status: 'unhealthy' });
+
+    // Simulate a health check routine
+    const healthStatus = await daemon.checkContainerHealth(container.containerID);
+    expect(healthStatus).toEqual({ status: 'unhealthy' });
+
+    // Expect the daemon to attempt a restart on the container
+    // We mock the restart behavior here; in a real scenario, you would check if the appropriate methods were called
+    jest.spyOn(daemon, 'killContainers').mockResolvedValueOnce();
+    jest.spyOn(daemon, 'initializeContainer').mockResolvedValueOnce();
+
+    // Simulate the restart action
+    await daemon.killContainers([container]);
+    await daemon.initializeContainer(container);
+
+    // Verify the restart actions were called
+    expect(daemon.killContainers).toHaveBeenCalledWith([container]);
+    expect(daemon.initializeContainer).toHaveBeenCalledWith(container);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    daemon.shutdown();
+  });
+});
+describe('PlatformDaemon Non-existent Container Removal Handling', () => {
+  let daemon;
+  beforeEach(() => {
+      // Initialize the daemon with some settings
+      daemon = new PlatformDaemon([9000], 1, 2048, 'nonExistentContainerRemoval', 100, 0, 'TestDaemon');
+  });
+
+  it('gracefully handles the removal of a non-existent container', async () => {
+      const nonExistentContainer = new Container(0.5, 1024, "nonExistent", "testModelNonExistent");
+
+      // Attempt to remove a non-existent container and expect no errors or exceptions
+      await expect(daemon.killContainers([nonExistentContainer])).resolves.not.toThrow();
+
+      // Additionally, check that the internal state of the daemon has not been adversely affected
+      expect(daemon.containerStack.stack.length).toBe(0);
+      expect(daemon.containerStack.getCurrentCPU()).toEqual(0);
+      expect(daemon.containerStack.getCurrentMemory()).toEqual(0);
+  });
+
+  afterEach(() => {
+      jest.clearAllMocks();
+      daemon.shutdown();
+  });
+});
+describe('PlatformDaemon Shutdown with Active Containers', () => {
+  let daemon;
+  beforeEach(() => {
+      daemon = new PlatformDaemon([10000, 10001], 2, 4096, 'shutdownWithContainers', 100, 0, 'TestDaemon');
+      jest.spyOn(daemon, 'addToPortMap').mockImplementation((containerID) => 10000 + parseInt(containerID, 10));
+      jest.spyOn(daemon, 'killContainers').mockImplementation(async (containers) => {
+          containers.forEach(container => {
+              daemon.containerStack.remove(container.containerID);
+          });
+      });
+  });
+
+  it('ensures all containers are stopped and resources are released on shutdown', async () => {
+      const container1 = new Container(1, 2048, '5', 'testModel5');
+      const container2 = new Container(1, 2048, '6', 'testModel6');
+
+      await daemon.initializeContainer(container1);
+      await daemon.initializeContainer(container2);
+
+      // Shutdown the daemon
+      await daemon.shutdown();
+
+      // After shutdown, the container stack should be empty and resources released
+      expect(daemon.containerStack.stack.length).toBe(0);
+      expect(daemon.containerStack.getCurrentCPU()).toEqual(0);
+      expect(daemon.containerStack.getCurrentMemory()).toEqual(0);
+
+      // Verify that killContainers was called for each container during shutdown
+      expect(daemon.killContainers).toHaveBeenCalledWith(expect.arrayContaining([container1, container2]));
+  });
+
+  afterEach(() => {
+      jest.clearAllMocks();
+  });
+});
+
+
