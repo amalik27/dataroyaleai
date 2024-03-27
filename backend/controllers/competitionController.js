@@ -632,7 +632,7 @@ async function joinCompetition(user_id, competition_id) {
     }
 
     let id = generateCompetitionID(); 
-    const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
+    const query = "INSERT INTO submissions (comp_id, submission_id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
     const params = [competition_id, id, 0, "", user_id]
     return new Promise((resolve, reject) => {
         try {
