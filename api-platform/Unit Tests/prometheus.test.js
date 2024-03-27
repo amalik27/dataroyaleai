@@ -1,6 +1,7 @@
 const { PlatformDaemon,Container } = require('../platformDaemon.js');
 const { PlatformDaemonManager, DatabaseSystem } = require('../platformManager');
 const EventEmitter = require('events');
+
 const shell = require('shelljs');
 jest.useFakeTimers();
 jest.mock('shelljs', () => ({
@@ -317,7 +318,7 @@ describe('Container Health Status Update', () => {
   const maxCPU = 0.5;
   const maxMemory = 512;
   const processID = 'healthCheckDaemon';
-  const maxUptime = 60; // in seconds
+  const maxUptime = 60; //  seconds
 
   beforeEach(() => {
     // Initialize a PlatformDaemon instance before each test
@@ -362,7 +363,7 @@ describe('PlatformDaemon Resource Allocation Limit', () => {
   });
 
   afterEach(() => {
-      daemon.shutdown(); // Clean up by shutting down the daemon
+      daemon.shutdown(); 
   });
 });
 
@@ -406,9 +407,9 @@ describe('PlatformDaemon Exit Event Emission', () => {
           try {
               // Check that the exit event provides the correct status code
               expect(code).toBe(0);
-              done(); // Indicate that the test is complete
+              done(); 
           } catch (error) {
-              done(error); // Pass the error if the expectation fails
+              done(error);
           }
       });
 
@@ -469,10 +470,10 @@ describe('PlatformDaemon Non-existent Container Removal Handling', () => {
   it('gracefully handles the removal of a non-existent container', async () => {
       const nonExistentContainer = new Container(0.5, 1024, "nonExistent", "testModelNonExistent");
 
-      // Attempt to remove a non-existent container and expect no errors or exceptions
+      // trys to remove a non-existent container and expect no errors or exceptions
       await expect(daemon.killContainers([nonExistentContainer])).resolves.not.toThrow();
 
-      // Additionally, check that the internal state of the daemon has not been adversely affected
+      //check that the internal state of the daemon has not been adversely affected
       expect(daemon.containerStack.stack.length).toBe(0);
       expect(daemon.containerStack.getCurrentCPU()).toEqual(0);
       expect(daemon.containerStack.getCurrentMemory()).toEqual(0);
@@ -519,4 +520,32 @@ describe('PlatformDaemon Shutdown with Active Containers', () => {
   });
 });
 
+
+describe('PlatformDaemon Resource Constraint Handling', () => {
+    let platformDaemon;
+
+    beforeEach(() => {
+        // Initialize a PlatformDaemon with specific resource limits
+        platformDaemon = new PlatformDaemon([3000, 3001, 3002], 1.0, 1024, 'testDaemon', 100, 0, 'TestDaemon');
+    });
+
+    it('should not allow container initialization that exceeds CPU limits', async () => {
+        const container = new Container(2.0, 512, 'containerID', 'testModel'); // This container requires more CPU than the daemon has available
+        expect(() => platformDaemon.initializeContainer(container)).toThrowError();
+    });
+
+    it('should not allow container initialization that exceeds memory limits', async () => {
+        const container = new Container(0.5, 2048, 'containerID', 'testModel'); // This container requires more memory than the daemon has available
+        expect(() => platformDaemon.initializeContainer(container)).toThrowError();
+    });
+
+    it('should allow container initialization within resource limits', async () => {
+        const container = new Container(0.5, 512, 'containerID', 'testModel'); // This container fits within the daemon's resource limits
+        expect(() => platformDaemon.initializeContainer(container)).not.toThrowError();
+    });
+
+    afterEach(() => {
+        platformDaemon.shutdown(); // Ensure cleanup 
+    });
+});
 
