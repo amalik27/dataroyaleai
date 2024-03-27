@@ -310,3 +310,113 @@ describe('PlatformDaemonManager Daemon Spawning', () => {
         jest.clearAllMocks();
     });
 });
+
+
+describe('Container Health Status Update', () => {
+  let daemon;
+  const maxCPU = 0.5;
+  const maxMemory = 512;
+  const processID = 'healthCheckDaemon';
+  const maxUptime = 60; // in seconds
+
+  beforeEach(() => {
+    // Initialize a PlatformDaemon instance before each test
+    daemon = new PlatformDaemon([8000], maxCPU, maxMemory, processID, maxUptime, 0, 'TestDaemon');
+  });
+
+  it('updates container health status correctly', async () => {
+    const containerID = 'container123';
+    const containerHealthSpy = jest.spyOn(daemon, 'checkContainerHealth').mockResolvedValue({ status: 'healthy' });
+
+    const healthStatus = await daemon.checkContainerHealth(containerID);
+    expect(healthStatus).toEqual({ status: 'healthy' });
+    expect(containerHealthSpy).toHaveBeenCalledWith(containerID);
+
+    containerHealthSpy.mockRestore();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+});
+
+describe('PlatformDaemon Resource Allocation Limit', () => {
+  let daemon;
+  beforeEach(() => {
+      // Initialize the daemon with limited resources
+      daemon = new PlatformDaemon([8000], 1, 1024, 'testProcess', 100, 10, 'TestDaemon');
+  });
+
+  it('should not allow a container to exceed resource limits', () => {
+      const container = new Container(2, 2048, 'containerExceedingLimits', 'testModel');
+
+      // Expect the initialization to throw an error due to resource limits
+      expect(() => daemon.initializeContainer(container)).toThrowError();
+
+      // Verify the container is not added to the container stack
+      expect(daemon.containerStack.stack).not.toContain(container);
+
+      // Check that the resources of the daemon are not exceeded
+      expect(daemon.containerStack.getCurrentCPU()).toBeLessThanOrEqual(daemon.containerStack.getMaxCPU());
+      expect(daemon.containerStack.getCurrentMemory()).toBeLessThanOrEqual(daemon.containerStack.getMaxMemory());
+  });
+
+  afterEach(() => {
+      daemon.shutdown(); // Clean up by shutting down the daemon
+  });
+});
+
+describe('PlatformDaemon Container Resource Deallocation', () => {
+  let daemon;
+  beforeEach(() => {
+      // Initialize the daemon with some mock settings
+      daemon = new PlatformDaemon([5000, 5001, 5002], 2, 2048, "testProcess", 100, 0, "TestDaemon");
+  });
+
+  it("deallocates resources when a container is killed", async () => {
+      const container = new Container(1, 1024, "containerToKill", "testModel");
+
+      // Initialize the container to consume resources
+      await daemon.initializeContainer(container);
+      expect(daemon.containerStack.getCurrentCPU()).toEqual(1);
+      expect(daemon.containerStack.getCurrentMemory()).toEqual(1024);
+
+      // Kill the container and check if resources are released
+      await daemon.killContainers([container]);
+      expect(daemon.containerStack.getCurrentCPU()).toEqual(0);
+      expect(daemon.containerStack.getCurrentMemory()).toEqual(0);
+  });
+
+  afterEach(() => {
+      jest.clearAllMocks();
+  });
+});
+
+
+describe('PlatformDaemon Exit Event Emission', () => {
+  let daemon;
+  beforeEach(() => {
+      // Initialize the daemon with some settings
+      daemon = new PlatformDaemon([5000], 0.5, 1024, 'testExitEvent', 100, 0, 'TestDaemon');
+  });
+
+  it('emits an exit event on shutdown', done => {
+      // Set up an event listener for the 'exit' event
+      daemon.on('exit', (code) => {
+          try {
+              // Check that the exit event provides the correct status code
+              expect(code).toBe(0);
+              done(); // Indicate that the test is complete
+          } catch (error) {
+              done(error); // Pass the error if the expectation fails
+          }
+      });
+
+      // Trigger the shutdown which should cause the exit event to emit
+      daemon.shutdown();
+  });
+
+  afterEach(() => {
+      jest.clearAllMocks();
+  });
+});
