@@ -173,7 +173,7 @@ class PlatformDaemon extends EventEmitter{
     // Check if the containerID is present in the portMap
     if (this.portMap.has(Number(containerID))) {
         // Return the port assigned to the containerID
-       
+        console.log(this.portMap.get(Number(containerID)))
         return this.portMap.get(Number(containerID));
     } else {
         // Throw an error if the containerID is not found in the portMap
@@ -393,7 +393,7 @@ class PlatformDaemon extends EventEmitter{
         // Reject the promise on request error
         reject(`problem with request: ${e.message}`);
       });
-
+      console.log("API REQUEST COMPLETED");
       // End the request
       forwardReq.end();
     }).catch((error) => {

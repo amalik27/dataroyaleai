@@ -635,17 +635,39 @@ class DatabaseSystem {
     }
 
     async validateUserAPIKey(apiKey,user) {
-        const query = 'SELECT username FROM users WHERE apiKey = ?';
+        const query = 'SELECT username FROM users WHERE api_token = ?';
         try {
             const results = await this.query(query, [apiKey]);
             if (results.length > 0) {
-                return results[0].username==user;
+                return true;
             } else {
-                throw new Error('API key not found');
+                return false;
             }
         } catch (err) {
             throw err;
         }
+    }
+
+    //Given user and amount, check if user has requisite credits
+    async checkUserCredits(username) {
+        //PAYMENT HANDLING LOGIC FOR DETERMINING COST GOES HERE
+        let amount = 5; // Suppose 5 credits are required per call for now
+
+        const sql = "SELECT credits FROM users WHERE username = ?";
+        const results = await this.query(sql, [username]);
+        if (results.length > 0 && results[0].credits >= amount) {
+            return ;
+        } else {
+            return false;
+        }
+    }
+    //Deduct user credits
+    async deductUserCredits(username) {
+        //PAYMENT HANDLING LOGIC FOR DETERMINING COST GOES HERE
+        let amount = 5; // Suppose 5 credits are required per call  for now
+
+        const sql = "UPDATE users SET credits = credits - ? WHERE username = ?";
+        await this.query(sql, [amount, username]);
     }
 
     async getUserTier(username) {

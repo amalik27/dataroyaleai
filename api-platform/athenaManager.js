@@ -188,6 +188,8 @@ class AthenaDatabaseSystem extends DatabaseSystem {
         this.query = util.promisify(db.query).bind(db);
     }
 
+    
+
     async createCompetition(id, title, description, file_path) {
         const sql = "INSERT INTO Competitions (id, title, description, file_path) VALUES (?, ?, ?, ?, ?)";
         await this.query(sql, [id, title, description, file_path]);

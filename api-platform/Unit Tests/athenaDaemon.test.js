@@ -1,4 +1,4 @@
-const AthenaDaemon = require('./athenaDaemon');
+const AthenaDaemon = require('../athenaDaemon');
 const EventEmitter = require('events');
 const shell = require('shelljs');
 
