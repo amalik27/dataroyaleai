@@ -1,3 +1,8 @@
+// When running these test cases, please make sure that the extractedCompDatasets folder is EMPTY.
+// Please run the SQL commands in competitionSQL.sql to populate table with competitions needed for 
+// test cases to run. These test cases were done in Jest. Thank you!
+// @author Haejin Song
+
 const supertest = require("supertest");
 const server = require("../../backend/server.js");
 const request = supertest(server);
