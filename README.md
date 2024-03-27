@@ -1,4 +1,6 @@
 # SWE2024
+![image](https://github.com/Herxity/SWE2024/assets/34107608/1d779544-c823-4e7b-b249-07f2793e6651)
+
 Group Project for SWE
 
 ## Quick Setup 
