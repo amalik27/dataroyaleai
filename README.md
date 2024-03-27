@@ -5,7 +5,7 @@
 <br>
 <b> Demo Videos </b>
 <br>
-[Demo 1](https://www.youtube.com/watch?v=_E6fqzHvxds)
+<a href="https://www.youtube.com/watch?v=_E6fqzHvxds">link text</a>
 
 ## Initial Setup Steps 
 - Open up an editor of your choice
