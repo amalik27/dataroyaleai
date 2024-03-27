@@ -5,11 +5,10 @@
 
 const mysql = require('mysql');
 
-async function test() {
-const connection = await mysql.createConnection({
-    host: 'localhost',
-    user: 'tester', 
-    password: 'tester', 
+const connection = mysql.createConnection({
+    host: '172.25.144.1',
+    user: 'tester', // changed to work locally
+    password: 'tester', // changed to work locally
     database: 'swe2024',
     port: '8889' 
 });
@@ -24,4 +23,3 @@ const connection = await mysql.createConnection({
 
     module.exports = connection;
 }
-test();

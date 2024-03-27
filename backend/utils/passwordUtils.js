@@ -9,11 +9,10 @@ function encryptSHA1(password) {
 function encrypt(password, salt) {
     const concatenatedPassword = password + salt;
     const hash = crypto.createHash('sha256').update(concatenatedPassword).digest('hex');
-    return hash;
+    return hash.slice(0, 119);
 }
 
 module.exports = {
     encrypt,
     encryptSHA1
 };
-

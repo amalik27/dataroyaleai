@@ -8,7 +8,7 @@ const fs = require('fs');
 const unzipper = require('unzipper');
 const csv = require('csv-parser');
 const path = require('path');
-const defaultClient = require('cloudmersive-virus-api-client');
+// const defaultClient = require('cloudmersive-virus-api-client');
 
 const { readUserById } = require('./userController');
 const { addCredits, subtractCredits } = require('./paymentController');
@@ -19,7 +19,7 @@ const { addCredits, subtractCredits } = require('./paymentController');
 
 /**
  * Create a competition. 
- * @author @deshnadoshi
+ * @author @deshnadoshi @aartirao419
  * @param {*} userid User ID of the organizer. 
  * @param {*} title Title of the competition. 
  * @param {*} deadline Due date of the competition. 
@@ -632,7 +632,7 @@ async function joinCompetition(user_id, competition_id) {
     }
 
     let id = generateCompetitionID(); 
-    const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
+    const query = "INSERT INTO submissions (comp_id, submission_id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
     const params = [competition_id, id, 0, "", user_id]
     return new Promise((resolve, reject) => {
         try {

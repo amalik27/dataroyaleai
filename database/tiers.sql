@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Mar 14, 2024 at 08:18 PM
+-- Generation Time: Mar 14, 2024 at 08:24 PM
 -- Server version: 5.7.24
 -- PHP Version: 8.0.1
 
@@ -24,31 +24,37 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `submissions`
+-- Table structure for table `tiers`
 --
 
-CREATE TABLE `submissions` (
-  `comp_id` int(11) NOT NULL,
-  `submission_id` int(11) NOT NULL,
-  `score` double,
-  `file_path` varchar(512),
-  `user_id` int(30) NOT NULL
+CREATE TABLE `tiers` (
+  `TierLevel` int(30) NOT NULL,
+  `Guarantee` int(11) NOT NULL,
+  `Overload` decimal(10,0) NOT NULL,
+  `ports` int(11) NOT NULL,
+  `Uptime` decimal(10,0) NOT NULL,
+  `OverloadUptime` decimal(10,0) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `tiers`
+--
+
+INSERT INTO `tiers` (`TierLevel`, `Guarantee`, `Overload`, `Uptime`, `OverloadUptime`, `ports`) VALUES
+(1, 20, '10', '60', '10', 5),
+(2, 30, '15', '45', '5', 3),
+(3, 40, '20', '35', '0', 1);
 
 --
 -- Indexes for dumped tables
 --
 
 --
--- Indexes for table `submissions`
+-- Indexes for table `tiers`
 --
-ALTER TABLE `submissions`
-  ADD PRIMARY KEY (`submission_id`);
+ALTER TABLE `tiers`
+  ADD PRIMARY KEY (`TierLevel`);
 COMMIT;
-
-ALTER TABLE `submissions`
-ADD CONSTRAINT `unique_user_comp_combination` UNIQUE (`user_id`, `comp_id`);
-
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
