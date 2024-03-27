@@ -19,7 +19,7 @@ const { addCredits, subtractCredits } = require('./paymentController');
 
 /**
  * Create a competition. 
- * @author @deshnadoshi
+ * @author @deshnadoshi @aartirao419
  * @param {*} userid User ID of the organizer. 
  * @param {*} title Title of the competition. 
  * @param {*} deadline Due date of the competition. 
