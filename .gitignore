@@ -133,4 +133,7 @@ dist
 .DS_Store
 ._.DS_Store
 **/.DS_Store
-**/._.DS_Store
+**/._.node_modules
+
+# Package Lock
+package-lock.json

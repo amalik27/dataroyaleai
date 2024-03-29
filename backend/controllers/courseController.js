@@ -2,7 +2,7 @@
  * @Author: Nikita Filippov <nikfilippov1@gmail.com>
  * @Description: Module containing functions related to course management and user progress tracking in a learning management system.
  * @Author: Neha Murthy <nnm53@scarletmail.rutgers.edu>
- * @Description: Functions (getCourseDetailsById, markCourseCompletion)
+ * @Description: Functions (getCourseDetailsById, markCourseCompletion,readCompletedCoursesByApiToken,readInProgressCoursesByApiToken,getTotalCourseCount )
  */
 
 const db = require('../db');
@@ -176,6 +176,70 @@ async function markCourseCompletion(api_token, course_id) {
     }
 }
 
+//Function for users to see their completed courses
+async function readCompletedCoursesByApiToken(api_token) {
+    try {
+        const sql = 'SELECT * FROM course_progress WHERE api_token = ? AND is_completed = true';
+        return new Promise((resolve, reject) => {
+            db.query(sql, api_token, function (err, results, fields) {
+                if (err) {
+                    console.error('Error getting completed courses by API token Field:', err);
+                    return reject(err);
+                }
+                const completedCourses = results.map(result => {
+                    return {
+                        user_id: result.user_id,
+                        api_token: result.api_token,
+                        course_id: result.course_id,
+                        progress: result.progress
+                    };
+                });
+                resolve(completedCourses);
+            });
+        });
+    } catch (error) {
+        console.error('Error getting completed courses by API Token Field', error);
+        throw error;
+    }
+}
+//Function for users to see their in-progress courses
+async function readInProgressCoursesByApiToken(api_token) {
+    try {
+        const sql = 'SELECT * FROM course_progress WHERE api_token = ? AND is_completed = false';
+        return new Promise((resolve, reject) => {
+            db.query(sql, api_token, function (err, results, fields) {
+                if (err) {
+                    console.error('Error getting In Progress courses by API token Field:', err);
+                    return reject(err);
+                }
+                const inProgressCourses = results.map(result => {
+                    return {
+                        user_id: result.user_id,
+                        api_token: result.api_token,
+                        course_id: result.course_id,
+                        progress: result.progress
+                    };
+                });
+                resolve(inProgressCourses);
+            });
+        });
+    } catch (error) {
+        console.error('Error getting in-progress courses by API token:', error);
+        throw error;
+    }
+}
+//Gives total course available count
+async function getTotalCourseCount() {
+    try {
+        const sql = 'SELECT COUNT(*) AS total_courses FROM courses';
+        const result = await db.query(sql);
+        return result[0].total_courses;
+    } catch (error) {
+        console.error('Error getting total courses count:', error);
+        throw error;
+    }
+}
+
 module.exports = {
     readAllCoursesThatUserCanBuyOrAccessByApiToken,
     readAllCoursesOfUserByApiToken,
@@ -184,5 +248,8 @@ module.exports = {
     openCourse,
     getDefaultPage,
     getCourseDetailsById,
-    markCourseCompletion
+    markCourseCompletion,
+    readCompletedCoursesByApiToken,
+    readInProgressCoursesByApiToken,
+    getTotalCourseCount
 };

@@ -8,7 +8,7 @@ const fs = require('fs');
 const unzipper = require('unzipper');
 const csv = require('csv-parser');
 const path = require('path');
-const defaultClient = require('cloudmersive-virus-api-client');
+// const defaultClient = require('cloudmersive-virus-api-client');
 
 const { readUserById } = require('./userController');
 const { addCredits, subtractCredits } = require('./paymentController');
