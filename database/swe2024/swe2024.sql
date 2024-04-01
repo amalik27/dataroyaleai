@@ -130,7 +130,7 @@ CREATE TABLE `users` (
   `username` varchar(30) NOT NULL,
   `email` varchar(30) NOT NULL,
   `salt` varchar(30) NOT NULL,
-  `password_encrypted` varchar(30) NOT NULL,
+  `password_encrypted` varchar(120) NOT NULL,
   `role` varchar(30) NOT NULL,
   `tier` int(30) NOT NULL,
   `credits` int(30) NOT NULL,
@@ -138,6 +138,20 @@ CREATE TABLE `users` (
   `api_token` varchar(30) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `course_progress`
+--
+
+CREATE TABLE `course_progress` (
+  `user_id` int(30) NOT NULL,
+  `api_token` varchar(120) NOT NULL,
+  `course_id` int(11) NOT NULL,
+  `progress` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
 --
 -- Indexes for dumped tables
 --
@@ -187,7 +201,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `subscriptions`
 --
 ALTER TABLE `subscriptions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(30) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `users`
