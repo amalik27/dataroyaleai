@@ -10,7 +10,7 @@ const connection = mysql.createConnection({
     user: 'tester', // changed to work locally
     password: 'tester', // changed to work locally
     database: 'swe2024',
-    port: '8889' 
+    port: '3306' 
 });
 
     connection.connect((err) => {
