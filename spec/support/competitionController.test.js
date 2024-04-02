@@ -3,13 +3,12 @@
 // and users needed for test cases to run. These test cases were done in Jest.
 // Note that since one of the test cases adds a competition, there will be cases that break
 // if these test cases are run more than once, unless you manually change the database accordingly.
-// Please make sure to change the const todayDate to today's date (just change date). Thank you!
+// Thank you!
 // @author Haejin Song
 
 const supertest = require("supertest");
 const server = require("../../backend/server.js");
 const request = supertest(server);
-const todayDate = "2024-04-02T04:00:00.000Z"; 
 
 afterAll(() => {
     server.close();
