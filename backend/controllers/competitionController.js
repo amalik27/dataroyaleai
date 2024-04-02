@@ -8,7 +8,7 @@ const fs = require('fs');
 const unzipper = require('unzipper');
 const csv = require('csv-parser');
 const path = require('path');
-// const defaultClient = require('cloudmersive-virus-api-client');
+const defaultClient = require('cloudmersive-virus-api-client');
 
 const { readUserById } = require('./userController');
 const { addCredits, subtractCredits } = require('./paymentController');
@@ -180,9 +180,10 @@ async function updateCompetition (id, userid, deadline, prize){
                 if (competitionExists){
                     
                     if (pairCompetitionToID(userid, id)){
-                        
 
                         if (allowedDeadlineUpdate && allowedPrizeUpdate){
+                            console.log("test"); 
+
                             const query = 'UPDATE `competitions` SET deadline = ?, prize = ? WHERE id = ? AND userid = ?';
                             const params = [deadline, prize, id, userid]; 
                             db.query(query, params, function(err, result){
@@ -632,7 +633,7 @@ async function joinCompetition(user_id, competition_id) {
     }
 
     let id = generateCompetitionID(); 
-    const query = "INSERT INTO submissions (comp_id, submission_id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
+    const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
     const params = [competition_id, id, 0, "", user_id]
     return new Promise((resolve, reject) => {
         try {
