@@ -34,8 +34,7 @@ async function registerUser(username, email, password, role){
         throw new Error("Weak password");
     }
     const salt = generateRandomString(16);
-    // const password_encrypted = passwordUtils.encrypt(password, salt);
-    const password_encrypted = '12345';
+    const password_encrypted = passwordUtils.encrypt(password, salt);
     
     const credits = 50;
     const tier = 1;
@@ -47,8 +46,7 @@ async function registerUser(username, email, password, role){
     const minutes = String(currentDate.getMinutes()).padStart(2, '0');
     const seconds = String(currentDate.getSeconds()).padStart(2, '0');
     const reg_date = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    let api_token = passwordUtils.encrypt(username, salt); 
-    api_token = api_token.slice(0, 15);
+    let api_token = generateRandomString(16); 
     const hashPrefix = passwordUtils.encryptSHA1(password).slice(0,5);
     try {
         const count = await getPwnedPasswordCount(hashPrefix);
@@ -66,6 +64,12 @@ async function registerUser(username, email, password, role){
 async function loginUser(username, password){
     try {
         const user = await readUserByUsername(username);
+        const new_api_token = generateRandomString(16); 
+        const reg_date_utc = new Date(user.reg_date);
+        reg_date_utc.setHours(reg_date_utc.getHours() - 4);
+        const reg_date_utc_str = reg_date_utc.toISOString().slice(0, 19).replace('T', ' ');
+        updateUserById(user.id, user.username, user.email, user.salt, user.password_encrypted, user.role, user.tier, user.credits, reg_date_utc_str, new_api_token);
+        updateCourseProgressApiTokens(user.api_token, new_api_token);
         return user.password_encrypted == passwordUtils.encrypt(password, user.salt);
     } catch (error) {
         console.error('Error logging in user:', error);
@@ -167,38 +171,6 @@ async function readUserByApiToken(api_token) {
             resolve(user);
         });
     }); 
-}
-
-// Function to retrieve a user by their email.
-async function readUserByEmail (email){
-    const sql = 'SELECT * FROM users WHERE email = ?';
-    return new Promise ((resolve, reject) =>{
-        db.query (sql, email, function (err, result, fields){
-            if (err){
-                console.error ("There was an error getting the user by their email: ", err);
-                return reject (err);
-                    }
-            if (!result || result.length ===0){
-                const error = new error ("User with this email is not found");
-                console.error (error.message);
-                return reject (error);
-            }
-            const output = Object.values (JSON.parse (JSON.stringify (result [0])));
-            const user = {
-                id: output[0],
-                username: output[1],
-                email: output[2],
-                salt: output[3],
-                password_encrypted: output[4],
-                role: output[5],
-                tier: output[6],
-                credits: output[7],
-                reg_date: output[8],
-                api_token: output[9]
-            };
-            resolve (user);
-        });
-    });
 }
 
 // Function to retrieve a user by their email.
@@ -352,6 +324,17 @@ async function deleteAccount(username, password) {
         return { success: true, message: "Account deleted successfully" };
     } catch (error) {
         console.error("Error deleting account:", error);
+        throw error;
+    }
+}
+
+// Function to update api token.
+async function updateCourseProgressApiTokens(old_api_token, new_api_token) {
+    try {
+        const sql = `UPDATE course_progress SET api_token = ? WHERE api_token = ?`;
+        await db.query(sql, [new_api_token, old_api_token]);
+    } catch (error) {
+        console.error('Error updating course progress:', error);
         throw error;
     }
 }

@@ -176,7 +176,7 @@ it('should generate a random string of specified length', () => {
         expect(randomString).toBeDefined();
         expect(randomString.length).toEqual(length);
     });
-  
+
 //Test Case 9 : Should be randomized and giving different strings
     it('should generate a different string on each call', () => {
         const length = 10;
@@ -184,7 +184,7 @@ it('should generate a random string of specified length', () => {
         const randomString2 = userController.generateRandomString(length);
         expect(randomString1).not.toEqual(randomString2);
     });
-  
+
 // Test Case 10 : Should generate alphanumeric characters, no special characters
     it('should generate a string containing only alphanumeric characters', () => {
         const length = 10;
@@ -245,7 +245,6 @@ describe('updateEmail function', () => {
 
         const result = await userController.updateEmail(userId, newEmail);
 
-        // 
         expect(result).toEqual({ success: true, message: 'The new email given was updated successfully' });
     });
 });

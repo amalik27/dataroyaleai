@@ -10,15 +10,15 @@ const connection = mysql.createConnection({
     user: 'tester', // changed to work locally
     password: 'tester', // changed to work locally
     database: 'swe2024',
-    port: '3306' // changed to work locally
+    port: '8889' 
 });
 
-connection.connect((err) => {
-    if (err) {
-        console.error('Error connecting to database: ' + err.stack);
-        return;
-    }
-    console.log('Connected to database as id ' + connection.threadId);
-});
+    connection.connect((err) => {
+        if (err) {
+            console.error('Error connecting to database: ' + err.stack);
+            return;
+        }
+        console.log('Connected to database as id ' + connection.threadId);
+    });
 
 module.exports = connection;
