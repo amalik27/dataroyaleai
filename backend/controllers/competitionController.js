@@ -246,7 +246,7 @@ async function updatePrizeEligibility(id, userid, newPrize) {
                 if (results.length > 0) {
                     const originalPrize = results[0].prize;
 
-                    const allowablePrize = newPrize > originalPrize && originalPrize !== -1;
+                    const allowablePrize = newPrize > originalPrize && originalPrize != -1;
                     const allowableAmount = newPrize < organizerCredits; 
 
                     resolve(allowablePrize && allowableAmount);
@@ -632,7 +632,7 @@ async function joinCompetition(user_id, competition_id) {
     }
 
     let id = generateCompetitionID(); 
-    const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
+    const query = "INSERT INTO submissions (comp_id, submission_id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
     const params = [competition_id, id, 0, "", user_id]
     return new Promise((resolve, reject) => {
         try {
@@ -646,7 +646,7 @@ async function joinCompetition(user_id, competition_id) {
                 }
                 if (result.length === 0 || !result) {
                     console.error("User_id is invalid"); 
-                    return resolve(null);
+                    return resolve("User_id is invalid");
                 } else {
                     return resolve(true);
                 }
