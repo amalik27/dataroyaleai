@@ -53,6 +53,15 @@ CREATE TABLE `competitions` (
   `file_path` varchar(512) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Dumping data for table `competitions`
+--
+
+INSERT INTO `competitions` (`id`, `userid`, `title`, `deadline`, `prize`, `metrics`, `description`, `player_cap`, `date_created`, `inputs_outputs`, `file_path`) VALUES
+(42161251, 123456, "Competition A", "2024-05-06", 120, json_object("size", 3, "speed", 1, "accuracy", 5), "A sample Competition", 120, "2024-03-20", json_object("inputs", json_array("images"), "outputs", json_array("name")), "./backend/controllers/goodcat.zip"),
+(71393633, 123456, "Competition B", "2024-06-06", 120, json_object("size", 3, "speed", 1, "accuracy", 5), "A sample Competition", 120, "2024-03-20", json_object("inputs", json_array("images"), "outputs", json_array("name")), "./backend/controllers/goodcat.zip"), 
+(1765057604, 93625, "Digit Recognizer", "2024-05-13", 200, json_object("speed", 1, "accuracy", 2, "filesize", 3), "In this competition, your goal is to correctly identify digits from a dataset of tens of thousands of handwritten images. We encourage you to experiment with different algorithms to learn first-hand what works well and how techniques compare.", 150, "2024-04-02", json_object("inputs", json_array("imageid"), "outputs", json_array("label")), "database\\apifiles\\validCompDB.zip");
+
 -- --------------------------------------------------------
 
 --
@@ -146,7 +155,11 @@ INSERT INTO `users` (`id`, `username`, `email`, `salt`, `password_encrypted`, `r
 (1, 'user1', 'test1@gmail.com', '7obtPxa5i4KG7rsA', 'e427aa220500aec74cdfc054c8e61d963d6d68dfb9deb6ae0dbff384d1f6d56b', 'competitor', 1, 50, '2024-04-01 08:15:17', 'VvVmzazIy3UPf3km'),
 (2, 'user2', 'test2@gmail.com', 'z70G5WVZSWCzLl7z', '7b2a429be0a5ea37326b2e4a892aa0bc34a517f0b7be0f97ddb6a8db7113b7e3', 'competitor', 1, 50, '2024-04-01 08:17:04', '2ho5qDRPFO99FtAm'),
 (3, 'user3', 'test3@gmail.com', 'Qzkh3LAHsjliAhCI', 'a70a6bc6517d94c0446af8e5d69d5ee45279d8c84d9fd686e474a75130432aa2', 'competitor', 1, 50, '2024-04-01 08:17:58', 'JkOWIiSUOnaDDL7Z'),
-(5, 'organizer1', 'organizer1@gmail.com', 'db6AiGEsOqCArrjj', '47c8bcbc81c10a7d24656f198743d6846894a2098f3d7b95a64a7c173f1dd12a', 'organizer', 1, 10000, '2024-04-02 15:57:26', 'm6LNBR2sImI4xQsP');
+(5, 'organizer1', 'organizer1@gmail.com', 'db6AiGEsOqCArrjj', '47c8bcbc81c10a7d24656f198743d6846894a2098f3d7b95a64a7c173f1dd12a', 'organizer', 1, 10000, '2024-04-02 15:57:26', 'm6LNBR2sImI4xQsP'), 
+(123456, "TestOrganizer", "organizer@gmail.com", "JGvblyx2XaGrQ8zH", "9847cc19a5508220c6e42c982d8385aac13ae10c2d19748695793f5b5924101e", "organizer", 1, 150, "2024-03-20 06:03:02", "Ya0xxc2yXf1Mxc7E"), 
+(68, "Other Organizer", "wow@gmail.com", "OlWiZXyGmRNYMKQN", "6ffde83552b0d61309eaeefafb13e415c85ca5869f9b1bff098022c285dc42b2", "organizer", 1, 200, "2024-03-21 09:35:19", "3CLMo4ub2VgxccZl"), 
+(129834, "Sample Competitor", "competitor@gmail.com", "aF5QP1nH9BiSs5eQ", "d2b5d6e4f7d60669fdba0447a0c3f0805a6e6a89ad6520d67c7bbf4bb87a2668", "competitor", 2, 100, "2024-03-21 10:48:28", "iFMnl8eRLBkJDhZ9"), 
+(93625, "Another Organizer", "tester@gmail.com", "GORZjyat5j6XWYYq", "3a720784d7675fb72b5be51b7e04619cd1784cb77a1fb0aecb00f8a181a9789f", "organizer", 1, 20000, "2024-04-02 03:15:47", "RMQvg4zjaBo9J9cu");
 COMMIT;
 
 -- --------------------------------------------------------
