@@ -145,7 +145,8 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `username`, `email`, `salt`, `password_encrypted`, `role`, `tier`, `credits`, `reg_date`, `api_token`) VALUES
 (1, 'user1', 'test1@gmail.com', '7obtPxa5i4KG7rsA', 'e427aa220500aec74cdfc054c8e61d963d6d68dfb9deb6ae0dbff384d1f6d56b', 'competitor', 1, 50, '2024-04-01 08:15:17', 'VvVmzazIy3UPf3km'),
 (2, 'user2', 'test2@gmail.com', 'z70G5WVZSWCzLl7z', '7b2a429be0a5ea37326b2e4a892aa0bc34a517f0b7be0f97ddb6a8db7113b7e3', 'competitor', 1, 50, '2024-04-01 08:17:04', '2ho5qDRPFO99FtAm'),
-(3, 'user3', 'test3@gmail.com', 'Qzkh3LAHsjliAhCI', 'a70a6bc6517d94c0446af8e5d69d5ee45279d8c84d9fd686e474a75130432aa2', 'competitor', 1, 50, '2024-04-01 08:17:58', 'JkOWIiSUOnaDDL7Z');
+(3, 'user3', 'test3@gmail.com', 'Qzkh3LAHsjliAhCI', 'a70a6bc6517d94c0446af8e5d69d5ee45279d8c84d9fd686e474a75130432aa2', 'competitor', 1, 50, '2024-04-01 08:17:58', 'JkOWIiSUOnaDDL7Z'),
+(5, 'organizer1', 'organizer1@gmail.com', 'db6AiGEsOqCArrjj', '47c8bcbc81c10a7d24656f198743d6846894a2098f3d7b95a64a7c173f1dd12a', 'organizer', 1, 10000, '2024-04-02 15:57:26', 'm6LNBR2sImI4xQsP');
 COMMIT;
 
 -- --------------------------------------------------------
