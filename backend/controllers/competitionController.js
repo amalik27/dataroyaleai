@@ -182,7 +182,6 @@ async function updateCompetition (id, userid, deadline, prize){
                     if (pairCompetitionToID(userid, id)){
 
                         if (allowedDeadlineUpdate && allowedPrizeUpdate){
-                            console.log("test"); 
 
                             const query = 'UPDATE `competitions` SET deadline = ?, prize = ? WHERE id = ? AND userid = ?';
                             const params = [deadline, prize, id, userid]; 
@@ -770,14 +769,12 @@ async function submitModel(user_id, competition_id, submission_file) {
                     console.error("There is an invalid id or file. User may not be registered for the competition.");
                     return resolve("There is an invalid id or file. User may not be registered for the competition.");
                 } else {
-                    console.log("here1"); // delete later
                     return resolve(true);
                 }
             });
         });
 
         const databaseUpdateResult = await databaseUpdatePromise;
-        console.log("db update", databaseUpdateResult); 
 
         return databaseUpdateResult;
 
@@ -806,7 +803,6 @@ async function checkValidCompetition(competition_id) {
                     console.error("Error finding competition:", err); 
                     return resolve(null); 
                 }
-                console.log(result);
                 // Selected competition does not exist. 
                 if (!result || result.length == 0) {
                     console.error("Competition does not exist."); 
