@@ -10,7 +10,7 @@ RUN apt-get update && \
     apt-get install -y docker-ce-cli
 WORKDIR /app
 COPY . /app
-CMD ["npm", "install", "dotenv"]
+CMD ["npm", "install", "--save", "dotenv"]
 CMD ["npm", "install"]
 WORKDIR /app/backend
 CMD [ "node", "server.js" ]
