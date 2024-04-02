@@ -10,9 +10,6 @@ const server = http.createServer((req, res) => {
     routes.processRequest(req, res);
 });
 
-
-
-
 // Set server port
 const PORT = process.env.PORT || 3000;
 
