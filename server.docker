@@ -1,16 +1,12 @@
-# Use Docker's official Node image as the base
-FROM node:16
+FROM node:18
 
-# Install Docker CLI
-RUN apt-get update && \
-    apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common && \
-    curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
-    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && \
-    apt-get update && \
-    apt-get install -y docker-ce-cli
+# Install Docker using official script
+RUN curl -fsSL https://get.docker.com | sh
+
 WORKDIR /app
 COPY . /app
-CMD ["npm", "install", "--save", "dotenv"]
-CMD ["npm", "install"]
 WORKDIR /app/backend
-CMD [ "node", "server.js" ]
+
+# Install your app dependencies here
+RUN npm install
+CMD ["node","server.js"]
