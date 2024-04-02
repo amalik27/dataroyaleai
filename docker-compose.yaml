@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  db:
+    build: 
+      context: .
+      dockerfile: db.docker
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    networks:
+      - my-bridge-network
+
+  server:
+    build:
+      context: .
+      dockerfile: server.docker
+    ports:
+      - "3000:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - db
+    networks:
+      - my-bridge-network
+
+networks:
+  my-bridge-network:
+    driver: bridge

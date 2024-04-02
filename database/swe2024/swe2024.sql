@@ -75,6 +75,7 @@ ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
 COMMIT;
 
+
 -- Replace 'password' with the actual password you want to set for 'tester'
 GRANT ALL PRIVILEGES ON *.* TO 'tester'@'localhost' IDENTIFIED BY 'tester' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
