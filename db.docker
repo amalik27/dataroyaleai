@@ -5,5 +5,8 @@ ENV MYSQL_ROOT_PASSWORD=root
 ENV MYSQL_USER=tester
 ENV MYSQL_PASSWORD=tester
 
-COPY ./database/*.sql /docker-entrypoint-initdb.d/
+#COPY ./database/*.sql /docker-entrypoint-initdb.d/
 COPY ./database/swe2024/swe2024.sql /docker-entrypoint-initdb.d/
+COPY db-healthcheck.sh /usr/local/bin/db-healthcheck.sh
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
+  CMD ["/usr/local/bin/db-healthcheck.sh"]

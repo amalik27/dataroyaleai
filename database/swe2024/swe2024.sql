@@ -27,7 +27,7 @@ SET time_zone = "+00:00";
 -- Table structure for table `catalog`
 --
 
-CREATE TABLE `catalog` (
+CREATE TABLE IF NOT EXISTS`catalog` (
   `id` int(11) NOT NULL,
   `permissions` text NOT NULL,
   `cost` int(11) NOT NULL
@@ -39,7 +39,7 @@ CREATE TABLE `catalog` (
 -- Table structure for table `competitions`
 --
 
-CREATE TABLE `competitions` (
+CREATE TABLE IF NOT EXISTS`competitions` (
   `id` int(11) NOT NULL,
   `userid` int(30) NOT NULL,
   `title` varchar(100) NOT NULL,
@@ -68,7 +68,7 @@ INSERT INTO `competitions` (`id`, `userid`, `title`, `deadline`, `prize`, `metri
 -- Table structure for table `leaderboard`
 --
 
-CREATE TABLE `leaderboard` (
+CREATE TABLE IF NOT EXISTS`leaderboard` (
   `user_id` int(30) NOT NULL,
   `comp_id` int(11) NOT NULL,
   `score` double NOT NULL
@@ -80,7 +80,7 @@ CREATE TABLE `leaderboard` (
 -- Table structure for table `submissions`
 --
 
-CREATE TABLE `submissions` (
+CREATE TABLE IF NOT EXISTS`submissions` (
   `comp_id` int(11) NOT NULL,
   `submission_id` int(11) NOT NULL,
   `score` double DEFAULT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE `submissions` (
 -- Table structure for table `subscriptions`
 --
 
-CREATE TABLE `subscriptions` (
+CREATE TABLE IF NOT EXISTS`subscriptions` (
   `id` int(11) NOT NULL,
   `user` int(11) NOT NULL,
   `purchase_date` datetime NOT NULL,
@@ -110,7 +110,7 @@ CREATE TABLE `subscriptions` (
 -- Table structure for table `tiers`
 --
 
-CREATE TABLE `tiers` (
+CREATE TABLE IF NOT EXISTS`tiers` (
   `TierLevel` int(30) NOT NULL,
   `Guarantee` int(11) NOT NULL,
   `Overload` decimal(10,0) NOT NULL,
@@ -134,7 +134,7 @@ INSERT INTO `tiers` (`TierLevel`, `Guarantee`, `Overload`, `ports`, `Uptime`, `O
 -- Table structure for table `users`
 --
 
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS`users` (
   `id` int(30) NOT NULL,
   `username` varchar(30) NOT NULL,
   `email` varchar(30) NOT NULL,
@@ -168,7 +168,7 @@ COMMIT;
 -- Table structure for table `course_progress`
 --
 
-CREATE TABLE `course_progress` (
+CREATE TABLE IF NOT EXISTS`course_progress` (
   `user_id` int(30) NOT NULL,
   `api_token` varchar(120) NOT NULL,
   `course_id` int(11) NOT NULL,
