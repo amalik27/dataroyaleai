@@ -38,6 +38,10 @@
 - All file paths must be begin from root folder
 
 ## Set Up Payments/Subscriptions
-- For testing: `npm run payment-test` (make sure to CNTRL+C after to leave the asynchronous server loop)
+- For testing: `npm run payment-test` (make sure to CTRL+C after to leave the asynchronous server loop)
 - The API is also available for you to use according to the demo video.
 - The Notifications system is currently being integrated into the API, to run it, you can find the file /backend/utils/. Ensure you change the email fields to valid ones, and please do not spam.
+
+## Set up Competition Management
+- For testing: `npm run competition-test` (make sure to CTRL+C after to leave the asynchronous server loop)
+- The API is also available for use according to the demo video.
