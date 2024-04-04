@@ -11,6 +11,8 @@ const userController = require('./controllers/userController');
 const competitionController = require('./controllers/competitionController'); 
 const courseController = require('./controllers/courseController');
 const paymentController = require('./controllers/paymentController');
+const notificationUtils = require('./utils/notificationUtils.js')
+const data_royale_email = "DataRoyaleAI@gmail.com"
 
 const subscriptionController = require('./controllers/subscriptionController');
 const { parse } = require('querystring');
@@ -62,9 +64,9 @@ function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const { credits_purchased, user_id, currency} = await JSON.parse(body);
-                //console.log(credits_purchased, user_id, currency)
-                if(!credits_purchased || !user_id || !currency) {
+                const { credits_purchased, username, currency} = await JSON.parse(body);
+                //console.log(credits_purchased, username, currency)
+                if(!credits_purchased || !username || !currency) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
                     return;
@@ -75,7 +77,7 @@ function processRequest(req, res){
                     res.end(JSON.stringify({ success: false, message: 'Invalid Credit Amount' }));
                     return;
                 }
-                let payment_intent = await paymentController.createPaymentIntent(credits_purchased, user_id, currency);
+                let payment_intent = await paymentController.createPaymentIntent(credits_purchased, username, currency);
                 if (!payment_intent) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Error creating payment intent' }));
@@ -310,36 +312,56 @@ function processRequest(req, res){
 
     } else if (pathname === '/payment') { //Payment Endpoint For Exchanging USD for Credits
         if (req.method === 'GET') { //get current status of payment
-            //console.log("Checking status of a payment.")
+            console.log("Checking status of a payment.")
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const {client_id} = await JSON.parse(body);
+                const {client_id, username, email} = await JSON.parse(body);
+                if(!client_id || !username || !email) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
+                    return;
+                }
                 const status = await paymentController.checkStatus(client_id);
                 if (!status) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Server error with checking status' }));
                     return;
                 }
+                if (!notificationUtils.checkEmail(email)) { // In this particular endpoint, this email verification simply serves as further authentication
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Invalid email. Please try again.' }));
+                    return;
+                }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, message: status }));
             });
         } else if (req.method === 'POST') { //actually submit the payment
-            //console.log("Submitting/Confirming payment.")
+            console.log("Submitting/Confirming payment.")
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const {client_id, payment_method} = await JSON.parse(body);
+                const {client_id, username, email, payment_method} = await JSON.parse(body);
+                if(!client_id || !username || !email) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
+                    return;
+                }
+                if (!notificationUtils.checkEmail(email)) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Invalid email. Please try again.' }));
+                    return;
+                }
                 const status = await paymentController.checkStatus(client_id);
                 if (!status) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Server error with checking status' }));
                     return;
-                } else if (status === "processing") { //currently in payment processing mode
+                } else if (status === "processing") { //currently in payment processing mode, prevents multiple entries
                     console.log("Can't do that!")
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Currently involved in payment process'}));
@@ -348,13 +370,14 @@ function processRequest(req, res){
                 
                 const confirm = await paymentController.confirmPaymentIntent(client_id, payment_method);
                 const status2 = await paymentController.checkStatus(client_id);
-                //console.log(status2) //should output "success or something similar"
                 if (!confirm) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Error with submitting purchase' }));
                     return;
                 }
 
+                //Success
+                notificationUtils.send_mail(data_royale_email, "Data Royale", email, username, "Order Submitted", "Testing", html=false)
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, message: confirm }));
             });
