@@ -98,7 +98,6 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
     }
     
 }
-
 /**
  * Determine the credits a given user has.
  * @author @deshnadoshi
@@ -124,7 +123,33 @@ async function fetchOrganizerCredits(userid) {
     });
 }
 
-
+/**
+ * Determine if any of the competitions have reached their deadline. 
+ * Helper function for Model Evaluation Team.
+ * @author @deshnadoshi
+ */
+function listenForCompetitionDeadline() {
+    setInterval(async () => {
+      try {
+        const now = new Date();
+        
+        const query = 'SELECT id FROM competitions WHERE deadline = ?';
+        const params = [now];
+        const results = await queryDatabase(query, params);
+        
+        if (results.length > 0) {
+          const competitionIDs = results.map(result => result.id);
+          console.log('Deadline met for competitions:', competitionIDs);
+          return competitionIDs;
+        } else {
+            return false; 
+        }
+      } catch (error) {
+        console.error('Error listening for competition deadlines:', error);
+      }
+    }, 60 * 60 * 1000); // check every hour for a competition that is completed
+  }
+    
 /**
  * Determine if a competition exists based on the competition ID and organizer ID. 
  * @author @deshnadoshi
@@ -363,6 +388,25 @@ async function processCompetitionDatsets(filepath) {
         return false;
     }
 }
+
+/**
+ * Helper function for SQL queries.
+ * @author @deshnadoshi
+ * @param {*} query SQL query.
+ * @param {*} params Parameters passed to the SQL query.
+ */
+function queryDatabase(query, params) {
+    return new Promise((resolve, reject) => {
+      db.query(query, params, (error, results) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      });
+    });
+  }
+
 
 /**
  * Helper function to determine CSV file headers.
