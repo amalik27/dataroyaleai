@@ -27,7 +27,7 @@ SET time_zone = "+00:00";
 -- Table structure for table `catalog`
 --
 
-CREATE TABLE `catalog` (
+CREATE TABLE IF NOT EXISTS`catalog` (
   `id` int(11) NOT NULL,
   `permissions` text NOT NULL,
   `cost` int(11) NOT NULL
@@ -39,7 +39,7 @@ CREATE TABLE `catalog` (
 -- Table structure for table `competitions`
 --
 
-CREATE TABLE `competitions` (
+CREATE TABLE IF NOT EXISTS`competitions` (
   `id` int(11) NOT NULL,
   `userid` int(30) NOT NULL,
   `title` varchar(100) NOT NULL,
@@ -53,13 +53,22 @@ CREATE TABLE `competitions` (
   `file_path` varchar(512) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Dumping data for table `competitions`
+--
+
+INSERT INTO `competitions` (`id`, `userid`, `title`, `deadline`, `prize`, `metrics`, `description`, `player_cap`, `date_created`, `inputs_outputs`, `file_path`) VALUES
+(42161251, 123456, "Competition A", "2024-05-06", 120, json_object("size", 3, "speed", 1, "accuracy", 5), "A sample Competition", 120, "2024-03-20", json_object("inputs", json_array("images"), "outputs", json_array("name")), "./backend/controllers/goodcat.zip"),
+(71393633, 123456, "Competition B", "2024-06-06", 120, json_object("size", 3, "speed", 1, "accuracy", 5), "A sample Competition", 120, "2024-03-20", json_object("inputs", json_array("images"), "outputs", json_array("name")), "./backend/controllers/goodcat.zip"), 
+(1765057604, 93625, "Digit Recognizer", "2024-05-13", 200, json_object("speed", 1, "accuracy", 2, "filesize", 3), "In this competition, your goal is to correctly identify digits from a dataset of tens of thousands of handwritten images. We encourage you to experiment with different algorithms to learn first-hand what works well and how techniques compare.", 150, "2024-04-02", json_object("inputs", json_array("imageid"), "outputs", json_array("label")), "database\\apifiles\\validCompDB.zip");
+
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `leaderboard`
 --
 
-CREATE TABLE `leaderboard` (
+CREATE TABLE IF NOT EXISTS`leaderboard` (
   `user_id` int(30) NOT NULL,
   `comp_id` int(11) NOT NULL,
   `score` double NOT NULL
@@ -71,7 +80,7 @@ CREATE TABLE `leaderboard` (
 -- Table structure for table `submissions`
 --
 
-CREATE TABLE `submissions` (
+CREATE TABLE IF NOT EXISTS`submissions` (
   `comp_id` int(11) NOT NULL,
   `submission_id` int(11) NOT NULL,
   `score` double DEFAULT NULL,
@@ -85,7 +94,7 @@ CREATE TABLE `submissions` (
 -- Table structure for table `subscriptions`
 --
 
-CREATE TABLE `subscriptions` (
+CREATE TABLE IF NOT EXISTS`subscriptions` (
   `id` int(11) NOT NULL,
   `user` int(11) NOT NULL,
   `purchase_date` datetime NOT NULL,
@@ -101,7 +110,7 @@ CREATE TABLE `subscriptions` (
 -- Table structure for table `tiers`
 --
 
-CREATE TABLE `tiers` (
+CREATE TABLE IF NOT EXISTS`tiers` (
   `TierLevel` int(30) NOT NULL,
   `Guarantee` int(11) NOT NULL,
   `Overload` decimal(10,0) NOT NULL,
@@ -125,7 +134,7 @@ INSERT INTO `tiers` (`TierLevel`, `Guarantee`, `Overload`, `ports`, `Uptime`, `O
 -- Table structure for table `users`
 --
 
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS`users` (
   `id` int(30) NOT NULL,
   `username` varchar(30) NOT NULL,
   `email` varchar(30) NOT NULL,
@@ -150,12 +159,22 @@ INSERT INTO `users` (`id`, `username`, `email`, `salt`, `password_encrypted`, `r
 -- Table structure for table `course_progress`
 --
 
-CREATE TABLE `course_progress` (
+CREATE TABLE IF NOT EXISTS`course_progress` (
   `user_id` int(30) NOT NULL,
   `api_token` varchar(120) NOT NULL,
   `course_id` int(11) NOT NULL,
   `progress` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `course_progress`
+--
+
+INSERT INTO `course_progress` (`user_id`, `api_token`, `course_id`, `progress`) VALUES
+(1, 'VvVmzazIy3UPf3km', 1, 1),
+(1, 'VvVmzazIy3UPf3km', 2, 1),
+(1, 'VvVmzazIy3UPf3km', 3, 1);
+COMMIT;
 
 -- --------------------------------------------------------
 --

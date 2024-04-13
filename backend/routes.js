@@ -156,7 +156,7 @@ function processRequest(req, res){
 
             req.on('end', async () => {
                 
-                const {id, userid, prize, deadline} = JSON.parse(body);
+                const {id, userid, deadline, prize} = JSON.parse(body);
 
                 if (!id || !userid, !prize || !deadline) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });

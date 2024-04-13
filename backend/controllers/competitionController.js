@@ -8,7 +8,7 @@ const fs = require('fs');
 const unzipper = require('unzipper');
 const csv = require('csv-parser');
 const path = require('path');
-// const defaultClient = require('cloudmersive-virus-api-client');
+const defaultClient = require('cloudmersive-virus-api-client');
 
 const { readUserById } = require('./userController');
 const { addCredits, subtractCredits } = require('./paymentController');
@@ -180,9 +180,9 @@ async function updateCompetition (id, userid, deadline, prize){
                 if (competitionExists){
                     
                     if (pairCompetitionToID(userid, id)){
-                        
 
                         if (allowedDeadlineUpdate && allowedPrizeUpdate){
+
                             const query = 'UPDATE `competitions` SET deadline = ?, prize = ? WHERE id = ? AND userid = ?';
                             const params = [deadline, prize, id, userid]; 
                             db.query(query, params, function(err, result){
@@ -246,7 +246,7 @@ async function updatePrizeEligibility(id, userid, newPrize) {
                 if (results.length > 0) {
                     const originalPrize = results[0].prize;
 
-                    const allowablePrize = newPrize > originalPrize && originalPrize !== -1;
+                    const allowablePrize = newPrize > originalPrize && originalPrize != -1;
                     const allowableAmount = newPrize < organizerCredits; 
 
                     resolve(allowablePrize && allowableAmount);
@@ -646,7 +646,7 @@ async function joinCompetition(user_id, competition_id) {
                 }
                 if (result.length === 0 || !result) {
                     console.error("User_id is invalid"); 
-                    return resolve(null);
+                    return resolve("User_id is invalid");
                 } else {
                     return resolve(true);
                 }
@@ -769,14 +769,12 @@ async function submitModel(user_id, competition_id, submission_file) {
                     console.error("There is an invalid id or file. User may not be registered for the competition.");
                     return resolve("There is an invalid id or file. User may not be registered for the competition.");
                 } else {
-                    console.log("here1"); // delete later
                     return resolve(true);
                 }
             });
         });
 
         const databaseUpdateResult = await databaseUpdatePromise;
-        console.log("db update", databaseUpdateResult); 
 
         return databaseUpdateResult;
 
@@ -805,7 +803,6 @@ async function checkValidCompetition(competition_id) {
                     console.error("Error finding competition:", err); 
                     return resolve(null); 
                 }
-                console.log(result);
                 // Selected competition does not exist. 
                 if (!result || result.length == 0) {
                     console.error("Competition does not exist."); 
