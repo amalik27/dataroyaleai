@@ -6,6 +6,7 @@ const db = require('../backend/db.js')
 const mysql = require('mysql');
 //Inherit from PrometheusManager
 class AthenaManager extends PlatformDaemonManager {
+    
     constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier) {
         super(maxCPU, maxMemory, portsAllowed, blocksPerTier, "Athena", new AthenaDatabaseSystem());
         

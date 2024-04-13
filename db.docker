@@ -5,5 +5,5 @@ ENV MYSQL_ROOT_PASSWORD=root
 ENV MYSQL_USER=tester
 ENV MYSQL_PASSWORD=tester
 
-COPY ./database/*.sql /docker-entrypoint-initdb.d/
+# COPY ./database/*.sql /docker-entrypoint-initdb.d/
 COPY ./database/swe2024/swe2024.sql /docker-entrypoint-initdb.d/
