@@ -231,7 +231,7 @@ class PlatformDaemon extends EventEmitter{
     console.log(port);
     
     // Running the Docker container
-    let runResult = shell.exec(`docker run -d --memory=${container.memory}m --cpus=${container.cpu} -p ${port}:${STARTING_PORT} ${container.containerID}`, { silent: silent });
+    let runResult = shell.exec(`docker run -d --memory=${container.memory}m --cpus=${container.cpu} -p ${port}:${STARTING_PORT} --network=swe2024_my-bridge-network ${container.containerID} `, { silent: silent });
     if (runResult.code !== 0) {
       throw new Error(chalk.red(`Failed to start container ${container.containerID} with exit code ${runResult.code}: ${runResult.stderr}`));
     }
@@ -352,19 +352,21 @@ class PlatformDaemon extends EventEmitter{
    * @param {JSON} req is the JSON data of the request as we recieve it.
    * @param {String} address is the address we are considering sending this to. To improve modularity, I added an address field. Hypothetically in future implementations, one could have these daemons running on one machine with the containers on another.
    */
-  async forward(req, address = '127.0.0.1') {
+  async forward(req) {
     // Wrap the request in a promise to handle it asynchronously
     return new Promise((resolve, reject) => {
       // Extract the container ID from the request.
       const containerID = req.containerID;
       let port = 0;
-      try{
-        
+      try{      
         port = this.getPortByID(containerID); // Assumes containerID is an integer.
       } catch (e) {
         reject(`Problem with request: ${e.message}`);
       }
-      
+      //Get container name from docker ps as json converted
+      let address = shell.exec(`docker ps --format '{{.Image}} {{.Names}}' | grep 345674 | cut -d ' ' -f2
+      `, { silent: true }).trim();
+      console.log(address);
 
       const options = {
         hostname: address,
