@@ -5,7 +5,7 @@
 
 const url = require('url');
 const fs = require('fs');
-const path = require('path');
+const pathModule = require('path');
 const { get } = require('http');
 const userController = require('./controllers/userController');
 const competitionController = require('./controllers/competitionController'); 
@@ -362,7 +362,18 @@ function processRequest(req, res){
             res.writeHead(405, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
-    } else if (pathname === '/users') { //Users Endpoint
+    } else if (pathname === '/welcome') {
+        const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'index.html');
+        fs.readFile(filePath, (err, data) => {
+        if (err) {
+            res.writeHead(500);
+            res.end('Error loading index.html');
+        } else {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(data);
+        }
+        });
+    } else if (pathname === '/users') {
         if (req.method === 'GET') {
             let body = '';
             req.on('data', (chunk) => {
@@ -440,6 +451,18 @@ function processRequest(req, res){
                 }
             });
         }
+        else if(req.method === 'GET'){
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'register.html');
+            fs.readFile(filePath, (err, data) => {
+            if (err) {
+                res.writeHead(500);
+                res.end('Error loading register.html');
+            } else {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(data);
+            }
+            });
+        }
     }
     else if (pathname === '/login') {
         if (req.method === 'POST') {
@@ -451,17 +474,33 @@ function processRequest(req, res){
                 const { username, password } = JSON.parse(body);
                 try {
                     let status = await userController.loginUser(username, password);
+                    let out;
                     if(status){
                         res.writeHead(200, { 'Content-Type': 'application/json' });
+                        let user = await userController.readUserByUsername(username);
+                        out = { success: status, api_token: user.api_token}
                     }
                     else{
                         res.writeHead(401, { 'Content-Type': 'application/json' });
+                        out = { success: status }
                     }
-                    res.end(JSON.stringify({ success: status }));
+                    res.end(JSON.stringify(out));
                 } catch (err) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, error: err.message }));
                 }
+            });
+        }
+        else if(req.method === 'GET'){
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'login.html');
+            fs.readFile(filePath, (err, data) => {
+            if (err) {
+                res.writeHead(500);
+                res.end('Error loading login.html');
+            } else {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(data);
+            }
             });
         }
     }    
@@ -490,11 +529,9 @@ function processRequest(req, res){
             });
         }
     }
-    else if (pathname.includes("/dashboard/")) {
-        const coursesRegex = /\/dashboard\/(.+)/;
-        const match = pathname.match(coursesRegex);
-        const api_token = match[1];
-        if (req.method === 'GET') {
+    else if (pathname.includes("/dashboard")) {
+        const api_token = req.headers.api_token;
+        if (req.method === 'POST') {
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
@@ -505,13 +542,25 @@ function processRequest(req, res){
                 res.end(JSON.stringify(courseTitles));
             });
         }
+        else if(req.method === 'GET'){
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'dashboard.html');
+            fs.readFile(filePath, (err, data) => {
+            if (err) {
+                res.writeHead(500);
+                res.end('Error loading login.html');
+            } else {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(data);
+            }
+            });
+        }
     }
     else if (pathname.includes("/course")) {
-        const coursesRegex = /\/course(?:\?.*?api_token=(\w+).*?course=(\d+).*?(?:&page=(\d+))?)?/;
-        const match = path.match(coursesRegex);
-        const api_token = match[1];
-        const course_id = match[2];
-        const given_page_number = match[3];
+        const urlParams = new URLSearchParams(req.url); // Parse URL parameters
+        const api_token = req.headers.api_token; // Extract api_token from headers
+        const course_id = urlParams.get('id'); // Extract course_id from URL parameters
+        const given_page_number = urlParams.get('page') || 1; // Extract page_number from URL parameters, default to 1 if not provided
+        console.log({api_token, course_id, given_page_number});
         if (req.method === 'GET') {
             let body = '';
             req.on('data', (chunk) => {

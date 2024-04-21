@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Noto Sans JP", Arial, sans-serif; /* Specify "Noto Sans JP" as the primary font */
+      background: linear-gradient(45deg, #5c10b9, #2b6cce);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .welcome-container {
+      text-align: center;
+    }
+
+    .button-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .btn {
+      background-color: #e91e63;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+      text-decoration: none; /* Remove default link underline */
+      margin-left: 10px; /* Add space between buttons */
+      display: inline-block; /* Ensure buttons are displayed inline */
+    }
+
+    .btn:hover {
+      background-color: #d81b60;
+    }
+
+    .form-group {
+      margin-bottom: 20px; /* Adjust this value to increase the separation */
+    }
+  </style>
+</head>
+<body>
+  <div class="welcome-container">
+    <h1>Dashboard</h1>
+    <h2>My Courses</h2>
+    <div class="button-container" id="courseButtons">
+      <!-- Buttons for courses will be dynamically added here -->
+    </div>
+  </div>
+  <script>
+    // Function to retrieve API token from local storage
+    function getApiTokenFromLocalStorage() {
+      return localStorage.getItem('api_token');
+    }
+
+    // Function to fetch courses based on API token
+    function fetchCourses(apiToken) {
+      fetch('/dashboard', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api_token': apiToken
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data); // Log the response data
+        renderCourseButtons(data);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+
+    // Function to render course buttons
+    function renderCourseButtons(courseData) {
+      const buttonContainer = document.getElementById('courseButtons');
+      courseData.forEach(course => {
+        const button = document.createElement('button');
+        button.textContent = `Course ID: ${course.course_id}, Progress: ${course.progress}`;
+        button.className = 'btn';
+        buttonContainer.appendChild(button);
+      });
+    }
+
+    // Entry point function
+    function initializeDashboard() {
+      const apiToken = getApiTokenFromLocalStorage();
+      if (apiToken) {
+        fetchCourses(apiToken);
+      } else {
+        console.error('API token not found.');
+      }
+    }
+
+    // Call the initializeDashboard function when the page loads
+    window.onload = initializeDashboard;
+  </script>
+</body>
+</html>
