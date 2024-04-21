@@ -75,7 +75,6 @@
       })
       .then(response => response.json())
       .then(data => {
-        console.log(data); // Log the response data
         renderCourseButtons(data);
       })
       .catch(error => {
@@ -83,16 +82,30 @@
       });
     }
 
-    // Function to render course buttons
     function renderCourseButtons(courseData) {
-      const buttonContainer = document.getElementById('courseButtons');
-      courseData.forEach(course => {
-        const button = document.createElement('button');
-        button.textContent = `Course ID: ${course.course_id}, Progress: ${course.progress}`;
-        button.className = 'btn';
-        buttonContainer.appendChild(button);
-      });
-    }
+  const buttonContainer = document.getElementById('courseButtons');
+  courseData.forEach(course => {
+    const button = document.createElement('button');
+    const [courseName, courseLength] = getCourseMetadata(course.course_id);
+    button.textContent = `${courseName} - ${course.progress}/${courseLength}`;
+    button.className = 'btn';
+    buttonContainer.appendChild(button);
+  });
+}
+
+
+    function getCourseMetadata(courseId) {
+      console.log(courseId);
+  const courseData = [
+    { courseId: 1, courseName: 'Introduction to AI', courseLength: '5' },
+    { courseId: 2, courseName: 'Machine Learning Basics', courseLength: '5' },
+    { courseId: 3, courseName: 'Introduction to Nothing', courseLength: '5'}
+  ];
+  const course = courseData.find(course => course.courseId === courseId);
+  console.log(course ? [course.courseName, course.courseLength] : null);
+  return course ? [course.courseName, course.courseLength] : null;
+}
+
 
     // Entry point function
     function initializeDashboard() {
