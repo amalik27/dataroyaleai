@@ -85,7 +85,8 @@ CREATE TABLE IF NOT EXISTS`submissions` (
   `submission_id` int(11) NOT NULL,
   `score` double DEFAULT NULL,
   `file_path` varchar(512) DEFAULT NULL,
-  `user_id` int(30) NOT NULL
+  `user_id` int(30) NOT NULL,
+  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
