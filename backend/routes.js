@@ -156,7 +156,7 @@ function processRequest(req, res){
 
             req.on('end', async () => {
                 
-                const {id, userid, prize, deadline} = JSON.parse(body);
+                const {id, userid, deadline, prize} = JSON.parse(body);
 
                 if (!id || !userid, !prize || !deadline) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -213,8 +213,6 @@ function processRequest(req, res){
                 }
             });
 
-
-
         } else if (req.method === 'PATCH'){
             // Submit a Model 
             let body = '';
@@ -250,8 +248,6 @@ function processRequest(req, res){
 
                 }
             });
-
-
 
         } else if (req.method === 'DELETE'){
             // Leave a Competition
@@ -289,8 +285,6 @@ function processRequest(req, res){
                 }
             });
 
-
-
         } else if (req.method === 'GET'){
             // View Leaderboard
             let body = '';
@@ -313,8 +307,6 @@ function processRequest(req, res){
                 res.end(JSON.stringify({ success: true, message: allJoined }));
             });
         }
-
-
 
     } else if (pathname === '/payment') { //Payment Endpoint For Exchanging USD for Credits
         if (req.method === 'GET') { //get current status of payment
@@ -459,7 +451,12 @@ function processRequest(req, res){
                 const { username, password } = JSON.parse(body);
                 try {
                     let status = await userController.loginUser(username, password);
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    if(status){
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                    }
+                    else{
+                        res.writeHead(401, { 'Content-Type': 'application/json' });
+                    }
                     res.end(JSON.stringify({ success: status }));
                 } catch (err) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -710,23 +707,30 @@ function processRequest(req, res){
         const forwardRegex = /\/manager\/forward(?:\?.*?)?/;
         const match = path.match(forwardRegex);
         if (req.method === 'POST') {
-            let body = '';
+            let postMsg = '';
             req.on('data', (chunk) => {
-                body += chunk.toString();
+                postMsg += chunk.toString();
             });
             req.on('end', async () => {
                 try {
-                    const { processID, containerID, body } = JSON.parse(body);
-                    if (!processID || !containerID || !body) {
+                    const { processID, containerID, body,api_token } = JSON.parse(postMsg);
+                    if (!processID || !containerID || !body || !api_token) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Process ID, Container ID, and Body are required.');
                         return;
                     }
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
+                        return;
+                    }
+                    await Prometheus.database.checkUserCredits(processID);
                     console.log(`Forwarding request to container ${containerID} for process ${processID}.`);
-                    const data = awaitPrometheus.forward(processID, containerID, body);
+                    const data = await Prometheus.forward(processID, containerID, body);
                     console.log(data);
+                    await Prometheus.database.deductUserCredits(processID);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify(data));
+                    res.end(data);
                 } catch (error) {
                     res.writeHead(500, { 'Content-Type': 'text/plain' });
                     res.end('500 Internal Server Error: ' + error.message);
@@ -834,7 +838,7 @@ function processRequest(req, res){
         const match = path.match(athenaUsageRegex);
         if (req.method === 'GET') {
             try {
-                const result = getSystemState(AthenaManagerInstance);
+                const result = getSystemState(Athena);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(result));
             } catch (error) {

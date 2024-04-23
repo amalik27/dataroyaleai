@@ -1,0 +1,13 @@
+FROM node:18
+
+# Install Docker using official script
+RUN curl -fsSL https://get.docker.com | sh
+#RUN docker run -it -v /var/run/docker.sock:/var/run/docker.sock docker
+ENV NETWORK = swe2024_my-bridge-network
+WORKDIR /app
+COPY . /app
+WORKDIR /app/backend
+
+# Install your app dependencies here
+RUN npm install
+ENTRYPOINT  ["node","server.js"]

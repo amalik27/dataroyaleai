@@ -19,7 +19,7 @@ async function createCourseProgress(api_token, course_id) {
         user_id = user.id;
         await db.query(sql, [user_id, api_token, course_id, progress]);
     } catch (error) {
-        console.error('Error creating user:', error);
+        console.error('Error creating course progress:', error);
         throw error;
     }
 }
@@ -30,7 +30,7 @@ async function updateCourseProgress(progress, api_token, course_id) {
         const sql = `UPDATE course_progress SET progress = ? WHERE api_token = ? AND course_id = ?`;
         await db.query(sql, [progress, api_token, course_id]);
     } catch (error) {
-        console.error('Error updating user:', error);
+        console.error('Error updating course progress:', error);
         throw error;
     }
 }
@@ -50,7 +50,7 @@ async function readAllCoursesThatUserCanBuyOrAccessByApiToken(api_token) {
         }
         return notBoughtCourseIds;
     } catch (error) {
-        console.error('Error reading courses for the user:', error);
+        console.error('Error reading course progress:', error);
         throw error;
     }
 }
@@ -252,5 +252,4 @@ module.exports = {
     readCompletedCoursesByApiToken,
     readInProgressCoursesByApiToken,
     getTotalCourseCount
-    markCourseCompletion
 };

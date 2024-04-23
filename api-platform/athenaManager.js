@@ -6,6 +6,7 @@ const db = require('../backend/db.js')
 const mysql = require('mysql');
 //Inherit from PrometheusManager
 class AthenaManager extends PlatformDaemonManager {
+    
     constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier) {
         super(maxCPU, maxMemory, portsAllowed, blocksPerTier, "Athena", new AthenaDatabaseSystem());
         
@@ -187,6 +188,8 @@ class AthenaDatabaseSystem extends DatabaseSystem {
         super();
         this.query = util.promisify(db.query).bind(db);
     }
+
+    
 
     async createCompetition(id, title, description, file_path) {
         const sql = "INSERT INTO Competitions (id, title, description, file_path) VALUES (?, ?, ?, ?, ?)";

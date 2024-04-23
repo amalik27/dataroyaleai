@@ -12,7 +12,7 @@ def calculate_hypotenuse():
     g = data['g']
     v = data['v']
     F = -1*r*g*v
-    return jsonify({"Buoyant Force": F})
+    return jsonify({"Buoyant Force": F}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -7,11 +7,10 @@ app = Flask(__name__)
 @app.route('/', methods=['POST'])
 def calculate_hypotenuse():
     data = request.get_json()
-    sleep(1)
     a = data['a']
     b = data['b']
     hypotenuse = math.sqrt(a**2 + b**2)
-    return jsonify({"hypotenuse": hypotenuse})
+    return jsonify({"hypotenuse": hypotenuse}), 200
 
 @app.route('/health', methods=['GET'])  # Health check typically uses a GET request
 def health_check():

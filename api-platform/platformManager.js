@@ -624,14 +624,51 @@ class DatabaseSystem {
         //tier 2 = 30 Guarantee, 15 Overload, 45 seconds uptime, 5 seconds overload time
         //tier 3 = 40 Guarantee, 20 Overload, 35 seconds uptime, 0 seconds overload time
         //Add to db via sql
-        const query = `INSERT INTO tiers (TierLevel, Guarantee, Overload, Uptime, OverloadUptime) VALUES (1, 20, 10, 60, 10), (2, 30, 15, 45, 5), (3, 40, 20, 35, 0)`;
-        db.query(query, (err, results) => {
+        //const query = `INSERT INTO tiers (TierLevel, Guarantee, Overload, Uptime, OverloadUptime) VALUES (1, 20, 10, 60, 10), (2, 30, 15, 45, 5), (3, 40, 20, 35, 0)`;
+        /*
+	 * db.query(query, (err, results) => {
             if (err) {
                 console.error('Error adding tiers:', err.code);
             } else {
                 console.log('Tiers added successfully');
             }
-        });
+        });*/
+    }
+
+    async validateUserAPIKey(apiKey,user) {
+        const query = 'SELECT username FROM users WHERE api_token = ?';
+        try {
+            const results = await this.query(query, [apiKey]);
+            if (results.length > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    //Given user and amount, check if user has requisite credits
+    async checkUserCredits(username) {
+        //PAYMENT HANDLING LOGIC FOR DETERMINING COST GOES HERE
+        let amount = 5; // Suppose 5 credits are required per call for now
+
+        const sql = "SELECT credits FROM users WHERE username = ?";
+        const results = await this.query(sql, [username]);
+        if (results.length > 0 && results[0].credits >= amount) {
+            return ;
+        } else {
+            return false;
+        }
+    }
+    //Deduct user credits
+    async deductUserCredits(username) {
+        //PAYMENT HANDLING LOGIC FOR DETERMINING COST GOES HERE
+        let amount = 5; // Suppose 5 credits are required per call  for now
+
+        const sql = "UPDATE users SET credits = credits - ? WHERE username = ?";
+        await this.query(sql, [amount, username]);
     }
 
     async getUserTier(username) {
