@@ -57,6 +57,7 @@ async function readAllCoursesThatUserCanBuyOrAccessByApiToken(api_token) {
 
 // Function to retrieve all courses of a user by API token.
 async function readAllCoursesOfUserByApiToken(api_token) {
+    console.log(api_token);
     try {
         const sql = 'SELECT * FROM course_progress WHERE api_token = ?';
         return new Promise((resolve, reject) => {

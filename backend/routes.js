@@ -556,11 +556,11 @@ function processRequest(req, res){
         }
     }
     else if (pathname.includes("/course")) {
-        const urlParams = new URLSearchParams(req.url); // Parse URL parameters
-        const api_token = req.headers.api_token; // Extract api_token from headers
-        const course_id = urlParams.get('id'); // Extract course_id from URL parameters
-        const given_page_number = urlParams.get('page') || 1; // Extract page_number from URL parameters, default to 1 if not provided
-        console.log({api_token, course_id, given_page_number});
+    const urlParams = new URLSearchParams(req.url); // Parse URL parameters
+    const api_token = urlParams.get("api_token"); // Extract api_token from URL parameters
+    const course_id = urlParams.get("id"); // Extract course_id from URL parameters
+    const given_page_number = urlParams.get("page") || 1; // Extract page_number from URL parameters, default to 1 if not provided
+    console.log({api_token, course_id, given_page_number});
         if (req.method === 'GET') {
             let body = '';
             req.on('data', (chunk) => {
@@ -597,6 +597,9 @@ function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
+                console.log(given_page_number);
+                console.log(api_token);
+                console.log(course_id);
                 await courseController.updateCourseProgress(given_page_number, api_token, course_id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));

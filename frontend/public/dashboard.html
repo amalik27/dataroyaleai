@@ -59,59 +59,64 @@
     </div>
   </div>
   <script>
+    const courseData = [
+      { courseId: 1, courseName: 'Website Guide', courseLength: '5' },
+      { courseId: 2, courseName: 'Introduction to AI', courseLength: '5' },
+      { courseId: 3, courseName: 'Machine Learning Basics', courseLength: '5'}
+    ];
+
     // Function to retrieve API token from local storage
     function getApiTokenFromLocalStorage() {
       return localStorage.getItem('api_token');
     }
 
-    // Function to fetch courses based on API token
-    function fetchCourses(apiToken) {
-      fetch('/dashboard', {
-        method: 'POST',
+    // Function to fetch course HTML content based on courseId
+    function fetchCourseHTML(courseId, apiToken) {
+      const url = `http://localhost:3000/course&id=${courseId}`;
+      console.log(url);
+      return fetch(url, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'api_token': apiToken
         }
       })
-      .then(response => response.json())
-      .then(data => {
-        renderCourseButtons(data);
+      .then(response => {
+        if (response.ok) {
+          return response.text();
+        }
+        throw new Error('Network response was not ok.');
+      })
+      .then(html => {
+        // Redirect to the fetched HTML page
+        window.location.href = './1/1.html';
       })
       .catch(error => {
-        console.error('Error:', error);
+        console.error('Error fetching course HTML:', error);
       });
     }
 
+    // Function to render course buttons
     function renderCourseButtons(courseData) {
-  const buttonContainer = document.getElementById('courseButtons');
-  courseData.forEach(course => {
-    const button = document.createElement('button');
-    const [courseName, courseLength] = getCourseMetadata(course.course_id);
-    button.textContent = `${courseName} - ${course.progress}/${courseLength}`;
-    button.className = 'btn';
-    buttonContainer.appendChild(button);
-  });
-}
-
-
-    function getCourseMetadata(courseId) {
-      console.log(courseId);
-  const courseData = [
-    { courseId: 1, courseName: 'Introduction to AI', courseLength: '5' },
-    { courseId: 2, courseName: 'Machine Learning Basics', courseLength: '5' },
-    { courseId: 3, courseName: 'Introduction to Nothing', courseLength: '5'}
-  ];
-  const course = courseData.find(course => course.courseId === courseId);
-  console.log(course ? [course.courseName, course.courseLength] : null);
-  return course ? [course.courseName, course.courseLength] : null;
-}
-
+      const buttonContainer = document.getElementById('courseButtons');
+      const apiToken = getApiTokenFromLocalStorage();
+      
+      courseData.forEach(course => {
+        const button = document.createElement('button');
+        button.textContent = course.courseName;
+        button.className = 'btn';
+        button.addEventListener('click', () => {
+          const url = `http://localhost:3000/course&id=${course.courseId}&api_token=${apiToken}`;
+          window.location.href = url;
+        });
+        buttonContainer.appendChild(button);
+      });
+    }
 
     // Entry point function
     function initializeDashboard() {
       const apiToken = getApiTokenFromLocalStorage();
       if (apiToken) {
-        fetchCourses(apiToken);
+        renderCourseButtons(courseData);
       } else {
         console.error('API token not found.');
       }

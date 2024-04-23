@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lesson 5: Advanced AI Models and Future Trends</title>
-    <meta name="course-id" content="1">
-    <meta name="course-name" content="Introduction to AI">
-    <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
+    <meta name="course-id" content="2">
+    <meta name="course-name" content="Introduction to Datasets">
+    <meta name="course-description" content="This course will introduce you to the basics of Datasets.">
     <style>
         body {
             margin: 0;
@@ -65,6 +65,14 @@
         <p>Advanced AI models are pushing the boundaries of what is possible in areas such as image generation, language translation, and autonomous decision-making.</p>
         <p>Future trends in AI include the development of explainable AI, which aims to make AI systems more transparent and interpretable, and the integration of AI with other emerging technologies such as blockchain and the Internet of Things.</p>
         <p>Thank you for completing our course on AI models!</p>
+        <p>When creating datasets for AI applications, various tools and techniques can be utilized to collect, annotate, and preprocess data:</p>
+        <ul>
+            <li><strong>Data Collection Platforms:</strong> Online platforms like Amazon Mechanical Turk, CrowdFlower, or specialized APIs for collecting labeled data.</li>
+            <li><strong>Data Labeling Tools:</strong> Software tools such as LabelImg, Labelbox, or Supervisely for annotating images, videos, or text data.</li>
+            <li><strong>Data Augmentation Libraries:</strong> Python libraries like Augmentor, imgaug, or TensorFlow Data Augmentation Toolkit for generating additional training data through transformations.</li>
+            <li><strong>Data Preprocessing Software:</strong> Tools like pandas, scikit-learn, or TensorFlow Data Validation for cleaning, transforming, and preparing data for model training.</li>
+        </ul>
+        <p>By leveraging these tools and techniques, AI practitioners can efficiently create high-quality datasets to train and evaluate their AI models.</p>
         <button class="btn" id="lesson4">Go back to Lesson 4</button>
         <button class="btn" id="backToDashboard">Back to Dashboard</button>
     </div>
@@ -80,7 +88,7 @@
 
         function handleLessonLinkClick(event, lessonNumber) {
             event.preventDefault();
-            var url = `http://localhost:3000/course&id=2&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
+            var url = `http://localhost:3000/course&id=3&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
             updateCourseProgress(url);
             window.location.href = url
         }

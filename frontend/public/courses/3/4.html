@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lesson 4: Roles and Competitions</title>
-    <meta name="course-id" content="1">
-    <meta name="course-name" content="Introduction to AI">
-    <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
+    <title>Lesson 4: Introduction to AI Models</title>
+    <meta name="course-id" content="2">
+    <meta name="course-name" content="Introduction to Datasets">
+    <meta name="course-description" content="This course will introduce you to the basics of Datasets.">
     <style>
         body {
             margin: 0;
@@ -57,10 +57,22 @@
 </head>
 <body>
     <div class="lesson-container">
-        <h1>Lesson 4: Roles and Competitions</h1>
-        <p>Roles on DataRoyal: DataRoyal accommodates two primary roles: organizers and competitors. Organizers create and manage competitions, while competitors participate in these competitions by submitting their AI models or analyses.</p>
-        <p>Joining Competitions as a Competitor: Browse the available competitions on DataRoyal and choose the ones that align with your expertise and interests. Review the competition details, rules, and deadlines before joining.</p>
-        <p>Participating in Competitions: As a competitor, actively engage in competitions by deploying your AI models and submitting your predictions or analyses. Earn credits based on your performance, rankings, and achievements in the competitions.</p>
+        <h1>Lesson 4: Introduction to AI Models</h1>
+    <p>Now that we've covered the basics, let's explore various AI models used in different applications.</p>
+    <p>AI models are mathematical representations of real-world processes that enable computers to make predictions or decisions.</p>
+    <p>Decision trees are a type of AI model used for classification and regression tasks. They partition the input space into regions and make predictions based on the majority class or average value within each region.</p>
+    <p>Support vector machines are another type of AI model used for classification and regression. They find the optimal hyperplane that separates the input data into different classes or predicts continuous outcomes.</p>
+    <p>Other popular AI models include k-nearest neighbors, naive Bayes, and random forests, each with its strengths and weaknesses.</p>
+    <p>Understanding AI models is essential for selecting the appropriate model for a given task and optimizing its performance.</p>
+    <p>In addition to exploring AI models, let's dive deeper into datasets, understanding their role and importance in the development and evaluation of AI models:</p>
+    <ul>
+        <li><strong>Data Collection:</strong> Strategies for collecting diverse and representative datasets to ensure model generalization and robustness.</li>
+        <li><strong>Data Labeling:</strong> Techniques for annotating and labeling data to provide supervision for supervised learning tasks.</li>
+        <li><strong>Data Bias:</strong> Identification and mitigation of bias in datasets to prevent unfair or discriminatory model behavior.</li>
+        <li><strong>Data Privacy:</strong> Considerations for handling sensitive or personal data in compliance with privacy regulations and ethical standards.</li>
+    </ul>
+    <p>By understanding these aspects of datasets, AI practitioners can effectively leverage data to build reliable and ethical AI models.</p>
+    <p>
         <button class="btn" id="lesson5">Proceed to Lesson 5</button>
         <button class="btn" id="lesson3">Go back to Lesson 3</button>
         <button class="btn" id="backToDashboard">Go back to Dashboard</button>
@@ -81,7 +93,7 @@
         
         function handleLessonLinkClick(event, lessonNumber) {
             event.preventDefault();
-            var url = `http://localhost:3000/course&id=1&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
+            var url = `http://localhost:3000/course&id=3&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
             updateCourseProgress(url);
             window.location.href = url
         }
