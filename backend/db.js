@@ -6,11 +6,11 @@
 const mysql = require('mysql');
 
 const connection = mysql.createConnection({
-    host: 'db',
+    host: process.env.DB_HOST || 'localhost',
     user: 'tester', // changed to work locally
     password: 'tester', // changed to work locally
     database: 'swe2024',
-    port: '3306' 
+    port: process.env.DB_PORT || '3001' //If you want to run tests we assume this 3001:3306 mapping
 });
 
     connection.connect((err) => {
