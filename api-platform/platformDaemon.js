@@ -364,13 +364,14 @@ class PlatformDaemon extends EventEmitter{
         reject(`Problem with request: ${e.message}`);
       }
       //Get container name from docker ps as json converted
-      let address = shell.exec(`docker ps --format '{{.Image}} {{.Names}}' | grep 345674 | cut -d ' ' -f2
-      `, { silent: true }).trim();
+      let containerName  = shell.exec(`docker ps | grep ${containerID} | awk '{print $NF}'`,{ silent: true }).trim();
+      console.log(containerName);
+      let address = shell.exec(`docker network inspect swe2024_my-bridge-network --format '{{range .Containers}}{{if eq .Name "${containerName}"}}{{.IPv4Address}}{{end}}{{end}}' | cut -d'/' -f1`, { silent: true }).trim();
       console.log(address);
 
       const options = {
         hostname: address,
-        port: port,
+        port: STARTING_PORT, //This is because of the docker network. We are using the same port for all containers.
         path: '/',
         method: 'POST',
         headers: {

@@ -10,4 +10,4 @@ WORKDIR /app/backend
 
 # Install your app dependencies here
 RUN npm install
-CMD ["node","server.js"]
+ENTRYPOINT  ["node","server.js"]
