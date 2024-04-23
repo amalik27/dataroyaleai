@@ -156,7 +156,7 @@ function processRequest(req, res){
 
             req.on('end', async () => {
                 
-                const {id, userid, prize, deadline} = JSON.parse(body);
+                const {id, userid, deadline, prize} = JSON.parse(body);
 
                 if (!id || !userid, !prize || !deadline) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -213,8 +213,6 @@ function processRequest(req, res){
                 }
             });
 
-
-
         } else if (req.method === 'PATCH'){
             // Submit a Model 
             let body = '';
@@ -250,8 +248,6 @@ function processRequest(req, res){
 
                 }
             });
-
-
 
         } else if (req.method === 'DELETE'){
             // Leave a Competition
@@ -289,8 +285,6 @@ function processRequest(req, res){
                 }
             });
 
-
-
         } else if (req.method === 'GET'){
             // View Leaderboard
             let body = '';
@@ -313,8 +307,6 @@ function processRequest(req, res){
                 res.end(JSON.stringify({ success: true, message: allJoined }));
             });
         }
-
-
 
     } else if (pathname === '/payment') { //Payment Endpoint For Exchanging USD for Credits
         if (req.method === 'GET') { //get current status of payment
@@ -459,7 +451,12 @@ function processRequest(req, res){
                 const { username, password } = JSON.parse(body);
                 try {
                     let status = await userController.loginUser(username, password);
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    if(status){
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                    }
+                    else{
+                        res.writeHead(401, { 'Content-Type': 'application/json' });
+                    }
                     res.end(JSON.stringify({ success: status }));
                 } catch (err) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });

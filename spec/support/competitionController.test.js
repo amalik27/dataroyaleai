@@ -1,6 +1,9 @@
 // When running these test cases, please make sure that the extractedCompDatasets folder is EMPTY.
-// Please run the SQL commands in competitionSQL.sql to populate table with competitions needed for 
-// test cases to run. These test cases were done in Jest. Thank you!
+// Please make sure the initial swe2024.sql file was run to populate table with competitions
+// and users needed for test cases to run. These test cases were done in Jest.
+// Note that since one of the test cases adds a competition, there will be cases that break
+// if these test cases are run more than once, unless you manually change the database accordingly.
+// Thank you!
 // @author Haejin Song
 
 const supertest = require("supertest");
@@ -89,7 +92,7 @@ describe("Competition Creation Testing", () => {
         const testData = {
             userid: "123456",
             title: "Expensive Competition",
-            deadline: "2024-04-30",
+            deadline: "2024-07-30",
             prize: 200,
             metrics: { speed: 4, accuracy: 8, size: 1 },
             desc: "A competition that doesn't work",
@@ -175,6 +178,7 @@ describe("Competition Creation Testing", () => {
         expect(response.body).toEqual(expected);
     });
 });
+
 describe("Competition Joining Testing", () => {
     test("Can join competition that exists", async () => {
         const testData = {
@@ -217,13 +221,14 @@ describe("Competition Joining Testing", () => {
         expect(response.body).toEqual(expected);
     });
 });
+
 describe("Competition Updating Testing", () => {
     test("Successfully updates a competition", async () => {
         const testData = {
             userid: "123456",
             id: "42161251",
-            deadline: "2024-06-13",
-            prize: 140
+            deadline: "2024-06-21",
+            prize: 145
         }
         const expected = { success: true, message: "Competition updated." };
         const response = await request.patch("/competitions/create").send(testData).set("Content-Type", "application/json");
@@ -251,6 +256,26 @@ describe("Withdraw from Competition Testing", () => {
             compid: "71393633"
         }
         const expected = { success: true, message: "Withdraw successful." };
+        const response = await request.delete("/competitions/join").send(testData).set("Content-Type", "application/json");
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toEqual(expected);
+    });
+    test("Cannot withdraw from competition that user is not in", async () => {
+        const testData = {
+            userid: "129834",
+            compid: "42161251"
+        }
+        const expected = { success: false, message: "There is an invalid id" };
+        const response = await request.delete("/competitions/join").send(testData).set("Content-Type", "application/json");
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toEqual(expected);
+    });
+    test("Invalid user id", async () => {
+        const testData = {
+            userid: "324354",
+            compid: "71393633"
+        }
+        const expected = { success: false, message: "There is an invalid id" };
         const response = await request.delete("/competitions/join").send(testData).set("Content-Type", "application/json");
         expect(response.statusCode).toBe(200);
         expect(response.body).toEqual(expected);
