@@ -46,3 +46,8 @@
 ## Set up Competition Management
 - For testing: `npm run competition-test` (make sure to CTRL+C after to leave the asynchronous server loop)
 - The API is also available for use according to the demo video.
+
+
+### Some footnote commands
+For starting the db container for testing without docker compose use ```docker run -d -p 3001:3306 db```
+Note, we need a bridge network named swe2024_my-bridge-network for successful running of this application as the user containers will all connect to it for IP assignment.
