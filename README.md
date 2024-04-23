@@ -27,10 +27,10 @@
 
 ## Docker compose setup
 - Install docker
-- If docker is not started put command (```sudo systemctl start docker```) or (```sudo service docker start```)
+- If docker is not started put command ```sudo systemctl start docker``` or ```sudo service docker start```
 - All file paths must be begin from root folder
 - Assuming you have docker installed on linux (Ubuntu 20.04 LTS preferred). You should be able to simply run
-  (```docker compose up --build```)
+  ```docker compose up --build```
 
 ## Set Up Database <These instructions should be deprecated as of the docker compose addition>
 - Start up MAMP, and click "Start Servers".  Then, navigate to this link: http://localhost/phpMyAdmin/?lang=en 
