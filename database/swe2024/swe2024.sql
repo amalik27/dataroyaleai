@@ -85,11 +85,17 @@ CREATE TABLE IF NOT EXISTS`submissions` (
   `submission_id` int(11) NOT NULL,
   `score` double DEFAULT NULL,
   `file_path` varchar(512) DEFAULT NULL,
-  `user_id` int(30) NOT NULL
+  `user_id` int(30) NOT NULL,
+  `published` BOOLEAN NOT NULL DEFAULT FALSE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- --------------------------------------------------------
 
+INSERT INTO `submissions` (`comp_id`, `submission_id`, `score`, `file_path`, `user_id`, `published`) VALUES
+(1, 9, 85.5, '.../api-platform/Euclid', 1, true),
+(8, 2, 78.2, '.../api-platform/Euclid', 2, false);
+
+-- --------------------------------------------------------
+-- docker exec -it swe2024-db-1 bash
 --
 -- Table structure for table `subscriptions`
 --
@@ -197,8 +203,8 @@ ALTER TABLE `leaderboard`
 -- Indexes for table `submissions`
 --
 ALTER TABLE `submissions`
-  ADD PRIMARY KEY (`submission_id`),
-  ADD UNIQUE KEY `unique_user_comp_combination` (`user_id`,`comp_id`);
+  ADD PRIMARY KEY (`submission_id`);
+--  ADD UNIQUE KEY `unique_user_comp_combination` (`user_id`,`comp_id`);
 
 --
 -- Indexes for table `subscriptions`

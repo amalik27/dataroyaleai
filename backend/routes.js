@@ -27,7 +27,7 @@ Athena.startMonitoring(1000);
 
 
 
-function processRequest(req, res){
+async function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
     const path = parsedUrl.path;
@@ -741,14 +741,15 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/prometheus/models")) {
-        const modelsRegex = /\/manager\/models(?:\?.*?)?/;
-        const match = path.match(modelsRegex);
+    
+    else if (pathname.includes("/prometheus/getAllPublishedSubmissions")) {
+        const submissionsRegex = /\/manager\/getAllPublishedSubmissions(?:\?.*?)?/;
+        const match = path.match(submissionsRegex);
         if (req.method === 'GET') {
             try {
-                const models =Prometheus.database.getAllModels();
+                const submissions = await Prometheus.database.getAllPublishedSubmissions();
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(models));
+                res.end(JSON.stringify(submissions));
             } catch (error) {
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
                 res.end('500 Internal Server Error: ' + error.message);
@@ -758,6 +759,44 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
+    else if (pathname.includes("/prometheus/updatePublishedStatus")) {
+        const updateRegex = /\/manager\/updatePublishedStatus(?:\?.*?)?/;
+        const match = path.match(updateRegex);
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => {
+                body += chunk.toString(); // Convert Buffer to string
+            });
+            req.on('end', async () => {
+                try {
+                    const data = JSON.parse(body);
+                    const submission_id = parseInt(data.submission_id);
+                    const published = typeof data.published === 'boolean' ? data.published : (data.published === 'true');
+    
+                    // Validate submission_id and published
+                    if (!Number.isInteger(submission_id) || typeof published !== 'boolean') {
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: "Invalid submission ID or published status" }));
+                        return;
+                    }
+    
+                    await Prometheus.database.updatePublishedStatus(submission_id, published);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ message: `Successfully updated submission ${submission_id} to published status ${published}` }));
+                } catch (error) {
+                    console.error(error);
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    
+    
+    
     else if (pathname.includes("/prometheus/kill")) {
         const killRegex = /\/manager\/kill(?:\?.*?)?/;
         const match = path.match(killRegex);
