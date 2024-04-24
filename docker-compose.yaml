@@ -31,4 +31,3 @@ services:
 networks:
   my-bridge-network:
     driver: bridge
-
