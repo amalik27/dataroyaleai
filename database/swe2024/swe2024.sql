@@ -86,8 +86,12 @@ CREATE TABLE IF NOT EXISTS`submissions` (
   `score` double DEFAULT NULL,
   `file_path` varchar(512) DEFAULT NULL,
   `user_id` int(30) NOT NULL,
-  
+  `published` boolean NOT NULL DEFAULT false
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `submissions` (`comp_id`, `submission_id`, `score`, `file_path`, `user_id`, `published`) VALUES
+(1, 1, 85.5, '/api-platform/Euclid', user1, true),
+(1, 2, 78.2, '/api-platform/Euclid', user2, false);
 
 -- --------------------------------------------------------
 

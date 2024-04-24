@@ -741,14 +741,15 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/prometheus/models")) {
-        const modelsRegex = /\/manager\/models(?:\?.*?)?/;
-        const match = path.match(modelsRegex);
+    //
+    else if (pathname.includes("/prometheus/getAllPublishedSubmissions")) {
+        const submissionsRegex = /\/manager\/getAllPublishedSubmissions(?:\?.*?)?/;
+        const match = path.match(submissionsRegex);
         if (req.method === 'GET') {
             try {
-                const models =Prometheus.database.getAllModels();
+                const submissions = Prometheus.database.getAllPublishedSubmissions();
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(models));
+                res.end(JSON.stringify(submissions));
             } catch (error) {
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
                 res.end('500 Internal Server Error: ' + error.message);
@@ -758,6 +759,7 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
+    
     else if (pathname.includes("/prometheus/kill")) {
         const killRegex = /\/manager\/kill(?:\?.*?)?/;
         const match = path.match(killRegex);
