@@ -729,6 +729,27 @@ class DatabaseSystem {
         }
     }
     
+    async updatePublishedStatus(submission_id, published) {
+        // Ensure the inputs are of the correct type
+        if (!Number.isInteger(submission_id) || typeof published !== 'boolean') {
+            throw new Error("Invalid input types: submission_id must be an integer, and published must be a boolean.");
+        }
+    
+        const query = 'UPDATE submissions SET published = ? WHERE submission_id = ?';
+        try {
+            const result = await this.query(query, [published, submission_id]);
+            if (result.affectedRows === 0) {
+                console.log(`No submission found with ID ${submission_id}, or no change needed.`);
+            } else {
+                console.log(`Updated submission ${submission_id} to published status ${published}.`);
+            }
+        } catch (err) {
+            console.error('Failed to update published status:', err);
+            throw err;
+        }
+    }
+    
+    
 
 }
 

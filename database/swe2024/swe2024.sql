@@ -91,8 +91,8 @@ CREATE TABLE IF NOT EXISTS`submissions` (
 
 
 INSERT INTO `submissions` (`comp_id`, `submission_id`, `score`, `file_path`, `user_id`, `published`) VALUES
-(1, 9, 85.5, '.../api-platform/Euclid', 1, TRUE),
-(8, 2, 78.2, '.../api-platform/Euclid', 2, FALSE);
+(1, 9, 85.5, '.../api-platform/Euclid', 1, true),
+(8, 2, 78.2, '.../api-platform/Euclid', 2, false);
 
 -- --------------------------------------------------------
 -- docker exec -it swe2024-db-1 bash
