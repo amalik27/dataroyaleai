@@ -27,7 +27,7 @@ Athena.startMonitoring(1000);
 
 
 
-function processRequest(req, res){
+async function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
     const path = parsedUrl.path;
@@ -741,13 +741,13 @@ function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    //
+    
     else if (pathname.includes("/prometheus/getAllPublishedSubmissions")) {
         const submissionsRegex = /\/manager\/getAllPublishedSubmissions(?:\?.*?)?/;
         const match = path.match(submissionsRegex);
         if (req.method === 'GET') {
             try {
-                const submissions = Prometheus.database.getAllPublishedSubmissions();
+                const submissions = await Prometheus.database.getAllPublishedSubmissions();
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(submissions));
             } catch (error) {

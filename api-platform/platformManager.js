@@ -718,9 +718,10 @@ class DatabaseSystem {
 
     async getAllPublishedSubmissions() {
         // Specify the columns you want to fetch in the SELECT clause
-        const query = 'SELECT submission_id, user_id FROM submissions WHERE published = true';
+        const query = 'SELECT submission_id, user_id FROM submissions WHERE published = TRUE';
         try {
             const results = await this.query(query);
+            console.log(results);
             return results;
         } catch (err) {
             console.error('Failed to retrieve published submissions:', err);
