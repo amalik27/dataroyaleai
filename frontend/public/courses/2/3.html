@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lesson 3: Deep Dive into Neural Networks</title>
-    <meta name="course-id" content="1">
+    <meta name="course-id" content="2">
     <meta name="course-name" content="Introduction to AI">
     <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
     <style>
@@ -66,18 +66,18 @@
         <p>Deep learning has achieved remarkable success in various tasks, including image recognition, speech recognition, and natural language processing.</p>
         <p>Key components of neural networks include activation functions, which introduce non-linearity into the model, and loss functions, which measure the model's performance.</p>
         <p>Understanding neural networks is crucial for designing and implementing advanced AI models.</p>
-        <button class="btn" id="lesson4">Proceed to Lesson 4</button>
         <button class="btn" id="lesson2">Go back to Lesson 2</button>
+        <button class="btn" id="lesson4">Proceed to Lesson 4</button>
         <button class="btn" id="backToDashboard">Go back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson4").addEventListener("click", function(event) {
-            handleLessonLinkClick(event, 4);
-        });
-        
         document.getElementById("lesson2").addEventListener("click", function(event) {
             handleLessonLinkClick(event, 2);
+        });
+
+        document.getElementById("lesson4").addEventListener("click", function(event) {
+            handleLessonLinkClick(event, 4);
         });
 
         document.getElementById("backToDashboard").addEventListener("click", function(event) {

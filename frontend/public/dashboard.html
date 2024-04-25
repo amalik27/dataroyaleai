@@ -13,7 +13,7 @@
       background: linear-gradient(45deg, #5c10b9, #2b6cce);
       height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start; /* Align items to the top */
       justify-content: center;
       color: white;
     }
@@ -48,6 +48,45 @@
     .form-group {
       margin-bottom: 20px; /* Adjust this value to increase the separation */
     }
+
+    /* Styles for the credits container */
+    #credits-container {
+      position: fixed;
+      top: 10px;
+      left: 10px; /* Changed from right to left */
+      background-color: #8400ff;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #credits {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    /* Tier container styles */
+    #tier-container {
+      position: fixed;
+      top: 60px; /* Adjusted top position */
+      left: 10px; /* Adjusted left position */
+      background-color: #8400ff;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #tier {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    /* Logout button styles */
+    #logout-btn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+    }
   </style>
 </head>
 <body>
@@ -58,48 +97,110 @@
       <!-- Buttons for courses will be dynamically added here -->
     </div>
   </div>
-  <script>
-    const courseData = [
-      { courseId: 1, courseName: 'Website Guide', courseLength: '5' },
-      { courseId: 2, courseName: 'Introduction to AI', courseLength: '5' },
-      { courseId: 3, courseName: 'Machine Learning Basics', courseLength: '5'}
-    ];
 
+  <!-- Credits container -->
+  <div id="credits-container">
+    <span>Your Credits:</span>
+    <span id="credits">0</span>
+  </div>
+
+  <!-- Tier container -->
+  <div id="tier-container">
+    <span id="tier">Your Tier: </span> <!-- Added tier display -->
+  </div>
+
+  <!-- Logout button -->
+  <button id="logout-btn" class="btn">Logout</button>
+
+  <script>
     // Function to retrieve API token from local storage
     function getApiTokenFromLocalStorage() {
       return localStorage.getItem('api_token');
     }
 
-    // Function to fetch course HTML content based on courseId
-    function fetchCourseHTML(courseId, apiToken) {
-      const url = `http://localhost:3000/course&id=${courseId}`;
-      console.log(url);
-      return fetch(url, {
-        method: 'GET',
-        headers: {
-          'api_token': apiToken
-        }
-      })
-      .then(response => {
+    async function fetchCredits(apiToken) {
+      try {
+        const response = await fetch('http://localhost:3000/users', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'api_token': apiToken
+          }
+        });
         if (response.ok) {
-          return response.text();
+          const data = await response.json();
+          return data.message.credits;
+        } else {
+          throw new Error('Failed to fetch courses');
         }
-        throw new Error('Network response was not ok.');
-      })
-      .then(html => {
-        // Redirect to the fetched HTML page
-        window.location.href = './1/1.html';
-      })
-      .catch(error => {
-        console.error('Error fetching course HTML:', error);
-      });
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        return [];
+      }
+    }
+
+    // Function to fetch courses from the server
+    async function fetchCourses(apiToken) {
+      try {
+        const response = await fetch('http://localhost:3000/dashboard', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'api_token': apiToken
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          return data.map(entry => entry.course_id);
+        } else {
+          throw new Error('Failed to fetch courses');
+        }
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        return [];
+      }
+    }
+
+    // Function to fetch user tier from the server
+    async function fetchUserTier(apiToken) {
+      try {
+        const response = await fetch('http://localhost:3000/users', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'api_token': apiToken
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          return data.message.tier;
+        } else {
+          throw new Error('Failed to fetch user tier');
+        }
+      } catch (error) {
+        console.error('Error fetching user tier:', error);
+        return 'Unknown';
+      }
+    }
+
+    // Function to filter course data based on provided course IDs
+    function filterCourseData(courseData, courseIds) {
+      return courseData.filter(course => courseIds.includes(course.courseId));
     }
 
     // Function to render course buttons
     function renderCourseButtons(courseData) {
       const buttonContainer = document.getElementById('courseButtons');
       const apiToken = getApiTokenFromLocalStorage();
-      
+      const buttonPlus = document.createElement('button');
+
+      buttonPlus.textContent = '+';
+      buttonPlus.className = 'btn';
+      buttonPlus.addEventListener('click', () => {
+        window.location.href = '/courses';
+      });
+      buttonContainer.appendChild(buttonPlus);
+
       courseData.forEach(course => {
         const button = document.createElement('button');
         button.textContent = course.courseName;
@@ -112,18 +213,50 @@
       });
     }
 
+    // Function to update credits display
+    function updateCredits(credits) {
+      document.getElementById('credits').textContent = credits;
+    }
+
+    // Function to update tier display
+    function updateTier(tier) {
+      document.getElementById('tier').textContent = `Your Tier: ${tier}`;
+    }
+
+    // Function to handle logout
+    function logout() {
+      localStorage.removeItem('api_token');
+      window.location.href = '/welcome'; // Redirect to welcome page
+    }
+
     // Entry point function
-    function initializeDashboard() {
+    async function initializeDashboard() {
       const apiToken = getApiTokenFromLocalStorage();
       if (apiToken) {
-        renderCourseButtons(courseData);
+        const courseIds = await fetchCourses(apiToken);
+        const filteredCourses = filterCourseData(courseData, courseIds);
+        renderCourseButtons(filteredCourses);
+        const credits = await fetchCredits(apiToken);
+        updateCredits(credits);
+        const tier = await fetchUserTier(apiToken);
+        updateTier(tier);
       } else {
         console.error('API token not found.');
       }
     }
 
+    // Define course data
+    const courseData = [
+      { courseId: 1, courseName: 'Website Guide', courseLength: '5' },
+      { courseId: 2, courseName: 'Introduction to AI', courseLength: '5' },
+      { courseId: 3, courseName: 'Machine Learning Basics', courseLength: '5'}
+    ];
+
     // Call the initializeDashboard function when the page loads
     window.onload = initializeDashboard;
+
+    // Attach logout function to logout button
+    document.getElementById('logout-btn').addEventListener('click', logout);
   </script>
 </body>
 </html>

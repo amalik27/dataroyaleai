@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lesson 3: Deep Dive into Neural Networks</title>
-    <meta name="course-id" content="2">
+    <meta name="course-id" content="3">
     <meta name="course-name" content="Introduction to Datasets">
     <meta name="course-description" content="This course will introduce you to the basics of Datasets.">
     <style>
@@ -75,20 +75,20 @@
     </ul>
     <p>By understanding these advanced concepts, you'll be equipped to tackle complex problems and develop cutting-edge AI solutions.</p>
     <p>
-        <button class="btn" id="lesson4">Proceed to Lesson 4</button>
         <button class="btn" id="lesson2">Go back to Lesson 2</button>
+        <button class="btn" id="lesson4">Proceed to Lesson 4</button>
         <button class="btn" id="backToDashboard">Go back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson4").addEventListener("click", function(event) {
-            handleLessonLinkClick(event, 4);
-        });
-        
         document.getElementById("lesson2").addEventListener("click", function(event) {
             handleLessonLinkClick(event, 2);
         });
 
+        document.getElementById("lesson4").addEventListener("click", function(event) {
+            handleLessonLinkClick(event, 4);
+        });
+        
         document.getElementById("backToDashboard").addEventListener("click", function(event) {
             window.location.href = "./dashboard";
         });

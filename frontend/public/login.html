@@ -71,7 +71,7 @@
       </form>
     </div>
     <div class="button-container">
-      <a href="register.html" class="btn">Register</a> <!-- Button to go to the register page -->
+      <a href="/register" class="btn">Register</a> <!-- Button to go to the register page -->
     </div>
   </div>
   <script>
@@ -101,7 +101,6 @@
       .then(data => {
         console.log(data);
         if (data.success) {
-          localStorage.clear();
           localStorage.setItem('api_token', data.api_token); // Store API token in local storage
           console.log(localStorage.getItem('api_token'));
           window.location.href = '/dashboard'; // Redirect to the dashboard page

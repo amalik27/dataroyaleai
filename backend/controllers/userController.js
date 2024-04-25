@@ -212,7 +212,10 @@ async function updateUserById(id, username, email, salt, password_encrypted, rol
                      SET username = ?, email = ?, salt = ?, password_encrypted = ?,
                          role = ?, tier = ?, credits = ?, reg_date = ?, api_token = ?
                      WHERE id = ?`;
-        await db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token, id]);
+        const reg_date_utc = new Date(reg_date);
+        reg_date_utc.setHours(reg_date_utc.getHours() - 4);
+        const reg_date_utc_str = reg_date_utc.toISOString().slice(0, 19).replace('T', ' ');
+        await db.query(sql, [username, email, salt, password_encrypted, role, tier, credits, reg_date_utc_str, api_token, id]);
         return { success: true, message: 'User updated successfully' };
     } catch (error) {
         console.error('Error updating user:', error);

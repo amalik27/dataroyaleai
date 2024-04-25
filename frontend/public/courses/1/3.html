@@ -61,20 +61,20 @@
         <p>Earning Credits: DataRoyal operates on an internal credit system, where users earn credits for participating in competitions and other platform activities.</p>
         <p>Exchanging Credits for Real Money: Accumulated credits can be exchanged for real money or used to unlock premium features and services within the platform. The exchange rate may vary depending on your subscription tier.</p>  
         <p>Understanding neural networks is crucial for designing and implementing advanced AI models.</p>
-        <button class="btn" id="lesson4">Proceed to Lesson 4</button>
         <button class="btn" id="lesson2">Go back to Lesson 2</button>
+        <button class="btn" id="lesson4">Proceed to Lesson 4</button>
         <button class="btn" id="backToDashboard">Go back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson4").addEventListener("click", function(event) {
-            handleLessonLinkClick(event, 4);
-        });
-        
         document.getElementById("lesson2").addEventListener("click", function(event) {
             handleLessonLinkClick(event, 2);
         });
 
+        document.getElementById("lesson4").addEventListener("click", function(event) {
+            handleLessonLinkClick(event, 4);
+        });
+        
         document.getElementById("backToDashboard").addEventListener("click", function(event) {
             window.location.href = "./dashboard";
         });

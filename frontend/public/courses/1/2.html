@@ -60,18 +60,18 @@
         <h1>Lesson 2: Subscriptions and Tiers</h1>
         <p>Exploring Subscription Options: DataRoyal offers various subscription tiers, each with its own set of features and benefits. Take some time to explore the available subscription plans and choose the one that best suits your needs and budget.</p>
         <p>Upgrading Your Tier: Depending on your requirements and usage, you may choose to upgrade your subscription tier at any time. Simply navigate to your account settings to view and manage your subscription options.</p>
-        <button class="btn" id="lesson3">Proceed to Lesson 3</button>
         <button class="btn" id="lesson1">Go back to Lesson 1</button>
+        <button class="btn" id="lesson3">Proceed to Lesson 3</button>
         <button class="btn" id="backToDashboard">Go back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson3").addEventListener("click", function(event) {
-            handleLessonLinkClick(event, 3);
-        });
-        
         document.getElementById("lesson1").addEventListener("click", function(event) {
             handleLessonLinkClick(event, 1);
+        });
+
+        document.getElementById("lesson3").addEventListener("click", function(event) {
+            handleLessonLinkClick(event, 3);
         });
 
         document.getElementById("backToDashboard").addEventListener("click", function(event) {

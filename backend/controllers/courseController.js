@@ -38,6 +38,7 @@ async function updateCourseProgress(progress, api_token, course_id) {
 // Function to retrieve IDs of courses that a user can buy or access.
 async function readAllCoursesThatUserCanBuyOrAccessByApiToken(api_token) {
     try {
+        //console.log(api_token);
         const allCourses = await retrieveCourseMetadata();
         const allCourseIds = allCourses.map(course => parseInt(course.id));
         const userBoughtCourses = await readAllCoursesOfUserByApiToken(api_token);
@@ -57,7 +58,6 @@ async function readAllCoursesThatUserCanBuyOrAccessByApiToken(api_token) {
 
 // Function to retrieve all courses of a user by API token.
 async function readAllCoursesOfUserByApiToken(api_token) {
-    console.log(api_token);
     try {
         const sql = 'SELECT * FROM course_progress WHERE api_token = ?';
         return new Promise((resolve, reject) => {

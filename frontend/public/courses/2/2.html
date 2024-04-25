@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lesson 2: Understanding Machine Learning</title>
-    <meta name="course-id" content="1">
+    <meta name="course-id" content="2">
     <meta name="course-name" content="Introduction to AI">
     <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
     <style>
@@ -66,20 +66,20 @@
         <p>Reinforcement learning algorithms learn by interacting with an environment and receiving feedback in the form of rewards or penalties.</p>
         <p>Machine learning algorithms are used in various applications, such as image recognition, natural language processing, recommendation systems, and autonomous vehicles.</p>
         <p>Understanding machine learning is essential for building and deploying AI models in real-world scenarios.</p>
-        <button class="btn" id="lesson3">Proceed to Lesson 3</button>
         <button class="btn" id="lesson1">Go back to Lesson 1</button>
+        <button class="btn" id="lesson3">Proceed to Lesson 3</button>
         <button class="btn" id="backToDashboard">Go back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson3").addEventListener("click", function(event) {
-            handleLessonLinkClick(event, 3);
-        });
-        
         document.getElementById("lesson1").addEventListener("click", function(event) {
             handleLessonLinkClick(event, 1);
         });
 
+        document.getElementById("lesson3").addEventListener("click", function(event) {
+            handleLessonLinkClick(event, 3);
+        });
+        
         document.getElementById("backToDashboard").addEventListener("click", function(event) {
             window.location.href = "./dashboard";
         });

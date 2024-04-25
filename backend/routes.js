@@ -379,14 +379,9 @@ function processRequest(req, res){
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
+            const api_token = req.headers.api_token;
             req.on('end', async () => {
-                const { id } = JSON.parse(body);
-                if (!id) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing user ID in JSON body' }));
-                    return;
-                }
-                const user = await userController.readUserById(id);
+                const user = await userController.readUserByApiToken(api_token);
                 if (!user) {
                     res.writeHead(404, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'User not found' }));
@@ -505,7 +500,8 @@ function processRequest(req, res){
         }
     }    
     else if (pathname.includes("/courses")) {
-        if (req.method === 'GET') {
+        const api_token = req.headers.api_token;
+        if (req.method === 'POST') {
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
@@ -516,16 +512,16 @@ function processRequest(req, res){
                 res.end(JSON.stringify(courseTitles));
             });
         }
-        if (req.method === 'POST') {
-            let body = '';
-            req.on('data', (chunk) => {
-                body += chunk.toString();
-            });
-            req.on('end', async () => {
-                const course_id = JSON.parse(body).course_id;
-                await courseController.createCourseProgress(api_token, course_id);
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true }));
+        else if(req.method === 'GET'){
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'courses.html');
+            fs.readFile(filePath, (err, data) => {
+            if (err) {
+                res.writeHead(500);
+                res.end('Error loading courses.html');
+            } else {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(data);
+            }
             });
         }
     }
@@ -556,12 +552,11 @@ function processRequest(req, res){
         }
     }
     else if (pathname.includes("/course")) {
-    const urlParams = new URLSearchParams(req.url); // Parse URL parameters
-    const api_token = urlParams.get("api_token"); // Extract api_token from URL parameters
-    const course_id = urlParams.get("id"); // Extract course_id from URL parameters
-    const given_page_number = urlParams.get("page") || 1; // Extract page_number from URL parameters, default to 1 if not provided
-    console.log({api_token, course_id, given_page_number});
         if (req.method === 'GET') {
+            const urlParams = new URLSearchParams(req.url); // Parse URL parameters
+            const api_token = urlParams.get("api_token"); // Extract api_token from URL parameters
+            const course_id = urlParams.get("id"); // Extract course_id from URL parameters
+            const given_page_number = urlParams.get("page") || 1; // Extract page_number from URL parameters, default to 1 if not provided
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
@@ -592,6 +587,10 @@ function processRequest(req, res){
             });
         }        
         else if (req.method === 'PATCH') {
+            const urlParams = new URLSearchParams(req.url); // Parse URL parameters
+            const api_token = urlParams.get("api_token"); // Extract api_token from URL parameters
+            const course_id = urlParams.get("id"); // Extract course_id from URL parameters
+            const given_page_number = urlParams.get("page") || 1; // Extract page_number from URL parameters, default to 1 if not provided
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
@@ -601,6 +600,19 @@ function processRequest(req, res){
                 console.log(api_token);
                 console.log(course_id);
                 await courseController.updateCourseProgress(given_page_number, api_token, course_id);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            });
+        }
+        else if (req.method === 'POST') {
+            const api_token = req.headers.api_token;
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const course_id = JSON.parse(body).course_id;
+                await courseController.createCourseProgress(api_token, course_id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
             });

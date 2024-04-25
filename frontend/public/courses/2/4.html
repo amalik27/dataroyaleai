@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lesson 4: Introduction to AI Models</title>
-    <meta name="course-id" content="1">
+    <meta name="course-id" content="3">
     <meta name="course-name" content="Introduction to AI">
     <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
     <style>
@@ -64,20 +64,20 @@
         <p>Support vector machines are another type of AI model used for classification and regression. They find the optimal hyperplane that separates the input data into different classes or predicts continuous outcomes.</p>
         <p>Other popular AI models include k-nearest neighbors, naive Bayes, and random forests, each with its strengths and weaknesses.</p>
         <p>Understanding AI models is essential for selecting the appropriate model for a given task and optimizing its performance.</p>
-        <button class="btn" id="lesson5">Proceed to Lesson 5</button>
         <button class="btn" id="lesson3">Go back to Lesson 3</button>
+        <button class="btn" id="lesson5">Proceed to Lesson 5</button>
         <button class="btn" id="backToDashboard">Go back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson5").addEventListener("click", function(event) {
-            handleLessonLinkClick(event, 5);
-        });
-        
         document.getElementById("lesson3").addEventListener("click", function(event) {
             handleLessonLinkClick(event, 3);
         });
 
+        document.getElementById("lesson5").addEventListener("click", function(event) {
+            handleLessonLinkClick(event, 5);
+        });
+        
         document.getElementById("backToDashboard").addEventListener("click", function(event) {
             window.location.href = "./dashboard";
         });
