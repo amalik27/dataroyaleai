@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competitions</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Noto Sans JP", Arial, sans-serif; /* Specify "Noto Sans JP" as the primary font */
+      background: linear-gradient(45deg, #5c10b9, #2b6cce);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .competition-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .competition-box {
+      background-color: #fff;
+      color: #000;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+
+    .competition-box a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .competition-box:hover {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+<body>
+    <div class="competition-container" id="competition-container">
+      <!-- Competitions will be dynamically added here -->
+    </div>
+  
+    <script>
+      // Function to fetch competitions data from the server
+      function fetchCompetitions() {
+        fetch('/competitions/create')
+          .then(response => response.json())
+          .then(data => {
+            // Process the data and create HTML elements for each competition
+            const competitionContainer = document.getElementById('competition-container');
+            data.competitions.forEach(competition => {
+              const competitionBox = document.createElement('div');
+              competitionBox.classList.add('competition-box');
+  
+              const title = document.createElement('h2');
+              title.textContent = competition.title;
+              const desc = document.createElement('p');
+              desc.textContent = competition.desc;
+              const deadline = document.createElement('p');
+              deadline.textContent = 'Deadline: ' + new Date(competition.deadline).toLocaleDateString();
+              const prize = document.createElement('p');
+              prize.textContent = 'Prize: $' + competition.prize;
+  
+              const joinLink = document.createElement('a');
+              joinLink.textContent = 'Join';
+              joinLink.href = '/competitions/' + encodeURIComponent(competition.title);
+  
+              competitionBox.appendChild(title);
+              competitionBox.appendChild(desc);
+              competitionBox.appendChild(deadline);
+              competitionBox.appendChild(prize);
+              competitionBox.appendChild(joinLink);
+  
+              competitionContainer.appendChild(competitionBox);
+            });
+          })
+          .catch(error => {
+            console.error('Error fetching competitions:', error);
+          });
+      }
+  
+      // Call fetchCompetitions function when the page loads
+      window.onload = fetchCompetitions;
+    </script>
+  </body>
+    
+  </html>
