@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -47,7 +48,7 @@
             text-decoration: none;
             margin-top: 20px;
             display: inline-block;
-            margin-right: 10px; /* Added margin between buttons */
+            margin-right: 10px;
         }
 
         .btn:hover {
@@ -55,37 +56,44 @@
         }
     </style>
 </head>
+
 <body>
     <div class="lesson-container">
         <h1>Lesson 4: Roles and Competitions</h1>
-        <p>Roles on DataRoyal: DataRoyal accommodates two primary roles: organizers and competitors. Organizers create and manage competitions, while competitors participate in these competitions by submitting their AI models or analyses.</p>
-        <p>Joining Competitions as a Competitor: Browse the available competitions on DataRoyal and choose the ones that align with your expertise and interests. Review the competition details, rules, and deadlines before joining.</p>
-        <p>Participating in Competitions: As a competitor, actively engage in competitions by deploying your AI models and submitting your predictions or analyses. Earn credits based on your performance, rankings, and achievements in the competitions.</p>
+        <p>Roles on DataRoyal: DataRoyal accommodates two primary roles: organizers and competitors. Organizers create
+            and manage competitions, while competitors participate in these competitions by submitting their AI models
+            or analyses.</p>
+        <p>Joining Competitions as a Competitor: Browse the available competitions on DataRoyal and choose the ones that
+            align with your expertise and interests. Review the competition details, rules, and deadlines before
+            joining.</p>
+        <p>Participating in Competitions: As a competitor, actively engage in competitions by deploying your AI models
+            and submitting your predictions or analyses. Earn credits based on your performance, rankings, and
+            achievements in the competitions.</p>
         <button class="btn" id="lesson3">Go back to Lesson 3</button>
         <button class="btn" id="lesson5">Proceed to Lesson 5</button>
         <button class="btn" id="backToDashboard">Go back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson3").addEventListener("click", function(event) {
+        document.getElementById("lesson3").addEventListener("click", function (event) {
             handleLessonLinkClick(event, 3);
         });
 
-        document.getElementById("lesson5").addEventListener("click", function(event) {
+        document.getElementById("lesson5").addEventListener("click", function (event) {
             handleLessonLinkClick(event, 5);
         });
-        
-        document.getElementById("backToDashboard").addEventListener("click", function(event) {
+
+        document.getElementById("backToDashboard").addEventListener("click", function (event) {
             window.location.href = "./dashboard";
         });
-        
+
         function handleLessonLinkClick(event, lessonNumber) {
             event.preventDefault();
             var url = `http://localhost:3000/course&id=1&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
             updateCourseProgress(url);
             window.location.href = url
         }
-        
+
         function updateCourseProgress(url) {
             var options = {
                 method: 'PATCH',
@@ -110,4 +118,5 @@
         }
     </script>
 </body>
+
 </html>

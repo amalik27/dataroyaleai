@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
-  <link rel="stylesheet" href="styles.css">
   <style>
     body {
       margin: 0;
       padding: 0;
-      font-family: "Noto Sans JP", Arial, sans-serif; /* Specify "Noto Sans JP" as the primary font */
+      font-family: "Noto Sans JP", Arial, sans-serif;
       background: linear-gradient(45deg, #5c10b9, #2b6cce);
       height: 100vh;
       display: flex;
@@ -40,9 +40,9 @@
       cursor: pointer;
       border-radius: 5px;
       transition: background-color 0.3s ease;
-      text-decoration: none; /* Remove default link underline */
-      margin-left: 10px; /* Add space between buttons */
-      display: inline-block; /* Ensure buttons are displayed inline */
+      text-decoration: none;
+      margin-left: 10px;
+      display: inline-block;
     }
 
     .btn:hover {
@@ -50,10 +50,11 @@
     }
 
     .form-group {
-      margin-bottom: 20px; /* Adjust this value to increase the separation */
+      margin-bottom: 20px;
     }
   </style>
 </head>
+
 <body>
   <div class="welcome-container">
     <h1>Login</h1>
@@ -67,11 +68,11 @@
           <label for="password">Password:</label>
           <input type="password" id="password" name="password" placeholder="Enter your password" required>
         </div>
-        <button type="button" onclick="loginUser()" class="btn">Login</button> <!-- Use button type and onclick event -->
+        <button type="button" onclick="loginUser()" class="btn">Login</button>
       </form>
     </div>
     <div class="button-container">
-      <a href="/register" class="btn">Register</a> <!-- Button to go to the register page -->
+      <a href="/register" class="btn">Register</a>
     </div>
   </div>
   <script>
@@ -91,27 +92,29 @@
         },
         body: JSON.stringify(json)
       })
-      .then(response => {
-        if (response.ok) {
-          console.log('Request successful');
-          return response.json();
-        }
-        throw new Error('Network response was not ok.');
-      })
-      .then(data => {
-        console.log(data);
-        if (data.success) {
-          localStorage.setItem('api_token', data.api_token); // Store API token in local storage
-          console.log(localStorage.getItem('api_token'));
-          window.location.href = '/dashboard'; // Redirect to the dashboard page
-        } else {
-          console.error('Login failed:', data.error);
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-      });
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          }
+          else {
+            alert("Invalid credentials.");
+            throw new Error('Network response was not ok.');
+          }
+        })
+        .then(data => {
+          if (data.success) {
+            localStorage.setItem('api_token', data.api_token);
+            window.location.href = '/dashboard';
+          } else {
+            alert("Invalid credentials.");
+            console.error('Login failed:', data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
     }
   </script>
 </body>
+
 </html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -47,7 +48,7 @@
             text-decoration: none;
             margin-top: 20px;
             display: inline-block;
-            margin-right: 10px; /* Added margin between buttons */
+            margin-right: 10px;
         }
 
         .btn:hover {
@@ -55,40 +56,46 @@
         }
     </style>
 </head>
+
 <body>
     <div class="lesson-container">
         <h1>Lesson 4: Introduction to AI Models</h1>
         <p>Now that we've covered the basics, let's explore various AI models used in different applications.</p>
-        <p>AI models are mathematical representations of real-world processes that enable computers to make predictions or decisions.</p>
-        <p>Decision trees are a type of AI model used for classification and regression tasks. They partition the input space into regions and make predictions based on the majority class or average value within each region.</p>
-        <p>Support vector machines are another type of AI model used for classification and regression. They find the optimal hyperplane that separates the input data into different classes or predicts continuous outcomes.</p>
-        <p>Other popular AI models include k-nearest neighbors, naive Bayes, and random forests, each with its strengths and weaknesses.</p>
-        <p>Understanding AI models is essential for selecting the appropriate model for a given task and optimizing its performance.</p>
+        <p>AI models are mathematical representations of real-world processes that enable computers to make predictions
+            or decisions.</p>
+        <p>Decision trees are a type of AI model used for classification and regression tasks. They partition the input
+            space into regions and make predictions based on the majority class or average value within each region.</p>
+        <p>Support vector machines are another type of AI model used for classification and regression. They find the
+            optimal hyperplane that separates the input data into different classes or predicts continuous outcomes.</p>
+        <p>Other popular AI models include k-nearest neighbors, naive Bayes, and random forests, each with its strengths
+            and weaknesses.</p>
+        <p>Understanding AI models is essential for selecting the appropriate model for a given task and optimizing its
+            performance.</p>
         <button class="btn" id="lesson3">Go back to Lesson 3</button>
         <button class="btn" id="lesson5">Proceed to Lesson 5</button>
         <button class="btn" id="backToDashboard">Go back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson3").addEventListener("click", function(event) {
+        document.getElementById("lesson3").addEventListener("click", function (event) {
             handleLessonLinkClick(event, 3);
         });
 
-        document.getElementById("lesson5").addEventListener("click", function(event) {
+        document.getElementById("lesson5").addEventListener("click", function (event) {
             handleLessonLinkClick(event, 5);
         });
-        
-        document.getElementById("backToDashboard").addEventListener("click", function(event) {
+
+        document.getElementById("backToDashboard").addEventListener("click", function (event) {
             window.location.href = "./dashboard";
         });
-        
+
         function handleLessonLinkClick(event, lessonNumber) {
             event.preventDefault();
             var url = `http://localhost:3000/course&id=2&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
             updateCourseProgress(url);
             window.location.href = url
         }
-        
+
         function updateCourseProgress(url) {
             var options = {
                 method: 'PATCH',
@@ -113,4 +120,5 @@
         }
     </script>
 </body>
+
 </html>

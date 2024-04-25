@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,7 @@
     body {
       margin: 0;
       padding: 0;
-      font-family: "Noto Sans JP", Arial, sans-serif; /* Specify "Noto Sans JP" as the primary font */
+      font-family: "Noto Sans JP", Arial, sans-serif;
       background: linear-gradient(45deg, #5c10b9, #2b6cce);
       height: 100vh;
       display: flex;
@@ -30,9 +31,9 @@
       cursor: pointer;
       border-radius: 5px;
       transition: background-color 0.3s ease;
-      text-decoration: none; /* Remove default link underline */
-      margin-right: 10px; /* Add space between buttons */
-      display: inline-block; /* Ensure buttons are displayed inline */
+      text-decoration: none;
+      margin-right: 10px;
+      display: inline-block;
     }
 
     .button-container .btn:hover {
@@ -40,10 +41,11 @@
     }
 
     .form-group {
-      margin-bottom: 20px; /* Adjust this value to increase the separation */
+      margin-bottom: 20px;
     }
   </style>
 </head>
+
 <body>
   <div class="form-container">
     <h1>Register</h1>
@@ -68,7 +70,7 @@
         <label for="competitor">Competitor</label>
       </div>
       <div class="button-container">
-        <button type="button" onclick="registerUser()" class="btn">Register</button> <!-- Change type to button -->
+        <button type="button" onclick="registerUser()" class="btn">Register</button>
       </div>
     </form>
   </div>
@@ -78,15 +80,9 @@
       const formData = new FormData(form);
       const json = {};
 
-      // Convert FormData to JSON
       formData.forEach((value, key) => {
         json[key] = value;
       });
-
-      // Log the JSON data to the console (for demonstration purposes)
-      console.log(json);
-
-      // Send the JSON data to the server via a POST request using fetch
       fetch('/register', {
         method: 'POST',
         headers: {
@@ -94,21 +90,21 @@
         },
         body: JSON.stringify(json)
       })
-      .then(response => {
-        if (response.ok) {
-          console.log('Request successful');
-          return response.json();
-        }
-        throw new Error('Network response was not ok.');
-      })
-      .then(data => {
-        console.log(data);
-        window.location.href = '/login';
-      })
-      .catch(error => {
-        console.error('Error:', error);
-      });
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error('Network response was not ok.');
+        })
+        .then(data => {
+          window.location.href = '/login';
+        })
+        .catch(error => {
+          alert('The inputed data is invalid, try again.');
+          console.error('Error:', error);
+        });
     }
   </script>
 </body>
+
 </html>

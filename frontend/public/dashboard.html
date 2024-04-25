@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard</title>
-  <link rel="stylesheet" href="styles.css">
   <style>
     body {
       margin: 0;
       padding: 0;
-      font-family: "Noto Sans JP", Arial, sans-serif; /* Specify "Noto Sans JP" as the primary font */
+      font-family: "Noto Sans JP", Arial, sans-serif;
       background: linear-gradient(45deg, #5c10b9, #2b6cce);
       height: 100vh;
       display: flex;
-      align-items: flex-start; /* Align items to the top */
+      align-items: flex-start;
       justify-content: center;
       color: white;
     }
@@ -36,9 +36,9 @@
       cursor: pointer;
       border-radius: 5px;
       transition: background-color 0.3s ease;
-      text-decoration: none; /* Remove default link underline */
-      margin-left: 10px; /* Add space between buttons */
-      display: inline-block; /* Ensure buttons are displayed inline */
+      text-decoration: none;
+      margin-left: 10px;
+      display: inline-block;
     }
 
     .btn:hover {
@@ -46,14 +46,13 @@
     }
 
     .form-group {
-      margin-bottom: 20px; /* Adjust this value to increase the separation */
+      margin-bottom: 20px;
     }
 
-    /* Styles for the credits container */
     #credits-container {
       position: fixed;
       top: 10px;
-      left: 10px; /* Changed from right to left */
+      left: 10px;
       background-color: #8400ff;
       padding: 10px;
       border-radius: 5px;
@@ -65,11 +64,10 @@
       margin-right: 10px;
     }
 
-    /* Tier container styles */
     #tier-container {
       position: fixed;
-      top: 60px; /* Adjusted top position */
-      left: 10px; /* Adjusted left position */
+      top: 60px;
+      left: 10px;
       background-color: #8400ff;
       padding: 10px;
       border-radius: 5px;
@@ -81,7 +79,6 @@
       margin-right: 10px;
     }
 
-    /* Logout button styles */
     #logout-btn {
       position: fixed;
       top: 10px;
@@ -89,31 +86,27 @@
     }
   </style>
 </head>
+
 <body>
   <div class="welcome-container">
     <h1>Dashboard</h1>
     <h2>My Courses</h2>
     <div class="button-container" id="courseButtons">
-      <!-- Buttons for courses will be dynamically added here -->
     </div>
   </div>
 
-  <!-- Credits container -->
   <div id="credits-container">
     <span>Your Credits:</span>
     <span id="credits">0</span>
   </div>
 
-  <!-- Tier container -->
   <div id="tier-container">
-    <span id="tier">Your Tier: </span> <!-- Added tier display -->
+    <span id="tier">Your Tier: </span>
   </div>
 
-  <!-- Logout button -->
   <button id="logout-btn" class="btn">Logout</button>
 
   <script>
-    // Function to retrieve API token from local storage
     function getApiTokenFromLocalStorage() {
       return localStorage.getItem('api_token');
     }
@@ -139,7 +132,6 @@
       }
     }
 
-    // Function to fetch courses from the server
     async function fetchCourses(apiToken) {
       try {
         const response = await fetch('http://localhost:3000/dashboard', {
@@ -161,7 +153,6 @@
       }
     }
 
-    // Function to fetch user tier from the server
     async function fetchUserTier(apiToken) {
       try {
         const response = await fetch('http://localhost:3000/users', {
@@ -183,12 +174,10 @@
       }
     }
 
-    // Function to filter course data based on provided course IDs
     function filterCourseData(courseData, courseIds) {
       return courseData.filter(course => courseIds.includes(course.courseId));
     }
 
-    // Function to render course buttons
     function renderCourseButtons(courseData) {
       const buttonContainer = document.getElementById('courseButtons');
       const apiToken = getApiTokenFromLocalStorage();
@@ -213,23 +202,19 @@
       });
     }
 
-    // Function to update credits display
     function updateCredits(credits) {
       document.getElementById('credits').textContent = credits;
     }
 
-    // Function to update tier display
     function updateTier(tier) {
       document.getElementById('tier').textContent = `Your Tier: ${tier}`;
     }
 
-    // Function to handle logout
     function logout() {
-      localStorage.removeItem('api_token');
-      window.location.href = '/welcome'; // Redirect to welcome page
+      localStorage.clear();
+      window.location.href = '/welcome';
     }
 
-    // Entry point function
     async function initializeDashboard() {
       const apiToken = getApiTokenFromLocalStorage();
       if (apiToken) {
@@ -245,18 +230,16 @@
       }
     }
 
-    // Define course data
     const courseData = [
       { courseId: 1, courseName: 'Website Guide', courseLength: '5' },
       { courseId: 2, courseName: 'Introduction to AI', courseLength: '5' },
-      { courseId: 3, courseName: 'Machine Learning Basics', courseLength: '5'}
+      { courseId: 3, courseName: 'Machine Learning Basics', courseLength: '5' }
     ];
 
-    // Call the initializeDashboard function when the page loads
     window.onload = initializeDashboard;
 
-    // Attach logout function to logout button
     document.getElementById('logout-btn').addEventListener('click', logout);
   </script>
 </body>
+
 </html>

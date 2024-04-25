@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -54,31 +55,40 @@
         }
     </style>
 </head>
+
 <body>
     <div class="lesson-container">
         <h1>Lesson 1: Introduction to Datasets</h1>
-    <p>Welcome to Lesson 1 of our course on AI models!</p>
-    <p>In this lesson, we'll cover the basics of datasets and their significance in machine learning and AI.</p>
-    <p>A dataset is a collection of data, often organized in a structured format, used for training, testing, and validating machine learning models.</p>
-    <p>The quality and size of the dataset greatly influence the performance and accuracy of AI models. High-quality datasets ensure better generalization and robustness of models.</p>
-    <p>Datasets can be categorized into various types based on their sources, formats, and characteristics. Common types include:</p>
-    <ul>
-        <li><strong>Structured Datasets:</strong> Data organized into a tabular format with rows and columns, such as CSV files, databases, and spreadsheets.</li>
-        <li><strong>Unstructured Datasets:</strong> Data that lacks a predefined structure, such as text documents, images, audio, and video files.</li>
-        <li><strong>Semi-Structured Datasets:</strong> Data that does not conform to a strict structure but has some organization, like JSON, XML, and HTML files.</li>
-    </ul>
-    <p>Access to diverse and comprehensive datasets is crucial for training AI models across different domains and applications.</p>
-    <p>Throughout this course, we'll explore various datasets used in AI projects and understand how they contribute to model development and evaluation.</p>
+        <p>Welcome to Lesson 1 of our course on AI models!</p>
+        <p>In this lesson, we'll cover the basics of datasets and their significance in machine learning and AI.</p>
+        <p>A dataset is a collection of data, often organized in a structured format, used for training, testing, and
+            validating machine learning models.</p>
+        <p>The quality and size of the dataset greatly influence the performance and accuracy of AI models. High-quality
+            datasets ensure better generalization and robustness of models.</p>
+        <p>Datasets can be categorized into various types based on their sources, formats, and characteristics. Common
+            types include:</p>
+        <ul>
+            <li><strong>Structured Datasets:</strong> Data organized into a tabular format with rows and columns, such
+                as CSV files, databases, and spreadsheets.</li>
+            <li><strong>Unstructured Datasets:</strong> Data that lacks a predefined structure, such as text documents,
+                images, audio, and video files.</li>
+            <li><strong>Semi-Structured Datasets:</strong> Data that does not conform to a strict structure but has some
+                organization, like JSON, XML, and HTML files.</li>
+        </ul>
+        <p>Access to diverse and comprehensive datasets is crucial for training AI models across different domains and
+            applications.</p>
+        <p>Throughout this course, we'll explore various datasets used in AI projects and understand how they contribute
+            to model development and evaluation.</p>
         <button class="btn" id="lesson2">Proceed to Lesson 2</button>
         <button class="btn" id="backToDashboard">Back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson2").addEventListener("click", function(event) {
+        document.getElementById("lesson2").addEventListener("click", function (event) {
             handleLessonLinkClick(event, 2);
         });
 
-        document.getElementById("backToDashboard").addEventListener("click", function(event) {
+        document.getElementById("backToDashboard").addEventListener("click", function (event) {
             window.location.href = "./dashboard";
         });
 
@@ -104,7 +114,7 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Course progress updated successfully:', data);
+                    console.log('Course progress updated susccessfully:', data);
                     window.location.href = url;
                 })
                 .catch(error => {
@@ -113,4 +123,5 @@
         }
     </script>
 </body>
+
 </html>

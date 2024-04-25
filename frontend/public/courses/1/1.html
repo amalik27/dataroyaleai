@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -54,21 +55,24 @@
         }
     </style>
 </head>
+
 <body>
     <div class="lesson-container">
         <h1>Lesson 1: Getting Started with DataRoyal</h1>
-        <p>Registering an Account: Begin by visiting the DataRoyal website and signing up for an account. Provide the necessary details, including your email address and a secure password.</p>
-        <p>Logging In: Once registered, log in to your DataRoyal account using your credentials. This will grant you access to the platform's features and functionalities.</p>
+        <p>Registering an Account: Begin by visiting the DataRoyal website and signing up for an account. Provide the
+            necessary details, including your email address and a secure password.</p>
+        <p>Logging In: Once registered, log in to your DataRoyal account using your credentials. This will grant you
+            access to the platform's features and functionalities.</p>
         <button class="btn" id="lesson2">Proceed to Lesson 2</button>
         <button class="btn" id="backToDashboard">Back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson2").addEventListener("click", function(event) {
+        document.getElementById("lesson2").addEventListener("click", function (event) {
             handleLessonLinkClick(event, 2);
         });
 
-        document.getElementById("backToDashboard").addEventListener("click", function(event) {
+        document.getElementById("backToDashboard").addEventListener("click", function (event) {
             window.location.href = "./dashboard";
         });
 
@@ -103,4 +107,5 @@
         }
     </script>
 </body>
+
 </html>

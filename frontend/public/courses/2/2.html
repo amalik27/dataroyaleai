@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -47,7 +48,7 @@
             text-decoration: none;
             margin-top: 20px;
             display: inline-block;
-            margin-right: 10px; /* Added margin between buttons */
+            margin-right: 10px;
         }
 
         .btn:hover {
@@ -55,16 +56,23 @@
         }
     </style>
 </head>
+
 <body>
     <div class="lesson-container">
         <h1>Lesson 2: Understanding Machine Learning</h1>
         <p>In this lesson, we'll delve into the concept of machine learning, a subset of artificial intelligence.</p>
-        <p>Machine learning is a field of study that enables computers to learn from data and improve their performance over time without being explicitly programmed.</p>
-        <p>There are several types of machine learning algorithms, including supervised learning, unsupervised learning, and reinforcement learning.</p>
-        <p>Supervised learning algorithms learn from labeled data, where the input-output pairs are provided during the training process.</p>
-        <p>Unsupervised learning algorithms, on the other hand, identify patterns and structures in unlabeled data without explicit guidance.</p>
-        <p>Reinforcement learning algorithms learn by interacting with an environment and receiving feedback in the form of rewards or penalties.</p>
-        <p>Machine learning algorithms are used in various applications, such as image recognition, natural language processing, recommendation systems, and autonomous vehicles.</p>
+        <p>Machine learning is a field of study that enables computers to learn from data and improve their performance
+            over time without being explicitly programmed.</p>
+        <p>There are several types of machine learning algorithms, including supervised learning, unsupervised learning,
+            and reinforcement learning.</p>
+        <p>Supervised learning algorithms learn from labeled data, where the input-output pairs are provided during the
+            training process.</p>
+        <p>Unsupervised learning algorithms, on the other hand, identify patterns and structures in unlabeled data
+            without explicit guidance.</p>
+        <p>Reinforcement learning algorithms learn by interacting with an environment and receiving feedback in the form
+            of rewards or penalties.</p>
+        <p>Machine learning algorithms are used in various applications, such as image recognition, natural language
+            processing, recommendation systems, and autonomous vehicles.</p>
         <p>Understanding machine learning is essential for building and deploying AI models in real-world scenarios.</p>
         <button class="btn" id="lesson1">Go back to Lesson 1</button>
         <button class="btn" id="lesson3">Proceed to Lesson 3</button>
@@ -72,25 +80,25 @@
     </div>
 
     <script>
-        document.getElementById("lesson1").addEventListener("click", function(event) {
+        document.getElementById("lesson1").addEventListener("click", function (event) {
             handleLessonLinkClick(event, 1);
         });
 
-        document.getElementById("lesson3").addEventListener("click", function(event) {
+        document.getElementById("lesson3").addEventListener("click", function (event) {
             handleLessonLinkClick(event, 3);
         });
-        
-        document.getElementById("backToDashboard").addEventListener("click", function(event) {
+
+        document.getElementById("backToDashboard").addEventListener("click", function (event) {
             window.location.href = "./dashboard";
         });
-        
+
         function handleLessonLinkClick(event, lessonNumber) {
             event.preventDefault();
             var url = `http://localhost:3000/course&id=2&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
             updateCourseProgress(url);
             window.location.href = url
         }
-        
+
         function updateCourseProgress(url) {
             var options = {
                 method: 'PATCH',
@@ -115,4 +123,5 @@
         }
     </script>
 </body>
+
 </html>

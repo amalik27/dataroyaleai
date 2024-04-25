@@ -12,7 +12,7 @@ const passwordUtils = require('../utils/passwordUtils');
 var zxcvbn = require('zxcvbn');
 const axios = require('axios');
 
-const passwordResetTokens= {};
+const passwordResetTokens = {};
 
 // Function to create a new user in the database.
 async function createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token) {
@@ -26,16 +26,16 @@ async function createUser(username, email, salt, password_encrypted, role, tier,
 }
 
 // Function to register a new user with validation checks.
-async function registerUser(username, email, password, role){
+async function registerUser(username, email, password, role) {
     if (!isValidEmail(email)) {
         throw new Error('Invalid email address');
     }
-    if(zxcvbn(password).score < 3){
+    if (zxcvbn(password).score < 3) {
         throw new Error("Weak password");
     }
     const salt = generateRandomString(16);
     const password_encrypted = passwordUtils.encrypt(password, salt);
-    
+
     const credits = 50;
     const tier = 1;
     const currentDate = new Date();
@@ -46,8 +46,8 @@ async function registerUser(username, email, password, role){
     const minutes = String(currentDate.getMinutes()).padStart(2, '0');
     const seconds = String(currentDate.getSeconds()).padStart(2, '0');
     const reg_date = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    let api_token = generateRandomString(16); 
-    const hashPrefix = passwordUtils.encryptSHA1(password).slice(0,5);
+    let api_token = generateRandomString(16);
+    const hashPrefix = passwordUtils.encryptSHA1(password).slice(0, 5);
     try {
         const count = await getPwnedPasswordCount(hashPrefix);
         if (count > 10000) {
@@ -61,10 +61,10 @@ async function registerUser(username, email, password, role){
 }
 
 // Function to log in a user with username and password.
-async function loginUser(username, password){
+async function loginUser(username, password) {
     try {
         const user = await readUserByUsername(username);
-        const new_api_token = generateRandomString(16); 
+        const new_api_token = generateRandomString(16);
         const reg_date_utc = new Date(user.reg_date);
         reg_date_utc.setHours(reg_date_utc.getHours() - 4);
         const reg_date_utc_str = reg_date_utc.toISOString().slice(0, 19).replace('T', ' ');
@@ -106,7 +106,7 @@ async function readUserById(id) {
             };
             resolve(user);
         });
-    }); 
+    });
 }
 
 // Function to retrieve a user by their username.
@@ -170,24 +170,24 @@ async function readUserByApiToken(api_token) {
             };
             resolve(user);
         });
-    }); 
+    });
 }
 
 // Function to retrieve a user by their email.
-async function readUserByEmail (email){
+async function readUserByEmail(email) {
     const sql = 'SELECT * FROM users WHERE email = ?';
-    return new Promise ((resolve, reject) =>{
-        db.query (sql, email, function (err, result, fields){
-            if (err){
-                console.error ("There was an error getting the user by their email: ", err);
-                return reject (err);
-                    }
-            if (!result || result.length ===0){
-                const error = new error ("User with this email is not found");
-                console.error (error.message);
-                return reject (error);
+    return new Promise((resolve, reject) => {
+        db.query(sql, email, function (err, result, fields) {
+            if (err) {
+                console.error("There was an error getting the user by their email: ", err);
+                return reject(err);
             }
-            const output = Object.values (JSON.parse (JSON.stringify (result [0])));
+            if (!result || result.length === 0) {
+                const error = new error("User with this email is not found");
+                console.error(error.message);
+                return reject(error);
+            }
+            const output = Object.values(JSON.parse(JSON.stringify(result[0])));
             const user = {
                 id: output[0],
                 username: output[1],
@@ -200,7 +200,7 @@ async function readUserByEmail (email){
                 reg_date: output[8],
                 api_token: output[9]
             };
-            resolve (user);
+            resolve(user);
         });
     });
 }
@@ -267,51 +267,51 @@ async function getPwnedPasswordCount(hashPrefix) {
 }
 
 // Function to generate a password reset token for a user.
-async function generatePasswordTokenReset (email) {
-    try{
-        const user= await readUserByEmail (email);
-        const token = generateRandomString (32);
-        passwordResetTokens [token] = user.id;
+async function generatePasswordTokenReset(email) {
+    try {
+        const user = await readUserByEmail(email);
+        const token = generateRandomString(32);
+        passwordResetTokens[token] = user.id;
         return token;
     } catch (error) {
-        console.error ("There was an error generating password reset token:" , error);
+        console.error("There was an error generating password reset token:", error);
         throw error;
     }
 }
 
 // Function to reset a user's password using a token and new password.
-async function resetPassword (token, newPassword){
+async function resetPassword(token, newPassword) {
     try {
-        const user_id = passwordResetTokens [token];
-        if (!user_id){
-            throw new error ("This is an invalid or expired token");
+        const user_id = passwordResetTokens[token];
+        if (!user_id) {
+            throw new error("This is an invalid or expired token");
         }
-    const salt = generateRandomString(16);
-    const password_encrypted = passwordUtils.encrypt (newPassword, salt);
-    await updateUserById (user_id , undefined, undefined, salt, password_encrypted, undefined, undefined, undefined, undefined, undefined);
-    delete passwordResetTokens [token];
-    return {success :true , message : "Password was reset successfully"};
-    } catch (error){
-        console.error ("There was an error when resetting the password: ",error);
+        const salt = generateRandomString(16);
+        const password_encrypted = passwordUtils.encrypt(newPassword, salt);
+        await updateUserById(user_id, undefined, undefined, salt, password_encrypted, undefined, undefined, undefined, undefined, undefined);
+        delete passwordResetTokens[token];
+        return { success: true, message: "Password was reset successfully" };
+    } catch (error) {
+        console.error("There was an error when resetting the password: ", error);
         throw error;
     }
 }
 
 // Function to update a user's email in the database.
-async function updateEmail (id,newEmail){
-    try{
+async function updateEmail(id, newEmail) {
+    try {
         const sql = 'UPDATE users SET email = ? WHERE id = ?';
-        await db.query (sql , [newEmail , id]);
-        return { success : true , message : "The new email given was updated successfully"};
-    } catch (error){
+        await db.query(sql, [newEmail, id]);
+        return { success: true, message: "The new email given was updated successfully" };
+    } catch (error) {
         console.error("Error updaing email: ", error);
         throw error;
     }
 }
 
 // Function to check if an email is valid.
-function isValidEmail(email){
-    const emailRegex  = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+function isValidEmail(email) {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email);
 }
 
@@ -346,16 +346,16 @@ module.exports = {
     createUser,
     readUserById,
     updateUserById,
-    readUserByUsername, 
+    readUserByUsername,
     deleteUserById,
     readUserByApiToken,
     registerUser,
     loginUser,
-    generatePasswordTokenReset, 
-    generateRandomString,
-    resetPassword, 
     generatePasswordTokenReset,
-    readUserByEmail, 
+    generateRandomString,
+    resetPassword,
+    generatePasswordTokenReset,
+    readUserByEmail,
     updateEmail,
     isValidEmail,
     deleteAccount
