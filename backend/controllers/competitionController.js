@@ -148,7 +148,7 @@ function listenForCompetitionDeadline() {
         console.error('Error listening for competition deadlines:', error);
       }
     }, 60 * 60 * 1000); // check every hour for a competition that is completed
-  }
+}
     
 /**
  * Determine if a competition exists based on the competition ID and organizer ID. 
