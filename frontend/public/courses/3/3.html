@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lesson 3: Deep Dive into Neural Networks</title>
-    <meta name="course-id" content="2">
-    <meta name="course-name" content="Introduction to AI">
-    <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
+    <meta name="course-id" content="3">
+    <meta name="course-name" content="Introduction to Datasets">
+    <meta name="course-description" content="This course will introduce you to the basics of Datasets.">
     <style>
         body {
             margin: 0;
@@ -74,9 +74,23 @@
         <p>Key components of neural networks include activation functions, which introduce non-linearity into the model,
             and loss functions, which measure the model's performance.</p>
         <p>Understanding neural networks is crucial for designing and implementing advanced AI models.</p>
-        <button class="btn" id="lesson2">Go back to Lesson 2</button>
-        <button class="btn" id="lesson4">Proceed to Lesson 4</button>
-        <button class="btn" id="backToDashboard">Go back to Dashboard</button>
+        <p>In addition to the architecture and components of neural networks, we'll also explore:</p>
+        <ul>
+            <li><strong>Training Techniques:</strong> Different approaches for training neural networks, such as
+                mini-batch gradient descent, momentum, and adaptive learning rates.</li>
+            <li><strong>Regularization:</strong> Techniques to prevent overfitting in neural networks, including L1 and
+                L2 regularization, dropout, and early stopping.</li>
+            <li><strong>Advanced Architectures:</strong> Overview of advanced neural network architectures, such as
+                convolutional neural networks (CNNs), recurrent neural networks (RNNs), and transformers.</li>
+            <li><strong>Applications:</strong> Real-world applications of neural networks across various domains,
+                including healthcare, finance, autonomous vehicles, and gaming.</li>
+        </ul>
+        <p>By understanding these advanced concepts, you'll be equipped to tackle complex problems and develop
+            cutting-edge AI solutions.</p>
+        <p>
+            <button class="btn" id="lesson2">Go back to Lesson 2</button>
+            <button class="btn" id="lesson4">Proceed to Lesson 4</button>
+            <button class="btn" id="backToDashboard">Go back to Dashboard</button>
     </div>
 
     <script>
@@ -94,7 +108,7 @@
 
         function handleLessonLinkClick(event, lessonNumber) {
             event.preventDefault();
-            var url = `http://localhost:3000/course&id=2&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
+            var url = `http://localhost:3000/course&id=3&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
             updateCourseProgress(url);
             window.location.href = url
         }
