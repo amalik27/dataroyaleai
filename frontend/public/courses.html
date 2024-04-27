@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Courses & Tutorials</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Noto Sans JP", Arial, sans-serif;
+      background: linear-gradient(45deg, #5c10b9, #2b6cce);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .welcome-container {
+      text-align: center;
+    }
+
+    .button-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .btn {
+      background-color: #e91e63;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+      margin-left: 10px;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background-color: #d81b60;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="welcome-container">
+    <h1>Courses & Tutorials</h1>
+    <div class="button-container" id="courseButtons">
+    </div>
+  </div>
+  <script>
+
+    function getApiTokenFromLocalStorage() {
+      return localStorage.getItem('api_token');
+    }
+
+    async function fetchCourses(apiToken) {
+      try {
+        const response = await fetch('http://localhost:3000/courses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'api_token': apiToken
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          return data;
+        } else {
+          throw new Error('Failed to fetch courses');
+        }
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        return [];
+      }
+    }
+
+    function filterCourseData(courseData, courseIds) {
+      return courseData.filter(course => courseIds.includes(course.courseId));
+    }
+
+    async function fetchCredits(apiToken) {
+      try {
+        const response = await fetch('http://localhost:3000/users', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'api_token': apiToken
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          return data.message.credits;
+        } else {
+          throw new Error('Failed to fetch courses');
+        }
+      } catch (error) {
+        console.error('Error fetching credits:', error);
+        return [];
+      }
+    }
+
+    async function fetchTier(apiToken) {
+      try {
+        const response = await fetch('http://localhost:3000/users', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'api_token': apiToken
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          return data.message.tier;
+        } else {
+          throw new Error('Failed to fetch courses');
+        }
+      } catch (error) {
+        console.error('Error fetching tier:', error);
+        return [];
+      }
+    }
+
+    async function addCourse(apiToken, course) {
+      fetch('/course', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api_token': apiToken
+        },
+        body: JSON.stringify({ 'course_id': course.courseId })
+      })
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error('Network response was not ok.');
+        })
+        .then(data => {
+          window.location.href = '/dashboard';
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    async function deductCredits(apiToken, cost) {
+      try {
+        const response = await fetch('http://localhost:3000/users', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'api_token': apiToken
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          try {
+            const response = await fetch('http://localhost:3000/users', {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'api_token': apiToken
+              },
+              body: JSON.stringify({ 'id': data.message.id, 'username': data.message.username, 'email': data.message.email, 'salt': data.message.salt, 'password_encrypted': data.message.password_encrypted, 'role': data.message.role, 'tier': data.message.tier, 'credits': data.message.credits - cost, 'reg_date': data.message.reg_date, 'api_token': data.message.api_token })
+            });
+          } catch (error) {
+            console.error('Error fetching courses:', error);
+            return [];
+          }
+        } else {
+          throw new Error('Failed to fetch courses');
+        }
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        return [];
+      }
+    }
+
+    function renderCourseButtons(courseData, myCredits, myTier) {
+      const buttonContainer = document.getElementById('courseButtons');
+      const apiToken = getApiTokenFromLocalStorage();
+      courseData.forEach(course => {
+        const button = document.createElement('button');
+        button.innerHTML = `<strong>${course.courseName}</strong><br>You can buy course for ${course.credits} credits or access it through Tier ${course.tier}`;
+        button.className = 'btn';
+
+        button.addEventListener('click', () => {
+          if (myTier >= course.tier) {
+            addCourse(apiToken, course);
+          }
+          else if (myCredits >= course.credits) {
+            deductCredits(apiToken, course.credits);
+            addCourse(apiToken, course);
+          }
+          else {
+            alert('You do not have either credits or tier to access this course.');
+          }
+        });
+        buttonContainer.appendChild(button);
+      });
+    }
+
+    function renderReturnButton() {
+      const buttonContainer = document.getElementById('courseButtons');
+      const returnButtonContainer = document.createElement('div');
+      returnButtonContainer.className = 'button-container';
+
+      const returnButton = document.createElement('button');
+      returnButton.textContent = 'Return to Dashboard';
+      returnButton.className = 'btn';
+      returnButton.addEventListener('click', () => {
+        window.location.href = '/dashboard';
+      });
+
+      returnButtonContainer.appendChild(returnButton);
+      buttonContainer.parentNode.appendChild(returnButtonContainer);
+    }
+
+    async function initializeDashboard() {
+      const apiToken = getApiTokenFromLocalStorage();
+      if (apiToken) {
+        const courseIds = await fetchCourses(apiToken);
+        const filteredCourses = filterCourseData(courseData, courseIds);
+        const credits = await fetchCredits(apiToken);
+        const tier = await fetchTier(apiToken);
+        renderCourseButtons(filteredCourses, credits, tier);
+        renderReturnButton();
+      } else {
+        console.error('API token not found.');
+      }
+    }
+
+    const courseData = [
+      { courseId: 1, courseName: 'Website Guide', courseLength: '5', tier: 1, credits: 0 },
+      { courseId: 2, courseName: 'Introduction to AI', courseLength: '5', tier: 2, credits: 10 },
+      { courseId: 3, courseName: 'Machine Learning Basics', courseLength: '5', tier: 3, credits: 100 }
+    ];
+
+    window.onload = initializeDashboard;
+  </script>
+</body>
+
+</html>
