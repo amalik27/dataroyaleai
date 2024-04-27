@@ -83,7 +83,7 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
                 const params = [id, userid, title, deadline, prize, JSON.stringify(metrics), desc, cap, datecreated, JSON.stringify(inputs_outputs), filepath]; 
                 await db.query(query, params); 
                 // Call payments team's function here to deduct the credits
-                await subtractCredits(userid);
+                await subtractCredits(userid, prize);
                 return true; 
             } catch (error) {
                 return `Error creating competition: ${error}`; 
