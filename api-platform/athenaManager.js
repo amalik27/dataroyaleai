@@ -11,7 +11,10 @@ class AthenaManager extends PlatformDaemonManager {
         super(maxCPU, maxMemory, portsAllowed, blocksPerTier, "Athena", new AthenaDatabaseSystem());
         
     }
+
+    //Entrypoint for most actions in the system
     startMonitoring(intervalTime) {
+        console.log(chalk.blue(`[${this.name}] Starting monitoring`));
         if (!this.interval) {
           this.interval = setInterval(async () => {
             if (this.messageQueue.length!=0) {
@@ -38,29 +41,9 @@ class AthenaManager extends PlatformDaemonManager {
                     } 
                     
                 } else if(message.type === "EVALUATE"){
-                    try{
-                    this.messageQueue.shift();
-                    await this.initializeContainer(message.body.processID,message.body);
-                    //Create body mapper....somehow
-
-                    
-
-
-                    await this.evaluateModel(message.body.processID, message.body.userID,await this.database.getCompetitionDataset(message.body.processID), message.body.containerID, message.body.inputs, message.body.outputs, message.body.metric);
-
-                    
-                    message.status = "SUCCESS";
-                    this.messageHistory.push(message);
-                    }
-                    catch (e){
-                        console.log(chalk.red(e.message));
-                        this.messageQueue.shift();
-                        message.status = "FAILED";
-                        this.messageHistory.push(message);
-                    }
-
-                    
-                } else{ 
+                    handleEval(message);
+                } 
+                else{ 
                     //Dequeue if not a system message
                     this.messageQueue.shift();
                 }
@@ -70,20 +53,38 @@ class AthenaManager extends PlatformDaemonManager {
           }, intervalTime);
         }
     }
-    // addMessageToQueue(message) {
-    //     //Add unique ID to message, make sure it is somehow unique.
-    //     message.id = Math.random().toString(36).substr(2, 9) 
-    //     message.status = "QUEUED";
-    //     this.messageQueue.push(message);
-    //     // Sort the queue first by tier and then by priority within each tier
-    //     this.messageQueue.sort((a, b) => {
-    //         if (a.tier === b.tier) {
-    //             return a.priority - b.priority;
-    //         }
-    //         return a.tier - b.tier;
-    //     });
-    //     return message.id;
-    // }
+
+    async handleEval(message){
+        try{
+            this.messageQueue.shift();
+            await this.initializeContainer(message.body.processID,message.body);
+            //Create body mapper....somehow
+            await this.evaluateModel(message.body.processID, message.body.userID,await this.database.getCompetitionDataset(message.body.processID), message.body.containerID, message.body.inputs, message.body.outputs, message.body.metric);
+
+            message.status = "SUCCESS";
+            this.messageHistory.push(message);
+        }
+        catch (e){
+            console.log(chalk.red(e.message));
+            this.messageQueue.shift();
+            message.status = "FAILED";
+            this.messageHistory.push(message);
+        }
+    }
+    addMessageToQueue(message) {
+        //Add unique ID to message, make sure it is somehow unique.
+        message.id = Math.random().toString(36).substr(2, 9) 
+        message.status = "QUEUED";
+        this.messageQueue.push(message);
+        //Sort the queue so evaluate requests always come first, these are always assumed to be bounded and easiest to handle. It is also a non-blocking operation
+        this.messageQueue.sort((a,b) => {
+            if(a.type === "EVALUATE") return -1;
+            if(b.type === "EVALUATE") return 1;
+            return 0;
+        });
+
+        return message.id;
+    }
      /**
      * Initializes a container for a specific process on a daemon.
      * @param {string} processID - The ID of the process.
@@ -137,8 +138,6 @@ class AthenaManager extends PlatformDaemonManager {
         
         
     }
-    
-
     async spawnNewDaemon(parameters) {
         //Try allocations. If we fail, we deallocate and throw an error
         if (this.daemons.get(parameters.processID)) {
@@ -160,6 +159,24 @@ class AthenaManager extends PlatformDaemonManager {
         const daemon = new AthenaDaemon(ports, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockCPU, this.resourceMonitor.usage.get(parameters.processID).guaranteed * this.blockMemory, parameters.processID, parameters.uptime, 3);
         daemon.startMonitoring(parameters.interval);
         this.registerDaemon(parameters.processID, daemon);
+        //Get submissions
+        let submissions = await this.database.getSubmissions(parameters.processID);
+        //Submit evaluate requests for each submission
+        for(let submission of submissions){
+            this.addMessageToQueue({
+            type: "EVALUATE",
+                body: {
+                    processID: parameters.processID,
+                    userID: submission.user_id,
+                    containerID: submission.file_path,
+                    inputs: submission.inputs_outputs.inputs,
+                    outputs: submission.inputs_outputs.outputs,
+                    }
+                }
+            );
+        }
+        //Set competition status to evaluating
+        this.database.setCompetitionStatus(parameters.processID, 'evaluating');
 
         //Callback functions for various needs. We use event emitters for asynchronous work rather than function calls which force the program counter to move.
         daemon.on('exit', (code) => {
@@ -169,10 +186,13 @@ class AthenaManager extends PlatformDaemonManager {
             console.log(chalk.gray(`[${this.name}] Daemons: ${Array.from(this.daemons.keys())}`));
             this.unregisterDaemon(parameters.processID);
             this.resourceMonitor.processExitCleanup(parameters.processID);
+            //Set competition status to complete
+            this.database.setCompetitionStatus(parameters.processID, 'complete');
+
           });
         //TODO:Overload callback function
         daemon.on('overload-exit', () => {
-            console.log(chalk.blue(`[${this.name}] Daemon child ${parameters.processID} has exited overload mode. Awaiting resource reassignment.`));
+            console.log(chalk.red(`[${this.name}] Daemon child ${parameters.processID} has exited overload mode. THIS SHOULD NOT HAPPEN. WE SHOULD NOT BE HERE.`));
             this.resourceMonitor.overloadDeallocationQueue.push(parameters.processID);
           });
     }
@@ -233,6 +253,13 @@ class AthenaDatabaseSystem extends DatabaseSystem {
         return results.map(submission => submission.file_path);
     }
 
+    //Get all submissions in competition
+    async getSubmissions(comp_id) {
+        const sql = "SELECT user_id, file_path FROM submissions WHERE comp_id = ?";
+        const results = await this.query(sql, [comp_id]);
+        return results;
+    }
+
     async getUserTier(compID) {
         //First grab the prize amount from the competitions database
         const sql = "SELECT prize FROM competitions WHERE id = ?";
@@ -247,9 +274,16 @@ class AthenaDatabaseSystem extends DatabaseSystem {
         }
     }
 
+    //Set a competition's status to 'evaluating'', 'pending', or 'complete'
+    async setCompetitionStatus(compID, status) {
+        const sql = "UPDATE competitions SET status = ? WHERE id = ?";
+        await this.query(sql, [status, compID]);
+    }
+
 
 }
 
 
-
-module.exports = { AthenaManager, AthenaDatabaseSystem };
+let Athena = new AthenaManager(4, 4000, 500, blocksPerTier = [40, 40, 40]);
+Athena.startMonitoring(1000);
+module.exports = { Athena, AthenaManager, AthenaDatabaseSystem };

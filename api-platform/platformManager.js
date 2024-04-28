@@ -80,6 +80,7 @@ class PlatformDaemonManager {
 
     //Needed for continuous monitoring of the queue asynchronously, allowing for reshuffles.
     startMonitoring(intervalTime) {
+        console.log(chalk.blue(`[${this.name}] Starting monitoring`));
         if (!this.interval) {
           this.interval = setInterval(async () => {
             if (this.messageQueue.length!=0) {
@@ -157,12 +158,12 @@ class PlatformDaemonManager {
         message.status = "QUEUED";
         this.messageQueue.push(message);
         // Sort the queue first by tier and then by priority within each tier
-        this.messageQueue.sort((a, b) => {
-            if (a.tier === b.tier) {
-                return a.priority - b.priority;
-            }
-            return a.tier - b.tier;
-        });
+        // this.messageQueue.sort((a, b) => {
+        //     if (a.tier === b.tier) {
+        //         return a.priority - b.priority;
+        //     }
+        //     return a.tier - b.tier;
+        // });
         return message.id;
     }
 
@@ -793,8 +794,9 @@ class OverloadResourceAllocationError extends ResourceAllocationError {
         this.name = "OverloadResourceAllocationError";
     }
 }
-
-module.exports = { PlatformDaemonManager , getSystemState, DaemonNotFoundError, DatabaseSystem, GuaranteeResourceAllocationError, OverloadResourceAllocationError};
+let Prometheus = new PlatformDaemonManager(4, 4000, 500, blocksPerTier = [40, 30, 50]);
+Prometheus.startMonitoring(1000);
+module.exports = { Prometheus, PlatformDaemonManager , getSystemState, DaemonNotFoundError, DatabaseSystem, GuaranteeResourceAllocationError, OverloadResourceAllocationError};
 
   
   

@@ -50,7 +50,8 @@ CREATE TABLE IF NOT EXISTS`competitions` (
   `player_cap` int(11) NOT NULL,
   `date_created` date NOT NULL,
   `inputs_outputs` json NOT NULL,
-  `file_path` varchar(512) NOT NULL
+  `file_path` varchar(512) NOT NULL,
+  `status` ENUM('pending', 'evaluating', 'complete') DEFAULT 'pending'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -58,9 +59,9 @@ CREATE TABLE IF NOT EXISTS`competitions` (
 --
 
 INSERT INTO `competitions` (`id`, `userid`, `title`, `deadline`, `prize`, `metrics`, `description`, `player_cap`, `date_created`, `inputs_outputs`, `file_path`) VALUES
-(42161251, 123456, "Competition A", "2024-05-06", 120, json_object("size", 3, "speed", 1, "accuracy", 5), "A sample Competition", 120, "2024-03-20", json_object("inputs", json_array("images"), "outputs", json_array("name")), "./backend/controllers/goodcat.zip"),
-(71393633, 123456, "Competition B", "2024-06-06", 120, json_object("size", 3, "speed", 1, "accuracy", 5), "A sample Competition", 120, "2024-03-20", json_object("inputs", json_array("images"), "outputs", json_array("name")), "./backend/controllers/goodcat.zip"), 
-(1765057604, 93625, "Digit Recognizer", "2024-05-13", 200, json_object("speed", 1, "accuracy", 2, "filesize", 3), "In this competition, your goal is to correctly identify digits from a dataset of tens of thousands of handwritten images. We encourage you to experiment with different algorithms to learn first-hand what works well and how techniques compare.", 150, "2024-04-02", json_object("inputs", json_array("imageid"), "outputs", json_array("label")), "database\\apifiles\\validCompDB.zip");
+(42161251, 1, "Noisy Wave Competition", "2024-04-06", 120, json_object("size", 3, "speed", 1, "accuracy", 5), "A competiton to figure out to approximate this wave of ours.", 120, "2024-03-20", json_object("inputs", json_array("angle"), "outputs", json_array("result")), "../api-platform/TestDatasets/sine_wave.zip"),
+(71393633, 2, "Competition B", "2024-06-06", 120, json_object("size", 3, "speed", 1, "accuracy", 5), "A sample Competition", 120, "2024-03-20", json_object("inputs", json_array("images"), "outputs", json_array("name")), "./backend/controllers/goodcat.zip"), 
+(1765057604, 3, "Digit Recognizer", "2024-05-13", 200, json_object("speed", 1, "accuracy", 2, "filesize", 3), "In this competition, your goal is to correctly identify digits from a dataset of tens of thousands of handwritten images. We encourage you to experiment with different algorithms to learn first-hand what works well and how techniques compare.", 150, "2024-04-02", json_object("inputs", json_array("imageid"), "outputs", json_array("label")), "database\\apifiles\\validCompDB.zip");
 
 -- --------------------------------------------------------
 
@@ -91,8 +92,8 @@ CREATE TABLE IF NOT EXISTS`submissions` (
 
 
 INSERT INTO `submissions` (`comp_id`, `submission_id`, `score`, `file_path`, `user_id`, `published`) VALUES
-(1, 9, 85.5, '.../api-platform/Euclid', 1, true),
-(8, 2, 78.2, '.../api-platform/Euclid', 2, false);
+(42161251, 9, NULL, '.../api-platform/Euclid', 1, false),
+(42161251, 2, NULL, '.../api-platform/Euclid', 2, false);
 
 -- --------------------------------------------------------
 -- docker exec -it swe2024-db-1 bash

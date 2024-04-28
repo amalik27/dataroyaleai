@@ -12,7 +12,7 @@ const defaultClient = require('cloudmersive-virus-api-client');
 
 const { readUserById } = require('./userController');
 const { addCredits, subtractCredits } = require('./paymentController');
-
+const { Athena } = require('../../api-platform/athenaManager');
 
 
 // Create Competition (Main Functions)
@@ -128,28 +128,41 @@ async function fetchOrganizerCredits(userid) {
  * Helper function for Model Evaluation Team.
  * @author @deshnadoshi
  */
+
 function listenForCompetitionDeadline() {
-    setInterval(async () => {
-      try {
-        const now = new Date();
-        
-        const query = 'SELECT id FROM competitions WHERE deadline = ?';
-        const params = [now];
-        const results = await queryDatabase(query, params);
-        
-        if (results.length > 0) {
-          const competitionIDs = results.map(result => result.id);
-          console.log('Deadline met for competitions:', competitionIDs);
-          return competitionIDs;
-        } else {
-            return false; 
+        setInterval(async () => {
+        try {
+            
+            const now = new Date();
+            
+            const query = 'SELECT id FROM competitions WHERE deadline < ? AND status = "pending"';
+            const params = [now];
+            const results = await queryDatabase(query, params);
+            
+            if (results.length > 0) {
+                const competitionIDs = results.map(result => result.id);
+                console.log('Deadline met for competitions:', competitionIDs);
+                // Call model evaluation team's function here
+                for (const id of competitionIDs) {
+                    Athena.addMessageToQueue({
+                        type: "START",
+                        body: {
+                            processID:id
+                        }
+                    });
+                    //Set status to evaluating
+                    const updateQuery = 'UPDATE competitions SET status = "evaluating" WHERE id = ?';
+                    const updateParams = [id];
+                    await queryDatabase(updateQuery, updateParams);
+                }
+            } else {
+            }
+        } catch (error) {
+            console.error('Error listening for competition deadlines:', error);
         }
-      } catch (error) {
-        console.error('Error listening for competition deadlines:', error);
-      }
-    }, 60 * 60 * 1000); // check every hour for a competition that is completed
-}
-    
+    }, 5000);
+        // }, 60 * 60 * 1000); // check every hour for a competition that is completed
+    }  
 /**
  * Determine if a competition exists based on the competition ID and organizer ID. 
  * @author @deshnadoshi
@@ -1274,5 +1287,6 @@ module.exports = {
     joinCompetition, 
     leaveCompetition, 
     submitModel, 
-    viewLeaderboard
+    viewLeaderboard,
+    listenForCompetitionDeadline
 };

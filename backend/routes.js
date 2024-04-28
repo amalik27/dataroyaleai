@@ -15,15 +15,13 @@ const subscriptionController = require('./controllers/subscriptionController');
 const { parse } = require('querystring');
 
 const { PlatformDaemonManager, getSystemState } = require('../api-platform/platformManager.js');
-const { AthenaManager } = require('../api-platform/athenaManager.js');
+const { Athena, AthenaManager } = require('../api-platform/athenaManager.js');
 const { Container } = require('../api-platform/platformDaemon');
 var chalk = require(`chalk`);
 
-let Prometheus = new PlatformDaemonManager(4, 4000, 500, blocksPerTier = [40, 30, 50]);
-Prometheus.startMonitoring(1000);
-let Athena = new AthenaManager(4, 4000, 500, blocksPerTier = [40, 40, 40]);
-Athena.startMonitoring(1000);
 
+
+competitionController.listenForCompetitionDeadline();
 
 
 async function processRequest(req, res){
@@ -840,9 +838,6 @@ async function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    
-    
-    
     else if (pathname.includes("/prometheus/kill")) {
         const killRegex = /\/manager\/kill(?:\?.*?)?/;
         const match = path.match(killRegex);
@@ -1097,5 +1092,5 @@ async function processRequest(req, res){
     }
 }
 module.exports = {
-    processRequest
+    processRequest,
 };
