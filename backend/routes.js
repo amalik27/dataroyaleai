@@ -28,16 +28,6 @@ function processRequest(req, res) {
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
     const path = parsedUrl.path;
-    const api_token = req.headers['api_token'];
-
-    const sendResponse = (statusCode, contentType, data) => {
-        res.writeHead(statusCode, { 'Content-Type': contentType });
-        res.end(data);
-    };
-
-    const sendErrorResponse = (statusCode, message) => {
-        sendResponse(statusCode, 'application/json', JSON.stringify({ success: false, error: message }));
-    };
 
     if (pathname === '/') { //Test Endpoint
         if (req.method === 'GET') {
@@ -47,10 +37,6 @@ function processRequest(req, res) {
             res.writeHead(405, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
-
-        /** 
-        YOUR ENDPOINT HERE
-        **/
     } else if (pathname === '/stripe_auth') { // endpoint to be called at the very beginning of a payment session to sent up Stripe Auth
         // Called once per purchase session
         if (req.method === 'POST') {
@@ -550,10 +536,10 @@ function processRequest(req, res) {
     }
     else if (pathname.includes("/course")) {
         if (req.method === 'GET') {
-            const urlParams = new URLSearchParams(req.url); // Parse URL parameters
-            const api_token = urlParams.get("api_token"); // Extract api_token from URL parameters
-            const course_id = urlParams.get("id"); // Extract course_id from URL parameters
-            const given_page_number = urlParams.get("page") || 1; // Extract page_number from URL parameters, default to 1 if not provided
+            const urlParams = new URLSearchParams(req.url);
+            const api_token = urlParams.get("api_token");
+            const course_id = urlParams.get("id");
+            const given_page_number = urlParams.get("page");
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
@@ -561,10 +547,7 @@ function processRequest(req, res) {
             req.on('end', async () => {
                 let page_number;
                 try {
-                    page_number = await courseController.getDefaultPage(course_id, api_token);
-                    if (given_page_number !== undefined) {
-                        page_number = given_page_number;
-                    }
+                    page_number = await courseController.getDefaultPage(course_id, api_token) || given_page_number;
                     const filePath = await courseController.openCourse(course_id, page_number, api_token);
                     let curDir = __dirname;
                     fs.readFile(curDir.replace('/backend', '') + filePath, (err, data) => {
@@ -584,18 +567,15 @@ function processRequest(req, res) {
             });
         }
         else if (req.method === 'PATCH') {
-            const urlParams = new URLSearchParams(req.url); // Parse URL parameters
-            const api_token = urlParams.get("api_token"); // Extract api_token from URL parameters
-            const course_id = urlParams.get("id"); // Extract course_id from URL parameters
-            const given_page_number = urlParams.get("page") || 1; // Extract page_number from URL parameters, default to 1 if not provided
+            const urlParams = new URLSearchParams(req.url);
+            const api_token = urlParams.get("api_token");
+            const course_id = urlParams.get("id");
+            const given_page_number = urlParams.get("page") || 1;
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                console.log(given_page_number);
-                console.log(api_token);
-                console.log(course_id);
                 await courseController.updateCourseProgress(given_page_number, api_token, course_id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
