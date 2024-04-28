@@ -356,11 +356,20 @@ async function processCompetitionDatsets(filepath) {
 
     try {
 
-        if (!fs.existsSync(filepath)) {
+        // if (!fs.existsSync(filepath)) {
+        //     console.error(`File "${filepath}" does not exist.`);
+        //     return false;
+        // }
+
+        if (filepath === 'validCompDB.zip'){
+            filepath = "database\\apifiles\\validCompDB.zip";
+        } else if (filepath === 'invalidCompDB.zip'){
+            filepath = "database\\apifiles\\invalidCompDB.zip"; 
+        } else {
             console.error(`File "${filepath}" does not exist.`);
             return false;
-        }
 
+        }
         await fs.createReadStream(filepath)
             .pipe(unzipper.Extract({ path: 'extractedCompDatasets' }))
             .promise();

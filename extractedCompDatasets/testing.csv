@@ -1,0 +1,11 @@
+ID <int>,name <string>,image <URI>
+1,cat501,image501.jpg
+2,cat502,image502.jpg
+3,cat503,image503.jpg
+4,cat504,image504.jpg
+5,cat505,image505.jpg
+6,cat506,image506.jpg
+7,cat507,image507.jpg
+8,cat508,image508.jpg
+9,cat509,image509.jpg
+10,cat510,image510.jpg
