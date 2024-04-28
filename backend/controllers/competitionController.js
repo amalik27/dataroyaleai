@@ -1303,6 +1303,58 @@ function emptyFolder(filepath) {
 }
 
 
+async function tierBasedCapacity(user_id, capacity){
+    try {
+        const user = await readUserById(user_id);
+        const userTier = user.tier;
+
+        if (userTier == 1){
+            if (capacity > 100){
+                return false; 
+            }
+        } else if (userTier == 2){
+            if (capacity > 200){
+                return false; 
+            }
+        } else if (userTier == 3){
+            if (capacity > 500){
+                return false; 
+            }
+        } else {
+            return true; 
+        }
+    } catch (error) {
+        return false;
+    }
+}
+
+async function tierBasedPrize(user_id, prize){
+    try {
+        const user = await readUserById(user_id);
+        const userTier = user.tier;
+
+        if (userTier == 1){
+            if (prize < 100){
+                return false; 
+            }
+        } else if (userTier == 2){
+            if (capacity < 150){
+                return false; 
+            }
+        } else if (userTier == 3){
+            if (capacity < 200){
+                return false; 
+            }
+        } else {
+            return true; 
+        }
+    } catch (error) {
+        return false;
+    }
+
+}
+
+
 // Exports
 
 module.exports = {
