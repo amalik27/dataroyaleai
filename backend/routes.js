@@ -322,25 +322,37 @@ function processRequest(req, res) {
 
         } else if (req.method === 'GET') {
             // View Leaderboard
-            let body = '';
+            // let body = '';
 
-            req.on('data', (chunk) => {
-                body += chunk.toString();
-            });
+            // req.on('data', (chunk) => {
+            //     body += chunk.toString();
+            // });
 
-            req.on('end', async () => {
-                const { compid } = JSON.parse(body);
+            // req.on('end', async () => {
+            //     const { compid } = JSON.parse(body);
 
-                const allJoined = await competitionController.viewLeaderboard(compid);
+            //     const allJoined = await competitionController.viewLeaderboard(compid);
 
-                if (!allJoined || allJoined.length == 0) {
-                    res.writeHead(404, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Competition does not exist/Nobody has joined this competition.' }));
-                    return;
+            //     if (!allJoined || allJoined.length == 0) {
+            //         res.writeHead(404, { 'Content-Type': 'application/json' });
+            //         res.end(JSON.stringify({ success: false, message: 'Competition does not exist/Nobody has joined this competition.' }));
+            //         return;
+            //     }
+            //     res.writeHead(200, { 'Content-Type': 'application/json' });
+            //     res.end(JSON.stringify({ success: true, message: allJoined }));
+            // });
+
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'join_competition.html');
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    res.end('Error loading join_competition.html');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
                 }
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: allJoined }));
             });
+
         }
 
     } else if (pathname === '/payment') { //Payment Endpoint For Exchanging USD for Credits

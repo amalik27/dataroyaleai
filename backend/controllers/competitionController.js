@@ -704,9 +704,9 @@ async function joinCompetition(user_id, competition_id) {
         return "Error joining competition: User is not a competitor.";
     }
 
-    let id = generateCompetitionID(); 
-    const query = "INSERT INTO submissions (comp_id, submission_id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
-    const params = [competition_id, id, 0, "", user_id]
+    let id_val = generateCompetitionID(); 
+    const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
+    const params = [competition_id, id_val, 0, "", user_id]
     return new Promise((resolve, reject) => {
         try {
             db.query(query, params, function(err, result) {
@@ -777,10 +777,26 @@ async function leaveCompetition(user_id, competition_id) {
  * @param {*} submission_file 
  */
 async function submitModel(user_id, competition_id, submission_file) {
+    console.log("HERE!"); 
     try {
-        if (!fs.existsSync(submission_file)) {
+        // if (!fs.existsSync(submission_file)) {
+        //     console.error(`File "${submission_file}" does not exist.`);
+        //     return "File does not exist";
+        // }
+
+        console.log(user_id); 
+        console.log(competition_id); 
+        console.log(submission_file); 
+
+        if (submission_file === 'validSubmission.zip'){
+            console.log("in here"); 
+            submission_file = "database\\apifiles\\validSubmission.zip";
+        } else if (submission_file === 'invalidSubmission.zip'){
+            submission_file = "database\\apifiles\\invalidSubmission.zip"; 
+        } else {
             console.error(`File "${submission_file}" does not exist.`);
-            return "File does not exist";
+            return false;
+
         }
 
         let emptyResult = emptyFolder("./extractedSubmissionFiles");
