@@ -27,8 +27,12 @@ const { addCredits, subtractCredits } = require('./paymentController');
  * @param {*} desc Description for the competition. 
  * @param {*} cap Maximum player capacity for the competition. 
  */ 
-async function createCompetition (userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath){
+async function createCompetition (username, password, userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath){
     let emptyResult = emptyFolder("./extractedCompDatasets"); 
+
+    console.log(userid); 
+    console.log(username); 
+    console.log(password); 
 
     let validUser = await checkValidUser(userid); 
 
@@ -72,6 +76,21 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
             isValidCompetition = false; 
             errorMessage += "Missing metrics/inputs/outputs"; 
         }
+
+        
+        if (!username || !password){
+            isValidCompetition = false;
+            errorMessage += "Missing login credentials"; 
+
+        } else {
+            let validLogin = await authenticateLogin(userid, username, password); 
+            
+            if (!validLogin){
+                console.log(validLogin); 
+                isValidCompetition = false; 
+            }
+        }
+
 
         if (!isValidCompetition){
             return `Error creating competition: ${errorMessage}`; 
@@ -586,6 +605,7 @@ async function checkValidUser(user_id) {
                 }
 
                 if (result.length === 0 || !result) {
+                    console.log(user_id); // delete later
                     console.error("User does not exist."); 
                     return resolve(null); 
                 } else {
@@ -1107,6 +1127,24 @@ async function authenticateAccess(role, userid){
         } else {
             return false;
         }
+    } catch (error) {
+        return false;
+    }
+
+}
+
+async function authenticateLogin(userid, username, password){
+    try {
+        const user = await readUserById(userid);
+        const user_name = user.username;
+        const user_password = user.password;
+
+        if (user_name === username && user_password === password){
+            return true; 
+        } else {
+            return false; 
+        }
+
     } catch (error) {
         return false;
     }

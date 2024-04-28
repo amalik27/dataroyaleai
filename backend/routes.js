@@ -129,16 +129,16 @@ function processRequest(req, res) {
             });
 
             req.on('end', async () => {
-                const { userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath } = JSON.parse(body);
+                const {username, password, userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath } = JSON.parse(body);
 
-                if (!userid || !title || !deadline || !prize || !desc || !cap || !metrics || !inputs_outputs || !filepath) {
+                if (!username || !password || !userid || !title || !deadline || !prize || !desc || !cap || !metrics || !inputs_outputs || !filepath) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing competition fields in JSON body' }));
                     return;
                 }
 
                 try {
-                    const getCreateResult = await competitionController.createCompetition(userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath);
+                    const getCreateResult = await competitionController.createCompetition(username, password, userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath);
                     if (getCreateResult == true) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: true, message: "Competition created successfully." }));

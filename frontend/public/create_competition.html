@@ -57,71 +57,95 @@
     .form-group {
       margin-bottom: 20px;
     }
+    
+    #competitionFormContainer {
+      display: none;
+    }
+
   </style>
 </head>
 
 <body>
   <div class="welcome-container">
-    <h1>Create Competition</h1>
-    <div class="form-container">
-      <form id="createCompetitionForm">
+    <div class="login-container">
+      <h2>Login</h2>
+      <form id="loginForm">
         <div class="form-group">
-          <label for="userid">User ID:</label>
-          <input type="text" id="userid" name="userid" placeholder="Enter your user ID" required>
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" placeholder="Enter your username" required>
         </div>
         <div class="form-group">
-          <label for="title">Title:</label>
-          <input type="text" id="title" name="title" placeholder="Enter the competition title" required>
-        </div>
-        <div class="form-group">
-          <label for="deadline">Deadline:</label>
-          <input type="date" id="deadline" name="deadline" required>
-        </div>
-        <div class="form-group">
-          <label for="prize">Prize:</label>
-          <input type="number" id="prize" name="prize" placeholder="Enter the prize credits" required>
-        </div>
-        <div class="form-group">
-          <label for="desc">Description:</label><br>
-          <textarea id="desc" name="desc" rows="4" cols="50" placeholder="Enter the competition description" required></textarea>
-        </div>
-        <div class="form-group">
-          <label for="cap">Player Capacity:</label>
-          <input type="number" id="cap" name="cap" placeholder="Enter the maximum player capacity" required>
-        </div>
-        <div class="form-group">
-          <label for="metrics">Metrics:</label><br>
-          <label for="speed">Speed:</label>
-          <input type="number" id="speed" name="speed" placeholder="Enter the speed metric" required>
-          <br>
-          <label for="accuracy">Accuracy:</label>
-          <input type="number" id="accuracy" name="accuracy" placeholder="Enter the accuracy metric" required>
-          <br>
-          <label for="filesize">File Size:</label>
-          <input type="number" id="filesize" name="filesize" placeholder="Enter the file size metric" required>
-        </div>
-        <div class="form-group">
-          <label for="inputs">Inputs:</label><br>
-          <input type="text" id="inputs" name="inputs" placeholder="Enter the inputs" required>
-        </div>
-        <div class="form-group">
-          <label for="outputs">Outputs:</label><br>
-          <input type="text" id="outputs" name="outputs" placeholder="Enter the outputs" required>
-        </div>
-        <div class="form-group">
-          <label for="filepath">File Path:</label>
-          <input type="file" id="filepath" name="filepath" required>
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required>
         </div>
         <div class="button-container">
-          <button type="button" onclick="createCompetition()" class="btn">Create Competition</button>
-        </div>
-        <div class="button-container">
-          <button type="button" onclick="viewCompetitions()" class="btn">View Competitions</button>
+          <button type="button" onclick="login()" class="btn">Login</button>
         </div>
       </form>
     </div>
-    <div class="button-container">
-      <a href="/login" class="btn">Back to Login</a>
+    
+    <div id="competitionFormContainer">
+      <h1>Create Competition</h1>
+      <div class="form-container">
+        <form id="createCompetitionForm">
+          <div class="form-group">
+            <label for="userid">User ID:</label>
+            <input type="text" id="userid" name="userid" placeholder="Enter your user ID" required>
+          </div>
+          <div class="form-group">
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" placeholder="Enter the competition title" required>
+          </div>
+          <div class="form-group">
+            <label for="deadline">Deadline:</label>
+            <input type="date" id="deadline" name="deadline" required>
+          </div>
+          <div class="form-group">
+            <label for="prize">Prize:</label>
+            <input type="number" id="prize" name="prize" placeholder="Enter the prize credits" required>
+          </div>
+          <div class="form-group">
+            <label for="desc">Description:</label><br>
+            <textarea id="desc" name="desc" rows="4" cols="50" placeholder="Enter the competition description" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="cap">Player Capacity:</label>
+            <input type="number" id="cap" name="cap" placeholder="Enter the maximum player capacity" required>
+          </div>
+          <div class="form-group">
+            <label for="metrics">Metrics:</label><br>
+            <label for="speed">Speed:</label>
+            <input type="number" id="speed" name="speed" placeholder="Enter the speed metric" required>
+            <br>
+            <label for="accuracy">Accuracy:</label>
+            <input type="number" id="accuracy" name="accuracy" placeholder="Enter the accuracy metric" required>
+            <br>
+            <label for="filesize">File Size:</label>
+            <input type="number" id="filesize" name="filesize" placeholder="Enter the file size metric" required>
+          </div>
+          <div class="form-group">
+            <label for="inputs">Inputs:</label><br>
+            <input type="text" id="inputs" name="inputs" placeholder="Enter the inputs" required>
+          </div>
+          <div class="form-group">
+            <label for="outputs">Outputs:</label><br>
+            <input type="text" id="outputs" name="outputs" placeholder="Enter the outputs" required>
+          </div>
+          <div class="form-group">
+            <label for="filepath">File Path:</label>
+            <input type="file" id="filepath" name="filepath" required>
+          </div>
+          <div class="button-container">
+            <button type="button" onclick="createCompetition()" class="btn">Create Competition</button>
+          </div>
+          <div class="button-container">
+            <button type="button" onclick="viewCompetitions()" class="btn">View Competitions</button>
+          </div>
+        </form>
+      </div>
+      <div class="button-container">
+        <a href="/login" class="btn">Back to Login</a>
+      </div>
     </div>
   </div>
   <script>
@@ -192,6 +216,17 @@
     function viewCompetitions() {
       window.location.href = 'view_competition.html'; 
     }
+
+    function login() {
+      // For demonstration purposes, assume login is successful
+      const loggedIn = true;
+
+      if (loggedIn) {
+        // Show competition creation form
+        document.getElementById('competitionFormContainer').style.display = 'block';
+      }
+    }
+
   </script>
 </body>
 
