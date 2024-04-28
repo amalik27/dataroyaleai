@@ -5,24 +5,23 @@
 
 const url = require('url');
 const fs = require('fs');
-const path = require('path');
-const { get } = require('http');
+const pathModule = require('path');
 const userController = require('./controllers/userController');
-const competitionController = require('./controllers/competitionController'); 
+const competitionController = require('./controllers/competitionController');
 const courseController = require('./controllers/courseController');
 const paymentController = require('./controllers/paymentController');
 
 const subscriptionController = require('./controllers/subscriptionController');
 const { parse } = require('querystring');
 
-const {PlatformDaemonManager,getSystemState} = require('../api-platform/platformManager.js');
-const {AthenaManager} = require('../api-platform/athenaManager.js');
-const {Container} = require('../api-platform/platformDaemon');
+const { PlatformDaemonManager, getSystemState } = require('../api-platform/platformManager.js');
+const { AthenaManager } = require('../api-platform/athenaManager.js');
+const { Container } = require('../api-platform/platformDaemon');
 var chalk = require(`chalk`);
 
-let Prometheus = new PlatformDaemonManager(4,4000,500,blocksPerTier = [40, 30, 50]);
+let Prometheus = new PlatformDaemonManager(4, 4000, 500, blocksPerTier = [40, 30, 50]);
 Prometheus.startMonitoring(1000);
-let Athena = new AthenaManager(4,4000,500,blocksPerTier = [40, 40, 40]);
+let Athena = new AthenaManager(4, 4000, 500, blocksPerTier = [40, 40, 40]);
 Athena.startMonitoring(1000);
 
 
@@ -31,16 +30,6 @@ async function processRequest(req, res){
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
     const path = parsedUrl.path;
-    const api_token = req.headers['api_token'];
-   
-    const sendResponse = (statusCode, contentType, data) => {
-        res.writeHead(statusCode, { 'Content-Type': contentType });
-        res.end(data);
-    };
-
-    const sendErrorResponse = (statusCode, message) => {
-        sendResponse(statusCode, 'application/json', JSON.stringify({ success: false, error: message }));
-    };
 
     if (pathname === '/') { //Test Endpoint
         if (req.method === 'GET') {
@@ -50,10 +39,6 @@ async function processRequest(req, res){
             res.writeHead(405, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
-    
-    /** 
-    YOUR ENDPOINT HERE
-    **/
     } else if (pathname === '/stripe_auth') { // endpoint to be called at the very beginning of a payment session to sent up Stripe Auth
         // Called once per purchase session
         if (req.method === 'POST') {
@@ -62,9 +47,9 @@ async function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const { credits_purchased, user_id, currency} = await JSON.parse(body);
+                const { credits_purchased, user_id, currency } = await JSON.parse(body);
                 //console.log(credits_purchased, user_id, currency)
-                if(!credits_purchased || !user_id || !currency) {
+                if (!credits_purchased || !user_id || !currency) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
                     return;
@@ -82,26 +67,26 @@ async function processRequest(req, res){
                     return;
                 }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: payment_intent.id})); //store in user window or in cookies
+                res.end(JSON.stringify({ success: true, message: payment_intent.id })); //store in user window or in cookies
             });
-        
+
         } else {
             res.writeHead(405, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
 
-    } else if (pathname === '/competitions/create'){ // Competitions Endpoint
-        if (req.method === 'GET'){
+    } else if (pathname === '/competitions/create') { // Competitions Endpoint
+        if (req.method === 'GET') {
             // View All Competitions
             let body = '';
-            
+
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
 
             req.on('end', async () => {
-                
-                const allCompetitions = await competitionController.viewAllCompetitions();  
+
+                const allCompetitions = await competitionController.viewAllCompetitions();
 
                 if (!allCompetitions || allCompetitions.length == 0) {
                     res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -113,16 +98,16 @@ async function processRequest(req, res){
             });
 
 
-        } else if (req.method === 'POST'){
+        } else if (req.method === 'POST') {
             // Create Competition
             let body = '';
-            
+
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
 
             req.on('end', async () => {
-                const {userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath} = JSON.parse(body);
+                const { userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath } = JSON.parse(body);
 
                 if (!userid || !title || !deadline || !prize || !desc || !cap || !metrics || !inputs_outputs || !filepath) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -131,32 +116,32 @@ async function processRequest(req, res){
                 }
 
                 try {
-                    const getCreateResult = await competitionController.createCompetition(userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath); 
-                    if (getCreateResult == true){
+                    const getCreateResult = await competitionController.createCompetition(userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath);
+                    if (getCreateResult == true) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: true, message: "Competition created successfully." }));    
+                        res.end(JSON.stringify({ success: true, message: "Competition created successfully." }));
                     } else {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: false, message: getCreateResult }));
-    
+
                     }
-                } catch (error){
+                } catch (error) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: error }));
                 }
             });
 
-        } else if (req.method === 'PATCH'){
+        } else if (req.method === 'PATCH') {
             // Update Competition Details
             let body = '';
-            
+
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
 
             req.on('end', async () => {
-                
-                const {id, userid, deadline, prize} = JSON.parse(body);
+
+                const { id, userid, deadline, prize } = JSON.parse(body);
 
                 if (!id || !userid, !prize || !deadline) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -165,7 +150,7 @@ async function processRequest(req, res){
                 }
 
                 try {
-                    await competitionController.updateCompetition(id, userid, deadline, prize); 
+                    await competitionController.updateCompetition(id, userid, deadline, prize);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true, message: "Competition updated." }));
                 } catch (error) {
@@ -177,18 +162,18 @@ async function processRequest(req, res){
 
         }
 
-    } else if (pathname === '/competitions/join'){
-        if (req.method === 'POST'){
+    } else if (pathname === '/competitions/join') {
+        if (req.method === 'POST') {
             // Join Competition
             let body = '';
-            
+
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
 
             req.on('end', async () => {
-                
-                const {userid, compid} = JSON.parse(body);
+
+                const { userid, compid } = JSON.parse(body);
 
 
                 if (!userid || !compid) {
@@ -198,32 +183,32 @@ async function processRequest(req, res){
                 }
 
                 try {
-                    const getJoinResult = await competitionController.joinCompetition(userid, compid); 
-                    if (getJoinResult == true){
+                    const getJoinResult = await competitionController.joinCompetition(userid, compid);
+                    if (getJoinResult == true) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: true, message: "Competition joined successfully." }));    
+                        res.end(JSON.stringify({ success: true, message: "Competition joined successfully." }));
                     } else {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: false, message: getJoinResult }));
-    
+
                     }
-                } catch (error){
+                } catch (error) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: error }));
                 }
             });
 
-        } else if (req.method === 'PATCH'){
+        } else if (req.method === 'PATCH') {
             // Submit a Model 
             let body = '';
-            
+
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
 
             req.on('end', async () => {
-                
-                const {userid, compid, filepath} = JSON.parse(body);
+
+                const { userid, compid, filepath } = JSON.parse(body);
 
                 if (!userid || !compid || !filepath) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -232,14 +217,14 @@ async function processRequest(req, res){
                 }
 
                 try {
-                    let submitResult = await competitionController.submitModel(userid, compid, filepath);  
-                    if (submitResult == true){
+                    let submitResult = await competitionController.submitModel(userid, compid, filepath);
+                    if (submitResult == true) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: true, message: "Model submitted." }));
                     } else {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: false, message: "Please check your submission." }));
-    
+
                     }
 
                 } catch (error) {
@@ -249,18 +234,18 @@ async function processRequest(req, res){
                 }
             });
 
-        } else if (req.method === 'DELETE'){
+        } else if (req.method === 'DELETE') {
             // Leave a Competition
 
             let body = '';
-            
+
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
 
             req.on('end', async () => {
-                
-                const {userid, compid} = JSON.parse(body);
+
+                const { userid, compid } = JSON.parse(body);
 
 
                 if (!userid || !compid) {
@@ -270,33 +255,33 @@ async function processRequest(req, res){
                 }
 
                 try {
-                    const getLeaveResult = await competitionController.leaveCompetition(userid, compid); 
-                    if (getLeaveResult == true){
+                    const getLeaveResult = await competitionController.leaveCompetition(userid, compid);
+                    if (getLeaveResult == true) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: true, message: "Withdraw successful." }));    
+                        res.end(JSON.stringify({ success: true, message: "Withdraw successful." }));
                     } else {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: false, message: getLeaveResult }));
-    
+
                     }
-                } catch (error){
+                } catch (error) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: error }));
                 }
             });
 
-        } else if (req.method === 'GET'){
+        } else if (req.method === 'GET') {
             // View Leaderboard
             let body = '';
-            
+
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
 
             req.on('end', async () => {
-                const {compid} = JSON.parse(body);
-                
-                const allJoined = await competitionController.viewLeaderboard(compid);   
+                const { compid } = JSON.parse(body);
+
+                const allJoined = await competitionController.viewLeaderboard(compid);
 
                 if (!allJoined || allJoined.length == 0) {
                     res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -316,7 +301,7 @@ async function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const {client_id} = await JSON.parse(body);
+                const { client_id } = await JSON.parse(body);
                 const status = await paymentController.checkStatus(client_id);
                 if (!status) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -333,7 +318,7 @@ async function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const {client_id, payment_method} = await JSON.parse(body);
+                const { client_id, payment_method } = await JSON.parse(body);
                 const status = await paymentController.checkStatus(client_id);
                 if (!status) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -342,10 +327,10 @@ async function processRequest(req, res){
                 } else if (status === "processing") { //currently in payment processing mode
                     console.log("Can't do that!")
                     res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Currently involved in payment process'}));
+                    res.end(JSON.stringify({ success: false, message: 'Currently involved in payment process' }));
                     return;
                 }
-                
+
                 const confirm = await paymentController.confirmPaymentIntent(client_id, payment_method);
                 const status2 = await paymentController.checkStatus(client_id);
                 //console.log(status2) //should output "success or something similar"
@@ -362,20 +347,26 @@ async function processRequest(req, res){
             res.writeHead(405, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
-    } else if (pathname === '/users') { //Users Endpoint
+    } else if (pathname === '/welcome') {
+        const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'index.html');
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                res.writeHead(500);
+                res.end('Error loading index.html');
+            } else {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(data);
+            }
+        });
+    } else if (pathname === '/users') {
         if (req.method === 'GET') {
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
+            const api_token = req.headers.api_token;
             req.on('end', async () => {
-                const { id } = JSON.parse(body);
-                if (!id) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing user ID in JSON body' }));
-                    return;
-                }
-                const user = await userController.readUserById(id);
+                const user = await userController.readUserByApiToken(api_token);
                 if (!user) {
                     res.writeHead(404, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'User not found' }));
@@ -440,6 +431,18 @@ async function processRequest(req, res){
                 }
             });
         }
+        else if (req.method === 'GET') {
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'register.html');
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    res.end('Error loading register.html');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
+                }
+            });
+        }
     }
     else if (pathname === '/login') {
         if (req.method === 'POST') {
@@ -451,22 +454,39 @@ async function processRequest(req, res){
                 const { username, password } = JSON.parse(body);
                 try {
                     let status = await userController.loginUser(username, password);
-                    if(status){
+                    let out;
+                    if (status) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
+                        let user = await userController.readUserByUsername(username);
+                        out = { success: status, api_token: user.api_token }
                     }
-                    else{
+                    else {
                         res.writeHead(401, { 'Content-Type': 'application/json' });
+                        out = { success: status }
                     }
-                    res.end(JSON.stringify({ success: status }));
+                    res.end(JSON.stringify(out));
                 } catch (err) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, error: err.message }));
                 }
             });
         }
-    }    
+        else if (req.method === 'GET') {
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'login.html');
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    res.end('Error loading login.html');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
+                }
+            });
+        }
+    }
     else if (pathname.includes("/courses")) {
-        if (req.method === 'GET') {
+        const api_token = req.headers.api_token;
+        if (req.method === 'POST') {
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
@@ -477,24 +497,22 @@ async function processRequest(req, res){
                 res.end(JSON.stringify(courseTitles));
             });
         }
-        if (req.method === 'POST') {
-            let body = '';
-            req.on('data', (chunk) => {
-                body += chunk.toString();
-            });
-            req.on('end', async () => {
-                const course_id = JSON.parse(body).course_id;
-                await courseController.createCourseProgress(api_token, course_id);
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true }));
+        else if (req.method === 'GET') {
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'courses.html');
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    res.end('Error loading courses.html');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
+                }
             });
         }
     }
-    else if (pathname.includes("/dashboard/")) {
-        const coursesRegex = /\/dashboard\/(.+)/;
-        const match = pathname.match(coursesRegex);
-        const api_token = match[1];
-        if (req.method === 'GET') {
+    else if (pathname.includes("/dashboard")) {
+        const api_token = req.headers.api_token;
+        if (req.method === 'POST') {
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
@@ -505,14 +523,25 @@ async function processRequest(req, res){
                 res.end(JSON.stringify(courseTitles));
             });
         }
+        else if (req.method === 'GET') {
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'dashboard.html');
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    res.end('Error loading login.html');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
+                }
+            });
+        }
     }
     else if (pathname.includes("/course")) {
-        const coursesRegex = /\/course(?:\?.*?api_token=(\w+).*?course=(\d+).*?(?:&page=(\d+))?)?/;
-        const match = path.match(coursesRegex);
-        const api_token = match[1];
-        const course_id = match[2];
-        const given_page_number = match[3];
         if (req.method === 'GET') {
+            const urlParams = new URLSearchParams(req.url);
+            const api_token = urlParams.get("api_token");
+            const course_id = urlParams.get("id");
+            const given_page_number = urlParams.get("page");
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
@@ -520,10 +549,7 @@ async function processRequest(req, res){
             req.on('end', async () => {
                 let page_number;
                 try {
-                    page_number = await courseController.getDefaultPage(course_id, api_token);
-                    if (given_page_number !== undefined) {
-                        page_number = given_page_number;
-                    }
+                    page_number = await courseController.getDefaultPage(course_id, api_token) || given_page_number;
                     const filePath = await courseController.openCourse(course_id, page_number, api_token);
                     let curDir = __dirname;
                     fs.readFile(curDir.replace('/backend', '') + filePath, (err, data) => {
@@ -541,58 +567,78 @@ async function processRequest(req, res){
                     return;
                 }
             });
-        }        
+        }
         else if (req.method === 'PATCH') {
+            const urlParams = new URLSearchParams(req.url);
+            const api_token = urlParams.get("api_token");
+            const course_id = urlParams.get("id");
+            const given_page_number = urlParams.get("page") || 1;
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
             req.on('end', async () => {
+                console.log(given_page_number);
+                console.log(api_token);
+                console.log(course_id);
                 await courseController.updateCourseProgress(given_page_number, api_token, course_id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
             });
         }
+        else if (req.method === 'POST') {
+            const api_token = req.headers.api_token;
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                const course_id = JSON.parse(body).course_id;
+                await courseController.createCourseProgress(api_token, course_id);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            });
+        }
     } //subscriptions
-    else if (pathname.includes("/subscription")){
-        const supportedContentTypes = {'application/json': JSON.parse, 'text/plain': parse};
+    else if (pathname.includes("/subscription")) {
+        const supportedContentTypes = { 'application/json': JSON.parse, 'text/plain': parse };
         if (req.method === 'POST' || req.method === 'GET' || req.method === 'PATCH') {
             const contentType = req.headers['content-type'];
             if (!contentType) {
-              res.writeHead(400, { 'Content-Type': 'text/plain' });
-              return res.end('Content-Type header is required');
+                res.writeHead(400, { 'Content-Type': 'text/plain' });
+                return res.end('Content-Type header is required');
             }
             if (!supportedContentTypes[contentType]) {
-              res.writeHead(415, { 'Content-Type': 'text/plain' });
-              return res.end(`Unsupported Content-Type. Supported types: ${Object.keys(supportedContentTypes).join(', ')}`);
+                res.writeHead(415, { 'Content-Type': 'text/plain' });
+                return res.end(`Unsupported Content-Type. Supported types: ${Object.keys(supportedContentTypes).join(', ')}`);
             }
             let body = '';
             req.on('data', (chunk) => {
-              body += chunk.toString();        
+                body += chunk.toString();
             });
-        
+
             req.on('end', async () => {
-              try {
-                let parsedBody;
-                if (contentType === 'application/json') {
-                  parsedBody = JSON.parse(body);
-                } else if (contentType === 'text/plain') {
-                  parsedBody = body;
+                try {
+                    let parsedBody;
+                    if (contentType === 'application/json') {
+                        parsedBody = JSON.parse(body);
+                    } else if (contentType === 'text/plain') {
+                        parsedBody = body;
+                    }
+                    var output = await subscriptionController.selectOption(body, req, res);
+                    res.writeHead(200, { 'Content-Type': contentType });
+                    res.end(output);
+                } catch (error) {
+                    console.error(error);
+                    res.writeHead(400, { 'Content-Type': 'text/plain' });
+                    res.end('Error parsing the request body');
                 }
-                var output = await subscriptionController.selectOption(body, req, res);
-                res.writeHead(200, { 'Content-Type': contentType });
-                res.end(output);
-              } catch (error) {
-                console.error(error);
-                res.writeHead(400, { 'Content-Type': 'text/plain' });
-                res.end('Error parsing the request body');
-              }
             });
-          } else {
+        } else {
             res.writeHead(405, { 'Content-Type': 'text/plain' });
             res.end('Method Not Allowed');
-          }
-      
+        }
+
     } //api platform
     else if (pathname.includes("/prometheus/displayUsage")) {
         const displayUsageRegex = /\/manager\/displayUsage(?:\?.*?)?/;
@@ -628,7 +674,7 @@ async function processRequest(req, res){
                         res.end('Message is required.');
                         return;
                     }
-                    const id =Prometheus.addMessageToQueue(message);
+                    const id = Prometheus.addMessageToQueue(message);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ messageID: id }));
                 } catch (error) {
@@ -657,7 +703,7 @@ async function processRequest(req, res){
                         res.end('Message ID is required.');
                         return;
                     }
-                    const status =Prometheus.fetchMessageStatus(messageID);
+                    const status = Prometheus.fetchMessageStatus(messageID);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify(status));
                 } catch (error) {
@@ -747,7 +793,7 @@ async function processRequest(req, res){
         const match = path.match(submissionsRegex);
         if (req.method === 'GET') {
             try {
-                const submissions = await Prometheus.database.getAllPublishedSubmissions();
+                const models =Prometheus.database.getAllModels();
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(submissions));
             } catch (error) {
@@ -813,7 +859,7 @@ async function processRequest(req, res){
                         res.end('Process ID is required.');
                         return;
                     }
-                   Prometheus.killProcessDaemon(processID);
+                    Prometheus.killProcessDaemon(processID);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
                     res.end('Process killed.');
                 } catch (error) {
@@ -905,7 +951,7 @@ async function processRequest(req, res){
                         res.end('Message is required.');
                         return;
                     }
-                    const id =Athena.addMessageToQueue(message);
+                    const id = Athena.addMessageToQueue(message);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ messageID: id }));
                 } catch (error) {
@@ -923,7 +969,7 @@ async function processRequest(req, res){
         const match = path.match(databaseRegex);
         if (req.method === 'GET') {
             try {
-                const dbState =Athena.databaseSystem.getDBState();
+                const dbState = Athena.databaseSystem.getDBState();
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(dbState));
             } catch (error) {
@@ -951,7 +997,7 @@ async function processRequest(req, res){
                         res.end('Competition ID, name, description, and dataset are required.');
                         return;
                     }
-                   Athena.databaseSystem.createCompetition(competitionID, competitionName, competitionDescription, competitionDataset);
+                    Athena.databaseSystem.createCompetition(competitionID, competitionName, competitionDescription, competitionDataset);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
                     res.end('Competition added.');
                 } catch (error) {
@@ -980,7 +1026,7 @@ async function processRequest(req, res){
                         res.end('Competition ID, user ID, and file path are required.');
                         return;
                     }
-                   Athena.databaseSystem.addUserSubmission(competitionID, userID, filePath);
+                    Athena.databaseSystem.addUserSubmission(competitionID, userID, filePath);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
                     res.end('User submission added.');
                 } catch (error) {
@@ -1009,7 +1055,7 @@ async function processRequest(req, res){
                         res.end('Competition ID, user ID, and score are required.');
                         return;
                     }
-                   Athena.databaseSystem.addScoreToLeaderboard(competitionID, userID, score);
+                    Athena.databaseSystem.addScoreToLeaderboard(competitionID, userID, score);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
                     res.end('Score added to leaderboard.');
                 } catch (error) {
@@ -1033,7 +1079,7 @@ async function processRequest(req, res){
                 return;
             }
             try {
-                const leaderboard =Athena.databaseSystem.getLeaderboard(competitionID);
+                const leaderboard = Athena.databaseSystem.getLeaderboard(competitionID);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(leaderboard));
             } catch (error) {
@@ -1044,11 +1090,11 @@ async function processRequest(req, res){
             res.writeHead(405, { 'Content-Type': 'text/plain' });
             res.end('405 Method Not Allowed');
         }
-    }     
+    }
     else {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, message: 'Endpoint Not Found' }));
-    }    
+    }
 }
 module.exports = {
     processRequest

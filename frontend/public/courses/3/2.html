@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lesson 3: Deep Dive into Neural Networks</title>
-    <meta name="course-id" content="2">
-    <meta name="course-name" content="Introduction to AI">
-    <meta name="course-description" content="This course will introduce you to the basics of Introduction to AI.">
+    <title>Lesson 2: Understanding Datasets</title>
+    <meta name="course-id" content="3">
+    <meta name="course-name" content="Introduction to Datasets">
+    <meta name="course-description" content="This course will introduce you to the basics of Datasets.">
     <style>
         body {
             margin: 0;
@@ -59,33 +59,39 @@
 
 <body>
     <div class="lesson-container">
-        <h1>Lesson 3: Deep Dive into Neural Networks</h1>
-        <p>Neural networks are fundamental in AI models. In this lesson, we'll explore the architecture and working
-            principles of neural networks.</p>
-        <p>Neural networks are computational models inspired by the structure and function of the human brain.</p>
-        <p>They consist of interconnected nodes, or neurons, organized into layers. Each neuron receives input signals,
-            processes them, and produces an output signal.</p>
-        <p>Neural networks can be trained using algorithms such as backpropagation and gradient descent to optimize
-            their parameters and improve their performance.</p>
-        <p>Deep learning is a subfield of machine learning that focuses on neural networks with multiple layers (deep
-            neural networks).</p>
-        <p>Deep learning has achieved remarkable success in various tasks, including image recognition, speech
-            recognition, and natural language processing.</p>
-        <p>Key components of neural networks include activation functions, which introduce non-linearity into the model,
-            and loss functions, which measure the model's performance.</p>
-        <p>Understanding neural networks is crucial for designing and implementing advanced AI models.</p>
-        <button class="btn" id="lesson2">Go back to Lesson 2</button>
-        <button class="btn" id="lesson4">Proceed to Lesson 4</button>
-        <button class="btn" id="backToDashboard">Go back to Dashboard</button>
+        <h1>Lesson 2: Understanding Datasets</h1>
+        <p>In this lesson, we'll explore the significance of datasets in machine learning and artificial intelligence.
+        </p>
+        <p>Datasets form the foundation of machine learning projects, providing the necessary training, testing, and
+            validation data for AI models.</p>
+        <p>Understanding the characteristics and properties of datasets is crucial for selecting appropriate data for
+            model development and evaluation.</p>
+        <p>Key aspects to consider when working with datasets include:</p>
+        <ul>
+            <li><strong>Data Quality:</strong> Ensuring that the data is accurate, complete, and representative of the
+                problem domain.</li>
+            <li><strong>Data Preprocessing:</strong> Cleaning, transforming, and organizing the data to prepare it for
+                analysis and model training.</li>
+            <li><strong>Feature Selection:</strong> Identifying relevant features or attributes that contribute to the
+                predictive power of the model.</li>
+            <li><strong>Dataset Size:</strong> Balancing the trade-off between dataset size and model complexity to
+                avoid overfitting or underfitting.</li>
+        </ul>
+        <p>By understanding the characteristics of datasets, machine learning practitioners can make informed decisions
+            during the model development process.</p>
+        <p>
+            <button class="btn" id="lesson1">Go back to Lesson 1</button>
+            <button class="btn" id="lesson3">Proceed to Lesson 3</button>
+            <button class="btn" id="backToDashboard">Go back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson2").addEventListener("click", function (event) {
-            handleLessonLinkClick(event, 2);
+        document.getElementById("lesson1").addEventListener("click", function (event) {
+            handleLessonLinkClick(event, 1);
         });
 
-        document.getElementById("lesson4").addEventListener("click", function (event) {
-            handleLessonLinkClick(event, 4);
+        document.getElementById("lesson3").addEventListener("click", function (event) {
+            handleLessonLinkClick(event, 3);
         });
 
         document.getElementById("backToDashboard").addEventListener("click", function (event) {
@@ -94,7 +100,7 @@
 
         function handleLessonLinkClick(event, lessonNumber) {
             event.preventDefault();
-            var url = `http://localhost:3000/course&id=2&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
+            var url = `http://localhost:3000/course&id=3&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
             updateCourseProgress(url);
             window.location.href = url
         }
