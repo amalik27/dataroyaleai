@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Competitions</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Noto Sans JP", Arial, sans-serif;
+      background: linear-gradient(45deg, #5c10b9, #2b6cce);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .container {
+      width: 80%;
+      margin-top: 20px;
+    }
+
+    .search-bar {
+      margin-bottom: 20px;
+    }
+
+    .competition {
+      background-color: #333;
+      padding: 20px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+
+    .competition h2 {
+      margin-top: 0;
+    }
+
+    .competition p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>View Competitions</h1>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search...">
+      <button onclick="searchCompetitions()">Search</button>
+    </div>
+    <div id="competitionsContainer"></div>
+  </div>
+
+  <script>
+    async function searchCompetitions() {
+      const searchInput = document.getElementById('searchInput').value;
+
+      try {
+        const competitions = await fetchCompetitions(searchInput);
+        displayCompetitions(competitions);
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while searching competitions. Please try again.');
+      }
+    }
+
+    async function fetchCompetitions(searchQuery) {
+      const response = await fetch(`/competitions?search=${searchQuery}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok.');
+      }
+      const data = await response.json();
+      return data.competitions;
+    }
+
+    function displayCompetitions(competitions) {
+      const competitionsContainer = document.getElementById('competitionsContainer');
+      competitionsContainer.innerHTML = '';
+
+      competitions.forEach(competition => {
+        const competitionElement = document.createElement('div');
+        competitionElement.classList.add('competition');
+
+        const titleElement = document.createElement('h2');
+        titleElement.textContent = competition.title;
+        competitionElement.appendChild(titleElement);
+
+        const descElement = document.createElement('p');
+        descElement.textContent = competition.desc;
+        competitionElement.appendChild(descElement);
+
+        const userIdElement = document.createElement('p');
+        userIdElement.textContent = `User ID: ${competition.userid}`;
+        competitionElement.appendChild(userIdElement);
+
+        const deadlineElement = document.createElement('p');
+        deadlineElement.textContent = `Deadline: ${competition.deadline}`;
+        competitionElement.appendChild(deadlineElement);
+
+        const prizeElement = document.createElement('p');
+        prizeElement.textContent = `Prize: ${competition.prize}`;
+        competitionElement.appendChild(prizeElement);
+
+        const metricsElement = document.createElement('p');
+        metricsElement.textContent = `Metrics: ${JSON.stringify(competition.metrics)}`;
+        competitionElement.appendChild(metricsElement);
+
+        competitionsContainer.appendChild(competitionElement);
+      });
+    }
+
+    // Initial load
+    window.onload = async function () {
+      try {
+        const competitions = await fetchCompetitions('');
+        displayCompetitions(competitions);
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while loading competitions. Please try again.');
+      }
+    }
+  </script>
+</body>
+
+</html>

@@ -2,6 +2,7 @@
  * @Author: Nikita Filippov <nikfilippov1@gmail.com>, Deshna Doshi <deshna.doshi@gmail.com>
  * @Description: Module for handling HTTP requests and routing them to corresponding controllers.
  */
+const multer = require('multer');
 
 const url = require('url');
 const fs = require('fs');
@@ -90,24 +91,36 @@ function processRequest(req, res) {
     } else if (pathname === '/competitions/create') { // Competitions Endpoint
         if (req.method === 'GET') {
             // View All Competitions
-            let body = '';
+            // let body = '';
 
-            req.on('data', (chunk) => {
-                body += chunk.toString();
-            });
+            // req.on('data', (chunk) => {
+            //     body += chunk.toString();
+            // });
 
-            req.on('end', async () => {
+            // req.on('end', async () => {
 
-                const allCompetitions = await competitionController.viewAllCompetitions();
+            //     const allCompetitions = await competitionController.viewAllCompetitions();
 
-                if (!allCompetitions || allCompetitions.length == 0) {
-                    res.writeHead(404, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Competitions not found' }));
-                    return;
+            //     if (!allCompetitions || allCompetitions.length == 0) {
+            //         res.writeHead(404, { 'Content-Type': 'application/json' });
+            //         res.end(JSON.stringify({ success: false, message: 'Competitions not found' }));
+            //         return;
+            //     }
+            //     res.writeHead(200, { 'Content-Type': 'application/json' });
+            //     res.end(JSON.stringify({ success: true, message: allCompetitions }));
+            // });
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'create_competition.html');
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    res.end('Error loading courses.html');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
                 }
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: allCompetitions }));
             });
+
+          
 
 
         } else if (req.method === 'POST') {

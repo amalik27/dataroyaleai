@@ -28,7 +28,7 @@ const { addCredits, subtractCredits } = require('./paymentController');
  * @param {*} cap Maximum player capacity for the competition. 
  */ 
 async function createCompetition (userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath){
-    let emptyResult = emptyFolder("../extractedCompDatasets"); 
+    let emptyResult = emptyFolder("./extractedCompDatasets"); 
 
     let validUser = await checkValidUser(userid); 
 
@@ -754,7 +754,7 @@ async function submitModel(user_id, competition_id, submission_file) {
             return "File does not exist";
         }
 
-        let emptyResult = emptyFolder("../extractedSubmissionFiles");
+        let emptyResult = emptyFolder("./extractedSubmissionFiles");
         let current_date = new Date();
 
         const query = "UPDATE submissions SET file_path = ? WHERE user_id = ? AND comp_id = ?";
