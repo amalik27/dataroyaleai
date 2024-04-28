@@ -2,7 +2,6 @@
  * @Author: Nikita Filippov <nikfilippov1@gmail.com>, Deshna Doshi <deshna.doshi@gmail.com>
  * @Description: Module for handling HTTP requests and routing them to corresponding controllers.
  */
-const multer = require('multer');
 
 const url = require('url');
 const fs = require('fs');
@@ -120,8 +119,6 @@ function processRequest(req, res) {
                 }
             });
 
-          
-
 
         } else if (req.method === 'POST') {
             // Create Competition
@@ -186,7 +183,19 @@ function processRequest(req, res) {
             });
 
         }
-
+    } else if (pathname === '/competitions/view'){
+        if (req.method === 'GET'){
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'view_competition.html');
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    res.end('Error loading courses.html');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
+                }
+            });
+        }
     } else if (pathname === '/competitions/join') {
         if (req.method === 'POST') {
             // Join Competition
