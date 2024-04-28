@@ -141,13 +141,19 @@
     async function createCompetition() {
       const form = document.getElementById('createCompetitionForm');
       const formData = new FormData(form);
+
+      const form2 = document.getElementById('loginForm'); 
+      const formData2 = new FormData(form2); 
   
       const metrics = formData.get('metrics');
       const inputs_outputs = formData.get('inputs_outputs');
+
+      const fileInput = document.getElementById('filepath');
+      const file = fileInput.files[0]["name"]; // Get the uploaded file
   
-      const competitionData = {
-        username: formData.get('username'),
-        password: formData.get('password'),
+      const requestBody = {
+        username: formData2.get('username'),
+        password: formData2.get('password'),
         userid: formData.get('userid'),
         title: formData.get('title'),
         deadline: formData.get('deadline'),
@@ -156,31 +162,37 @@
         cap: parseInt(formData.get('cap')),
         metrics: JSON.parse(metrics),
         inputs_outputs: JSON.parse(inputs_outputs),
+        filepath: file
       };
   
-      const fileInput = document.getElementById('filepath');
-      const file = fileInput.files[0]; // Get the uploaded file
+      //const fileInput = document.getElementById('filepath');
+      //const file = fileInput.files[0]; // Get the uploaded file
   
       if (!file) {
         console.error('No file selected');
         return;
       }
-  
+  /*
       const requestBody = {
         competitionData: competitionData,
         file: file,
       };
+*/
+      console.log(requestBody);
   
       try {
-        const response = await fetch('/competitions/create', {
+        const response = await fetch('http://localhost:3000/competitions/create', {
           method: 'POST',
           body: JSON.stringify(requestBody),
           headers: {
             'Content-Type': 'application/json',
-          },
+          }
         });
   
+        console.log(response);
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Server responded with error (${response.status}): ${errorText}`);
           throw new Error('Network response was not ok.');
         }
   
@@ -188,11 +200,12 @@
   
         if (data.success) {
           alert('Competition created successfully!');
-          window.location.href = '/dashboard'; // Redirect to dashboard upon successful competition creation
+          window.location.href = 'http://localhost:3000/dashboard'; // Redirect to dashboard upon successful competition creation
         } else {
           alert('Error: ' + data.message);
         }
       } catch (error) {
+        console.log("hi");
         console.log(error); 
         console.error('Error:', error);
         alert('An error occurred while creating the competition. Please try again.');
