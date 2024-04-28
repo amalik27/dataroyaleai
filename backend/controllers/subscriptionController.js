@@ -35,7 +35,7 @@ function selectOption(input, req, res){
     var parseInput = JSON.parse(input); //insert method for acquiring input from postman
     let tempSubscriber = new Object;
     switch (parseInput.request.select){
-        case "PURCHASE":    //calls Nikhils sub credits function
+        case "PURCHASE":    //wip, calls Nikhils sub credits function
             console.log("Purchasing a subscription (first time)");
             tempSubscriber.id = parseInput.request.id;
             tempSubscriber.tier = parseInput.request.tier;
@@ -43,27 +43,31 @@ function selectOption(input, req, res){
             tempSubscriber.email = parseInput.request.email;
             tempSubscriber.duration = parseInput.request.duration;
             tempSubscriber.credits = parseInput.request.credits;
+            tempSubscriber.api_token = parseInput.request.api_token;
             return checkNewSubscriber(tempSubscriber, tableAsString, req, res);
             //break;
-        case "UPDATE":      //calls Nikhils sub credits function
+        case "UPDATE":      //wip, calls Nikhils sub credits function
             console.log("Update subscription");
             tempSubscriber.id = parseInput.request.id;
             tempSubscriber.tier = parseInput.request.tier;
             tempSubscriber.duration = parseInput.request.duration;
             tempSubscriber.credits = parseInput.request.credits;        //TODO:  CODE SHOULD INSTEAD CALL VALUE FROM EXISTING DATABASE RATHER THAN FROM THE CALL, REMOVE THIS LINE IN FINAL
+            tempSubscriber.api_token = parseInput.request.api_token;
             return updateSubscription(tempSubscriber, tableAsString, req, res);
             //break;
         case "GET":     //done
             console.log("Getting user/subscription info");
             tempSubscriber.id = parseInput.request.id;
-            return getSubscriber(tempSubscriber.id, tableAsString, req, res);
+            tempSubscriber.api_token = parseInput.request.api_token;
+            return getSubscriber(tempSubscriber.id, tempSubscriber.api_token, tableAsString, req, res);
             //break;
         case "CANCEL":    //done
             console.log("Cancelling subscription for a user");
             tempSubscriber.id = parseInput.request.id;
-            return cancelSubscription(tempSubscriber.id, tableAsString, req, res);
+            tempSubscriber.api_token = parseInput.request.api_token;
+            return cancelSubscription(tempSubscriber.id, tempsubscriber.api_token, tableAsString, req, res);
             //break;
-        case "AUTOCANCEL":
+        case "AUTOCANCEL":  //done
             console.log("Autocancel subscriptions");
             return autoCancelSubs(req, res);
             //break;
@@ -86,7 +90,8 @@ function checkNewSubscriber(input, data, req, res){
         error = true;
     }
     //check id
-    if(input.id.length != 8 || input.id.isNaN || hasInvalidVal(input.id)){
+    //if(input.id.length != 8 || input.id.isNaN || hasInvalidVal(input.id)){
+    if(!(isInteger(input.id))){
       errorMessage = errorMessage + " id";
       error = true;
     }
@@ -107,7 +112,8 @@ function checkNewSubscriber(input, data, req, res){
       error = true;
     }
     //check credits
-    if(input.credits.length < 0 || input.credits.isNaN || hasInvalidVal(input.credits)){
+    //if(input.credits.length < 0 || input.credits.isNaN || hasInvalidVal(input.credits)){
+    if(input.credits.length < 0 || !isInteger(input.credits)){
       errorMessage = errorMessage + " credits";
       error = true;
     }
@@ -118,7 +124,7 @@ function checkNewSubscriber(input, data, req, res){
         //res.end(output);
         return errorMessage;
     } else {
-        let output = addToDatabase(input, data, req, res);
+        let output = addToDatabase(input, data, req, res); 
         return output;
     }
 }
@@ -127,7 +133,7 @@ function checkNewSubscriber(input, data, req, res){
 async function addToDatabase(newUser, data, req, res){    //NOTE:  THE ID VALUE USED SHOULD BE PULLED FROM THE LARGER DATABASE WHEN CALLING THIS FUNCTION
   console.log("test3");
   var output = "";
-  let sql4 = `INSERT INTO subscription_database (id, user, email, purchase_date, expire_date, tier, cost, credits) VALUES (?,?,?,?,?,?,?,?)`;
+  let sql4 = `INSERT INTO subscription_database (id, user, email, purchase_date, expire_date, tier, cost, credits, api_token) VALUES (?,?,?,?,?,?,?,?,?)`;
 
   let currentDate = new Date();
   console.log(currentDate);
@@ -165,7 +171,14 @@ async function addToDatabase(newUser, data, req, res){    //NOTE:  THE ID VALUE 
     output = `Error insufficient funds in user wallet for transaction.`;
     //res.end(output);
     return output;
+  } else {
+    newUser.cost = costVal;
+    let jsonUser = {id: newUser.id, cost: newUser.cost};
+    subtractCredits(jsonUser);                   //calls nikhils subtract credits function
+    console.log("Credit substraction process completed");
   }
+
+
   let year2 = expDate.getFullYear();
   let month2 = String(expDate.getMonth() + 1).padStart(2, '0');
   let day2 = String(expDate.getDate()).padStart(2, '0');
@@ -175,7 +188,7 @@ async function addToDatabase(newUser, data, req, res){    //NOTE:  THE ID VALUE 
 
   let formattedExpTime = `${year2}${month2}${day2}T${hours2}${minutes2}${seconds2}`;
 
-  await db.query(sql4, [newUser.id, newUser.user, newUser.email, formattedStartTime, formattedExpTime, newUser.tier, costVal, newUser.credits], (err) =>{
+  await db.query(sql4, [newUser.id, newUser.user, newUser.email, formattedStartTime, formattedExpTime, newUser.tier, costVal, newUser.credits, newUser.api_token], (err) =>{
     if (err) {
         console.error(`Error executing query: ${err.message}`);
         return;
@@ -204,7 +217,8 @@ async function addToDatabase(newUser, data, req, res){    //NOTE:  THE ID VALUE 
 //takes in the user info (utilizing just the user-subscription dataset)
 async function updateSubscription(subscriber, data, req, res){
   var output = "";
-  if(subscriber.id.length != 8 || subscriber.id.isNaN || hasInvalidVal(subscriber.id)){
+  //if(subscriber.id.length != 8 || subscriber.id.isNaN || hasInvalidVal(subscriber.id)){
+  if(!(isInteger(subscriber.id))){
     console.log("ERROR:  Given ID value is not a valid input.")
     output = "ERROR:  Given ID value is not a valid input."
     //res.end(output);
@@ -252,6 +266,11 @@ async function updateSubscription(subscriber, data, req, res){
     output = `Error insufficient funds in user wallet for transaction.`;
     //res.end(output);
     return output;
+  } else {
+    newUser.cost = costVal;
+    let jsonUser = {id: newUser.id, cost: newUser.cost};
+    subtractCredits(jsonUser);                   //calls nikhils subtract credits function
+    console.log("Credit substraction process completed");
   }
 
   let year2 = expDate.getFullYear();
@@ -267,8 +286,22 @@ async function updateSubscription(subscriber, data, req, res){
   while(currentLine<arrLen){
     if(data[currentLine][1].id == subscriber.id){
       foundUser = true;
-      let sql5 = `UPDATE subscription_database SET tier = ${subscriber.tier}, cost = ${costVal}, purchase_date = \'${formattedStartTime}\', expire_date = \'${formattedExpTime}\', credits = ${subscriber.credits} WHERE id = ?`;
-      await db.query(sql5, [subscriber.id], (err) => {
+      //let sql5 = `UPDATE subscription_database SET tier = ${subscriber.tier}, cost = ${costVal}, purchase_date = \'${formattedStartTime}\', expire_date = \'${formattedExpTime}\', credits = ${subscriber.credits} WHERE id = ? AND api_token = ?`;
+      let sql5 = `UPDATE subscription_database AS sub
+      JOIN users AS u ON sub.id = u.id
+      SET sub.tier = ${subscriber.tier},
+          sub.cost = ${costVal},
+          sub.purchase_date = '${formattedStartTime}',
+          sub.expire_date = '${formattedExpTime}',
+          sub.credits = ${subscriber.credits}
+      WHERE sub.id = ? 
+        AND sub.api_token = ?
+        AND sub.tier = u.tier
+        AND sub.user = u.username
+        AND sub.email = u.email
+        AND sub.credits = u.credits;
+      `;
+      await db.query(sql5, [subscriber.id, subscriber.api_token], (err) => {
         if (err) {
             console.error(`Error executing query: ${err.message}`);
             return;
@@ -305,15 +338,16 @@ async function updateSubscription(subscriber, data, req, res){
 
 
 //acquires and returns the relevant info pertaining to the subscription info belonging to a given user
-async function getSubscriber(idValue, data, req, res){
+async function getSubscriber(idValue, api_token_val, data, req, res){
   var arrLen = data.length;
   let currentLine = 0;
   var outputUser = new Object;
   var output = "";
-  outputUser = "ERROR:  No user can be found with the given ID code."
+  outputUser = "ERROR:  No user can be found with the given ID code and its matching api_token value."
 
   //ends early if the id value given is not valid
-  if(idValue.length != 8 || idValue.isNaN || hasInvalidVal(idValue)){
+  //if(idValue.length != 8 || idValue.isNaN || hasInvalidVal(idValue)){
+  if(!(isInteger(idValue))){
     console.log("ERROR:  Given ID value is not a valid input.")
     output = "ERROR:  Given ID value is not a valid input."
     //res.end(output);
@@ -321,7 +355,7 @@ async function getSubscriber(idValue, data, req, res){
   }
   //goes through all the items in the database table until it finds a user account that matches the given id, returning them
   while(currentLine<arrLen){
-    if(data[currentLine][1].id == idValue){
+    if(data[currentLine][1].id == idValue && data[currentLine][1].api_token == api_token_val){
       outputUser = data[currentLine][1];
       break;
     }
@@ -333,9 +367,10 @@ async function getSubscriber(idValue, data, req, res){
 }
 
 //TODO:  CURRENTLY REQUIRES MANUAL CALLING/USE, DETERMINE HOW TO CREATE A SCHEDULE OR SOMETHING TO CHECK THE DATE AND CALL THE SUBSCRIPTION CANCELLATION PROCESS
-async function cancelSubscription(idValue,data,req,res){
+async function cancelSubscription(idValue, api_token_val, data,req,res){
   var output = "";
-      if(idValue.length != 8 || idValue.isNaN || hasInvalidVal(idValue)){
+      //if(idValue.length != 8 || idValue.isNaN || hasInvalidVal(idValue)){
+      if(!(isInteger(idValue))){
           console.log("ERROR:  Given ID value is not a valid input.")
           output = "ERROR:  Given ID value is not a valid input."
           //res.end(output);
@@ -349,9 +384,21 @@ async function cancelSubscription(idValue,data,req,res){
   while(currentLine<arrLen){
     if(data[currentLine][1].id == idValue){
       foundUser = true;
-      let sql3 = `UPDATE subscription_database SET tier = 0, purchase_date = NULL, expire_date = NULL, cost = 0 WHERE id = ?`
-
-      await db.query(sql3, [idValue], (err) => {
+      //let sql3 = `UPDATE subscription_database SET tier = 0, purchase_date = NULL, expire_date = NULL, cost = 0 WHERE id = ? AND api_token = ?`
+      let sql3 = `UPDATE subscription_database AS sub
+      JOIN users AS u ON sub.id = u.id
+      SET sub.tier = 0,
+          sub.purchase_date = NULL,
+          sub.expire_date = NULL,
+          sub.cost = 0
+      WHERE sub.id = ? 
+        AND sub.api_token = ?
+        AND sub.tier = u.tier
+        AND sub.user = u.username
+        AND sub.email = u.email
+        AND sub.credits = u.credits;
+      `;
+      await db.query(sql3, [idValue, api_token_val], (err) => {
         if (err) {
             console.error(`Error executing query: ${err.message}`);
             return;
@@ -393,7 +440,21 @@ async function autoCancelSubs(req, res){
 
   let formattedExpTime = `${year}${month}${day}`;
 
-  let sql6 = `UPDATE subscription_database SET tier = 0, purchase_date = NULL, expire_date = NULL, cost = 0 WHERE SUBSTR(expire_date, 1, 8) = SUBSTR(${formattedExpTime}, 1, 8)`;
+  //let sql6 = `UPDATE subscription_database SET tier = 0, purchase_date = NULL, expire_date = NULL, cost = 0 WHERE SUBSTR(expire_date, 1, 8) = SUBSTR(${formattedExpTime}, 1, 8)`;
+  let sql6 = `UPDATE subscription_database AS sub
+  JOIN users AS u ON sub.id = u.id
+  SET sub.tier = 0,
+      sub.purchase_date = NULL,
+      sub.expire_date = NULL,
+      sub.cost = 0
+  WHERE SUBSTR(sub.expire_date, 1, 8) = SUBSTR(${formattedExpTime}, 1, 8)
+    AND sub.id = u.id 
+    AND sub.api_token = u.api_token
+    AND sub.tier = u.tier
+    AND sub.user = u.username
+    AND sub.email = u.email
+    AND sub.credits = u.credits;
+  `;
   await db.query(sql6, (err) => {
     if (err) {
         console.error(`Error executing query: ${err.message}`);
@@ -416,13 +477,18 @@ async function autoCancelSubs(req, res){
   return(`All subscriptions set to expire on ${formattedExpTime} have been properly cancelled.`);
 }
 
-function hasInvalidVal(s) {
+function hasInvalidVal(s) {  //may not be used/necessary
     return s.indexOf(' ') + s.indexOf('.') +s.indexOf(',') >= 0;
 }
 
 function checkEmail(input){
     const email = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
     return (email.test(input));
+}
+
+function isInteger(value) {
+  // Check if the value is a number and has no decimal part
+  return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
 }
 
 module.exports = {selectOption, addToDatabase, updateSubscription, getSubscriber, cancelSubscription, autoCancelSubs};

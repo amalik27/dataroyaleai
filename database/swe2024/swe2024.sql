@@ -94,15 +94,23 @@ CREATE TABLE IF NOT EXISTS`submissions` (
 -- Table structure for table `subscriptions`
 --
 
-CREATE TABLE IF NOT EXISTS`subscriptions` (
-  `id` int(11) NOT NULL,
-  `user` int(11) NOT NULL,
+CREATE TABLE IF NOT EXISTS`subscription_database` (
+  `id` int(30) NOT NULL,
+  `user` varchar(30) NOT NULL,
+  `email` varchar(30) NOT NULL,
   `purchase_date` datetime NOT NULL,
   `expire_date` datetime NOT NULL,
-  `tier` int(11) NOT NULL,
-  `cost` int(11) NOT NULL,
-  `email` varchar(255) NOT NULL
+  `tier` int(30) NOT NULL,
+  `cost` int(30) NOT NULL,
+  `credits` int(30) NOT NULL,
+  `api_token` varchar(30) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `subscription_database` (`id`, `user`, `email`, `purchase_date`, `expire_date`, `tier`, `cost`, `credits`, `api_token`) VALUES
+(1, 'user1', 'test1@gmail.com', '20240318T002458', '20240418T002458', 1, 100, 375, `VvVmzazIy3UPf3km`),
+(2, 'user2', 'test2@gmail.com', '20240317T204601', '20240417T204601', 1, 100, 250, `2ho5qDRPFO99FtAm`),
+(3, 'user3', 'test3@gmail.com', '20240314T200000', '20250314T200000', 1, 1000, 300, `JkOWIiSUOnaDDL7Z`);
+COMMIT;
 
 -- --------------------------------------------------------
 
@@ -203,8 +211,10 @@ ALTER TABLE `submissions`
 --
 -- Indexes for table `subscriptions`
 --
-ALTER TABLE `subscriptions`
+ALTER TABLE `subscription_database`
   ADD PRIMARY KEY (`id`);
+
+
 
 --
 -- Indexes for table `tiers`
@@ -225,7 +235,7 @@ ALTER TABLE `users`
 --
 -- AUTO_INCREMENT for table `subscriptions`
 --
-ALTER TABLE `subscriptions`
+ALTER TABLE `subscription_database`
   MODIFY `id` int(30) NOT NULL AUTO_INCREMENT;
 
 --

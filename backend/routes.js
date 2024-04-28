@@ -573,12 +573,12 @@ function processRequest(req, res){
         
             req.on('end', async () => {
               try {
-                let parsedBody;
-                if (contentType === 'application/json') {
-                  parsedBody = JSON.parse(body);
-                } else if (contentType === 'text/plain') {
-                  parsedBody = body;
-                }
+                // let parsedBody;
+                // if (contentType === 'application/json') {
+                //   parsedBody = JSON.parse(body);
+                // } else if (contentType === 'text/plain') {
+                //   parsedBody = body;
+                // }
                 var output = await subscriptionController.selectOption(body, req, res);
                 res.writeHead(200, { 'Content-Type': contentType });
                 res.end(output);
