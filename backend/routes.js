@@ -112,7 +112,7 @@ function processRequest(req, res) {
             fs.readFile(filePath, (err, data) => {
                 if (err) {
                     res.writeHead(500);
-                    res.end('Error loading courses.html');
+                    res.end('Error loading create_competition.html');
                 } else {
                     res.writeHead(200, { 'Content-Type': 'text/html' });
                     res.end(data);
@@ -183,18 +183,34 @@ function processRequest(req, res) {
             });
 
         }
-    } else if (pathname === '/competitions/view'){
-        if (req.method === 'GET'){
-            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'view_competition.html');
-            fs.readFile(filePath, (err, data) => {
-                if (err) {
-                    res.writeHead(500);
-                    res.end('Error loading courses.html');
-                } else {
-                    res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(data);
-                }
-            });
+    } else if (pathname === '/competitions'){
+        if (req.method === 'GET') {
+            try {
+                competitionController.viewAllCompetitions()
+                    .then(competitions => {
+                        const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'view_competition.html');
+                        fs.readFile(filePath, (err, data) => {
+                            if (err) {
+                                console.error('Error loading view_competition.html:', err);
+                                res.writeHead(500);
+                                res.end('Error loading view_competition.html');
+                            } else {
+                                const htmlWithData = data.toString().replace('/*insert_competitions_here*/', JSON.stringify(competitions));
+                                res.writeHead(200, { 'Content-Type': 'text/html' });
+                                res.end(htmlWithData);
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error retrieving competitions:', error);
+                        res.writeHead(500);
+                        res.end(JSON.stringify({ success: false, error: error.message }));
+                    });
+            } catch (error) {
+                console.error('Error retrieving competitions:', error);
+                res.writeHead(500);
+                res.end(JSON.stringify({ success: false, error: error.message }));
+            }
         }
     } else if (pathname === '/competitions/join') {
         if (req.method === 'POST') {

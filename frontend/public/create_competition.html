@@ -138,16 +138,15 @@
     </div>
   </div>
   <script>
-    function createCompetition() {
+    async function createCompetition() {
       const form = document.getElementById('createCompetitionForm');
       const formData = new FormData(form);
-
+  
       const metrics = formData.get('metrics');
-
-      const inputs_outputs = formData.get('inputs_outputs'); 
-
+      const inputs_outputs = formData.get('inputs_outputs');
+  
       const competitionData = {
-        username: formData.get('username'), 
+        username: formData.get('username'),
         password: formData.get('password'),
         userid: formData.get('userid'),
         title: formData.get('title'),
@@ -155,59 +154,63 @@
         prize: parseInt(formData.get('prize')),
         desc: formData.get('desc'),
         cap: parseInt(formData.get('cap')),
-        metrics: metrics,
-        inputs_outputs: inputs_outputs,
+        metrics: JSON.parse(metrics),
+        inputs_outputs: JSON.parse(inputs_outputs),
       };
-
+  
       const fileInput = document.getElementById('filepath');
       const file = fileInput.files[0]; // Get the uploaded file
-
-      if (file) {
-        formData.append('file', file);
-      } else {
+  
+      if (!file) {
         console.error('No file selected');
         return;
       }
-
-      formData.delete('Content-Type');
-
-      fetch('/competitions/create', {
+  
+      const requestBody = {
+        competitionData: competitionData,
+        file: file,
+      };
+  
+      try {
+        const response = await fetch('/competitions/create', {
           method: 'POST',
-          body: formData
-        })
-        .then(response => {
-          if (response.ok) {
-            return response.json();
-          }
-          throw new Error('Network response was not ok.');
-        })
-        .then(data => {
-          if (data.success) {
-            alert('Competition created successfully!');
-            window.location.href = '/dashboard'; // Redirect to dashboard upon successful competition creation
-          } else {
-            alert('Error: ' + data.message);
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('An error occurred while creating the competition. Please try again.');
+          body: JSON.stringify(requestBody),
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
+  
+        if (!response.ok) {
+          throw new Error('Network response was not ok.');
+        }
+  
+        const data = await response.json();
+  
+        if (data.success) {
+          alert('Competition created successfully!');
+          window.location.href = '/dashboard'; // Redirect to dashboard upon successful competition creation
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (error) {
+        console.log(error); 
+        console.error('Error:', error);
+        alert('An error occurred while creating the competition. Please try again.');
+      }
     }
-
+  
     function viewCompetitions() {
-      window.location.href = 'view_competition.html'; 
+      window.location.href = 'view_competition.html';
     }
-
+  
     function login() {
       const loggedIn = true;
-
+  
       if (loggedIn) {
         document.getElementById('competitionFormContainer').style.display = 'block';
       }
     }
-
   </script>
-</body>
+  </body>
 
 </html>
