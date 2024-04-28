@@ -342,19 +342,86 @@ function processRequest(req, res) {
             //     res.end(JSON.stringify({ success: true, message: allJoined }));
             // });
 
-            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'join_competition.html');
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'submit_model.html');
             fs.readFile(filePath, (err, data) => {
                 if (err) {
                     res.writeHead(500);
-                    res.end('Error loading join_competition.html');
+                    res.end('Error loading submit_model.html');
                 } else {
                     res.writeHead(200, { 'Content-Type': 'text/html' });
                     res.end(data);
                 }
             });
-
         }
+    } else if (pathname === '/competitions/join/new'){
+        if (req.method === 'GET') {
+            // View Leaderboard
+            // let body = '';
 
+            // req.on('data', (chunk) => {
+            //     body += chunk.toString();
+            // });
+
+            // req.on('end', async () => {
+            //     const { compid } = JSON.parse(body);
+
+            //     const allJoined = await competitionController.viewLeaderboard(compid);
+
+            //     if (!allJoined || allJoined.length == 0) {
+            //         res.writeHead(404, { 'Content-Type': 'application/json' });
+            //         res.end(JSON.stringify({ success: false, message: 'Competition does not exist/Nobody has joined this competition.' }));
+            //         return;
+            //     }
+            //     res.writeHead(200, { 'Content-Type': 'application/json' });
+            //     res.end(JSON.stringify({ success: true, message: allJoined }));
+            // });
+
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'join_competition.html');
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    res.end('Error loading submit_model.html');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
+                }
+            });
+        } else if (req.method === 'POST'){
+                        // Join Competition
+                        let body = '';
+
+                        req.on('data', (chunk) => {
+                            body += chunk.toString();
+                        });
+            
+                        req.on('end', async () => {
+            
+                            const { userid, compid } = JSON.parse(body);
+            
+            
+                            if (!userid || !compid) {
+                                res.writeHead(400, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing join fields in JSON body' }));
+                                return;
+                            }
+            
+                            try {
+                                const getJoinResult = await competitionController.joinCompetition(userid, compid);
+                                if (getJoinResult == true) {
+                                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                                    res.end(JSON.stringify({ success: true, message: "Competition joined successfully." }));
+                                } else {
+                                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                                    res.end(JSON.stringify({ success: false, message: getJoinResult }));
+            
+                                }
+                            } catch (error) {
+                                res.writeHead(400, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ success: false, message: error }));
+                            }
+                        });
+            
+        }
     } else if (pathname === '/payment') { //Payment Endpoint For Exchanging USD for Credits
         if (req.method === 'GET') { //get current status of payment
             //console.log("Checking status of a payment.")

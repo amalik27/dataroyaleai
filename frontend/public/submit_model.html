@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Join a Competition</title>
+  <title>Submit a Model</title>
   <style>
     body {
       margin: 0;
@@ -86,7 +86,7 @@
     
     <!-- Competition Submission Form -->
     <div id="competitionFormContainer">
-      <h1>Join Competition</h1>
+      <h1>Submit a Model</h1>
       <div class="form-container">
         <form id="submitModelForm">
           <div class="form-group">
@@ -97,8 +97,12 @@
             <label for="competitionid">Competition ID:</label>
             <input type="text" id="competitionid" name="competitionid" placeholder="Enter the competition ID" required>
           </div>
+          <div class="form-group">
+            <label for="filepath">File Path:</label>
+            <input type="file" id="filepath" name="filepath" required>
+          </div>
           <div class="button-container">
-            <button type="button" onclick="submitModel()" class="btn">Join</button>
+            <button type="button" onclick="submitModel()" class="btn">Submit Model</button>
           </div>
         </form>
       </div>
@@ -113,22 +117,27 @@
       const form = document.getElementById('submitModelForm');
       const formData = new FormData(form);
 
+      const fileInput = document.getElementById('filepath');
+      const file = fileInput.files[0]["name"]; // Get the uploaded file
   
       const requestBody = {
         compid: formData.get('competitionid'),
+        score : 0,
+        filepath: file,
         userid: formData.get('userid')
       };
 
       console.log("USERID:", userid); 
       console.log("CID:", competitionid); 
+      console.log("FILE NAME:", file); 
   
       //const fileInput = document.getElementById('filepath');
       //const file = fileInput.files[0]; // Get the uploaded file
   
-    //   if (!file) {
-    //     console.error('No file selected');
-    //     return;
-    //   }
+      if (!file) {
+        console.error('No file selected');
+        return;
+      }
   /*
       const requestBody = {
         competitionData: competitionData,
@@ -138,8 +147,8 @@
       console.log("BODY:\n\n", requestBody);
   
       try {
-        const response = await fetch('http://localhost:3000/competitions/join/new', {
-          method: 'POST',
+        const response = await fetch('http://localhost:3000/competitions/join', {
+          method: 'PATCH',
           body: JSON.stringify(requestBody),
           headers: {
             'Content-Type': 'application/json',
@@ -156,7 +165,7 @@
         const data = await response.json();
   
         if (data.success) {
-          alert('Competition joined successfully!');
+          alert('Model submitted successfully!');
           window.location.href = 'http://localhost:3000/dashboard'; // Redirect to dashboard upon successful competition creation
         } else {
           alert('Error: ' + data.message);
@@ -165,7 +174,7 @@
         console.log("hi");
         console.log(error); 
         console.error('Error:', error);
-        alert('An error occurred while joining the competition. Please try again.');
+        alert('An error occurred while submitting the model. Please try again.');
       }
     }
 
