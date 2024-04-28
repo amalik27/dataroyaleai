@@ -1137,7 +1137,10 @@ async function authenticateLogin(userid, username, password){
     try {
         const user = await readUserById(userid);
         const user_name = user.username;
-        const user_password = user.password;
+        const user_password = user.password_encrypted;
+
+        console.log(user_name); 
+        console.log(user_password); 
 
         if (user_name === username && user_password === password){
             return true; 
