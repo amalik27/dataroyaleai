@@ -114,22 +114,11 @@
           </div>
           <div class="form-group">
             <label for="metrics">Metrics:</label><br>
-            <label for="speed">Speed:</label>
-            <input type="number" id="speed" name="speed" placeholder="Enter the speed metric" required>
-            <br>
-            <label for="accuracy">Accuracy:</label>
-            <input type="number" id="accuracy" name="accuracy" placeholder="Enter the accuracy metric" required>
-            <br>
-            <label for="filesize">File Size:</label>
-            <input type="number" id="filesize" name="filesize" placeholder="Enter the file size metric" required>
+            <textarea id="metrics" name="metrics" rows="2" placeholder="Enter metrics (speed, accuracy, file size) separated by commas" required></textarea>
           </div>
           <div class="form-group">
-            <label for="inputs">Inputs:</label><br>
-            <input type="text" id="inputs" name="inputs" placeholder="Enter the inputs" required>
-          </div>
-          <div class="form-group">
-            <label for="outputs">Outputs:</label><br>
-            <input type="text" id="outputs" name="outputs" placeholder="Enter the outputs" required>
+            <label for="inputs_outputs">Inputs/Outputs:</label><br>
+            <textarea id="inputs_outputs" name="inputs_outputs" rows="4" placeholder="Enter inputs and outputs separated by commas" required></textarea>
           </div>
           <div class="form-group">
             <label for="filepath">File Path:</label>
@@ -153,18 +142,13 @@
       const form = document.getElementById('createCompetitionForm');
       const formData = new FormData(form);
 
-      const metrics = {
-        speed: formData.get('speed'),
-        accuracy: formData.get('accuracy'),
-        filesize: formData.get('filesize')
-      };
+      const metrics = formData.get('metrics');
 
-      const inputs_outputs = {
-        inputs: [formData.get('inputs')],
-        outputs: [formData.get('outputs')]
-      };
+      const inputs_outputs = formData.get('inputs_outputs'); 
 
       const competitionData = {
+        username: formData.get('username'), 
+        password: formData.get('password'),
         userid: formData.get('userid'),
         title: formData.get('title'),
         deadline: formData.get('deadline'),
@@ -179,10 +163,8 @@
       const file = fileInput.files[0]; // Get the uploaded file
 
       if (file) {
-        // Add the file to formData
         formData.append('file', file);
       } else {
-        // Handle case where no file is selected
         console.error('No file selected');
         return;
       }
@@ -218,11 +200,9 @@
     }
 
     function login() {
-      // For demonstration purposes, assume login is successful
       const loggedIn = true;
 
       if (loggedIn) {
-        // Show competition creation form
         document.getElementById('competitionFormContainer').style.display = 'block';
       }
     }
