@@ -185,35 +185,38 @@ function processRequest(req, res) {
         }
     } else if (pathname === '/competitions'){
         if (req.method === 'GET') {
-            try {
-                competitionController.viewAllCompetitions()
-                    .then(competitions => {
-                        const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'view_competition.html');
-                        fs.readFile(filePath, (err, data) => {
-                            if (err) {
-                                console.error('Error loading view_competition.html:', err);
-                                res.writeHead(500);
-                                res.end('Error loading view_competition.html');
-                            } else {
-                                const htmlWithData = data.toString().replace('/*insert_competitions_here*/', JSON.stringify(competitions));
-                                res.writeHead(200, { 'Content-Type': 'text/html' });
-                                res.end(htmlWithData);
-                            }
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error retrieving competitions:', error);
-                        res.writeHead(500);
-                        res.end(JSON.stringify({ success: false, error: error.message }));
-                    });
-            } catch (error) {
-                console.error('Error retrieving competitions:', error);
-                res.writeHead(500);
-                res.end(JSON.stringify({ success: false, error: error.message }));
-            }
+            // View All Competitions
+            competitionController.viewAllCompetitions()
+            .then(allCompetitions => {
+                if (!allCompetitions || allCompetitions.length === 0) {
+                    res.writeHead(404, { 'Content-Type': 'text/plain' });
+                    res.end('Competitions not found');
+                    return;
+                }
+        
+                // Serve the HTML file with competition data inserted
+                const filePath = pathModule.join(__dirname, '../frontend/public/view_competition.html');
+                fs.readFile(filePath, (err, data) => {
+                    if (err) {
+                        console.error('Error loading view_competition.html:', err);
+                        res.writeHead(500, { 'Content-Type': 'text/plain' });
+                        res.end('Error loading view_competition.html');
+                    } else {
+                        const htmlWithData = data.toString().replace('<!-- Competitions will be dynamically inserted here -->', generateCompetitionHTML(allCompetitions));
+        
+                        res.writeHead(200, { 'Content-Type': 'text/html' });
+                        res.end(htmlWithData);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching competitions:', error);
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('Internal Server Error');
+            });
         }
     } else if (pathname === '/competitions/join') {
-        if (req.method === 'POST') {
+            if (req.method === 'POST') {
             // Join Competition
             let body = '';
 
@@ -1185,3 +1188,22 @@ function processRequest(req, res) {
 module.exports = {
     processRequest
 };
+
+function generateCompetitionHTML(competitions) {
+    let html = '';
+    competitions.forEach(competition => {
+        html += `
+            <div class="competition-card">
+                <h2>${competition.title}</h2>
+                <p><strong>Deadline:</strong> ${competition.deadline}</p>
+                <p><strong>Prize:</strong> ${competition.prize}</p>
+                <p><strong>Description:</strong> ${competition.desc}</p>
+                <p><strong>Player Capacity:</strong> ${competition.player_cap}</p>
+                <p><strong>Date Created:</strong> ${competition.date_created}</p>
+                <p><strong>File Path:</strong> ${competition.file_path}</p>
+            </div>
+        `;
+    });
+    return html;
+}
+

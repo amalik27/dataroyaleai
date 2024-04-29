@@ -13,115 +13,129 @@
       background: linear-gradient(45deg, #5c10b9, #2b6cce);
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       color: white;
     }
 
-    .container {
-      width: 80%;
-      margin-top: 20px;
+    .competition-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
-    .search-bar {
-      margin-bottom: 20px;
-    }
-
-    .competition {
-      background-color: #333;
+    .competition-card {
+      background-color: #fff;
+      color: #333;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       padding: 20px;
-      border-radius: 5px;
-      margin-bottom: 20px;
+      margin: 20px;
+      width: 300px;
     }
 
-    .competition h2 {
+    .competition-card h2 {
+      font-size: 18px;
       margin-top: 0;
     }
 
-    .competition p {
-      margin: 5px 0;
+    .competition-card p {
+      margin: 10px 0;
+    }
+
+    .search-container {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .search-input {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      margin-right: 10px;
+      width: 300px;
+    }
+
+    .search-button {
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: none;
+      background-color: #e91e63;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .search-button:hover {
+      background-color: #d81b60;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <h1>View Competitions</h1>
-    <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Search...">
-      <button onclick="searchCompetitions()">Search</button>
-    </div>
-    <div id="competitionsContainer"></div>
+  <div class="search-container">
+    <input type="text" id="searchInput" class="search-input" placeholder="Search competitions...">
+    <button onclick="searchCompetitions()" class="search-button">Search</button>
+  </div>
+
+  <div class="competition-container" id="competitionContainer">
+    <!-- Competitions will be dynamically inserted here -->
   </div>
 
   <script>
+    async function fetchCompetitions() {
+      try {
+        const response = await fetch('http://localhost:3000/competitions', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });        
+        if (!response.ok) {
+          throw new Error('Failed to fetch competitions');
+        }
+        const competitions = await response.json();
+        return competitions;
+      } catch (error) {
+        throw new Error(`Error fetching competitions: ${error.message}`);
+      }
+    }
+
+    // Function to display competitions on the page
+    async function displayCompetitions(competitions) {
+      const competitionContainer = document.getElementById('competitionContainer');
+      competitionContainer.innerHTML = ''; // Clear any existing competitions
+
+      // competitions.forEach(competition => {
+      //   const competitionCard = document.createElement('div');
+      //   competitionCard.classList.add('competition-card');
+      //   competitionCard.innerHTML = `
+      //     <h2>${competition.title}</h2>
+      //     <p><strong>Deadline:</strong> ${competition.deadline}</p>
+      //     <p><strong>Prize:</strong> ${competition.prize}</p>
+      //     <p><strong>Description:</strong> ${competition.description}</p>
+      //     <p><strong>Player Capacity:</strong> ${competition.player_cap}</p>
+      //     <p><strong>Date Created:</strong> ${competition.date_created}</p>
+      //     <p><strong>File Path:</strong> ${competition.file_path}</p>
+      //   `;
+      //   competitionContainer.appendChild(competitionCard);
+      // });
+    }
+
+    // Function to search competitions
     async function searchCompetitions() {
-      const searchInput = document.getElementById('searchInput').value;
-
-      try {
-        const competitions = await fetchCompetitions(searchInput);
-        displayCompetitions(competitions);
-      } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred while searching competitions. Please try again.');
-      }
-    }
-
-    async function fetchCompetitions(searchQuery) {
-      const response = await fetch(`/competitions?search=${searchQuery}`);
-      if (!response.ok) {
-        throw new Error('Network response was not ok.');
-      }
-      const data = await response.json();
-      return data.competitions;
-    }
-
-    function displayCompetitions(competitions) {
-      const competitionsContainer = document.getElementById('competitionsContainer');
-      competitionsContainer.innerHTML = '';
-
-      competitions.forEach(competition => {
-        const competitionElement = document.createElement('div');
-        competitionElement.classList.add('competition');
-
-        const titleElement = document.createElement('h2');
-        titleElement.textContent = competition.title;
-        competitionElement.appendChild(titleElement);
-
-        const descElement = document.createElement('p');
-        descElement.textContent = competition.desc;
-        competitionElement.appendChild(descElement);
-
-        const userIdElement = document.createElement('p');
-        userIdElement.textContent = `User ID: ${competition.userid}`;
-        competitionElement.appendChild(userIdElement);
-
-        const deadlineElement = document.createElement('p');
-        deadlineElement.textContent = `Deadline: ${competition.deadline}`;
-        competitionElement.appendChild(deadlineElement);
-
-        const prizeElement = document.createElement('p');
-        prizeElement.textContent = `Prize: ${competition.prize}`;
-        competitionElement.appendChild(prizeElement);
-
-        const metricsElement = document.createElement('p');
-        metricsElement.textContent = `Metrics: ${JSON.stringify(competition.metrics)}`;
-        competitionElement.appendChild(metricsElement);
-
-        competitionsContainer.appendChild(competitionElement);
+      const searchInput = document.getElementById('searchInput').value.toLowerCase();
+      const competitions = await fetchCompetitions();
+      const filteredCompetitions = competitions.filter(competition => {
+        return competition.title.toLowerCase().includes(searchInput) ||
+               competition.description.toLowerCase().includes(searchInput);
       });
+      displayCompetitions(filteredCompetitions);
     }
 
-    window.onload = async function () {
-      try {
-        const competitions = await fetchCompetitions('');
-        displayCompetitions(competitions);
-      } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred while loading competitions. Please try again.');
-      }
-    }
+    window.onload = () => {
+      searchCompetitions(); // Display all competitions initially
+    };
   </script>
 </body>
 
