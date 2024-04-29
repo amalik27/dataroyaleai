@@ -88,13 +88,15 @@
         const response = await fetch('http://localhost:3000/competitions', {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'text/html',
           }
         });        
         if (!response.ok) {
           throw new Error('Failed to fetch competitions');
         }
-        const competitions = await response.json();
+        console.log("here"); 
+        const competitions = await response.text();
+        console.log(competitions); 
         return competitions;
       } catch (error) {
         throw new Error(`Error fetching competitions: ${error.message}`);
@@ -106,20 +108,27 @@
       const competitionContainer = document.getElementById('competitionContainer');
       competitionContainer.innerHTML = ''; // Clear any existing competitions
 
-      // competitions.forEach(competition => {
-      //   const competitionCard = document.createElement('div');
-      //   competitionCard.classList.add('competition-card');
-      //   competitionCard.innerHTML = `
-      //     <h2>${competition.title}</h2>
-      //     <p><strong>Deadline:</strong> ${competition.deadline}</p>
-      //     <p><strong>Prize:</strong> ${competition.prize}</p>
-      //     <p><strong>Description:</strong> ${competition.description}</p>
-      //     <p><strong>Player Capacity:</strong> ${competition.player_cap}</p>
-      //     <p><strong>Date Created:</strong> ${competition.date_created}</p>
-      //     <p><strong>File Path:</strong> ${competition.file_path}</p>
-      //   `;
-      //   competitionContainer.appendChild(competitionCard);
-      // });
+      async function displayCompetitions(competitions) {
+  const competitionContainer = document.getElementById('competitionContainer');
+  competitionContainer.innerHTML = ''; // Clear any existing competitions
+
+  competitions.forEach(competition => {
+    const competitionCard = document.createElement('div');
+    competitionCard.classList.add('competition-card');
+    const titleElement = document.createElement('h2');
+    titleElement.textContent = competition.title;
+    const descriptionElement = document.createElement('p');
+    descriptionElement.textContent = competition.description;
+    
+    // Append title and description to the card
+    competitionCard.appendChild(titleElement);
+    competitionCard.appendChild(descriptionElement);
+
+    // Append the card to the container
+    competitionContainer.appendChild(competitionCard);
+  });
+}
+
     }
 
     // Function to search competitions
