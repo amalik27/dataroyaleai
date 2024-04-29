@@ -91,6 +91,16 @@ async function createCompetition (username, password, userid, title, deadline, p
             }
         }
 
+        if (!(await tierBasedPrize(userid, prize))){
+            isValidCompetition = false; 
+            errorMessage += "Tier 1 Minimum Prize: 100, Tier 2 Minimum Prize: 150, Tier 3 Minimum Prize: 200. Please check the prize amount."; 
+        }
+
+        if (!(await tierBasedCapacity(userid, cap))){
+            isValidCompetition = false; 
+            errorMessage += "Tier 1 Maximum Capacity: 100, Tier 2 Maximum Capacity: 200, Tier 3 Maximum Capacity: 500. Please check the player capacity."; 
+        }
+
 
         if (!isValidCompetition){
             return `Error creating competition: ${errorMessage}`; 
@@ -1333,17 +1343,26 @@ async function tierBasedCapacity(user_id, capacity){
         const user = await readUserById(user_id);
         const userTier = user.tier;
 
+        console.log(userTier); 
+        console.log(capacity); 
+
         if (userTier == 1){
             if (capacity > 100){
                 return false; 
+            } else {
+                return true; 
             }
         } else if (userTier == 2){
             if (capacity > 200){
                 return false; 
+            } else {
+                return true; 
             }
         } else if (userTier == 3){
             if (capacity > 500){
                 return false; 
+            } else {
+                return true; 
             }
         } else {
             return true; 
@@ -1361,14 +1380,20 @@ async function tierBasedPrize(user_id, prize){
         if (userTier == 1){
             if (prize < 100){
                 return false; 
+            } else {
+                return true; 
             }
         } else if (userTier == 2){
-            if (capacity < 150){
+            if (prize < 150){
                 return false; 
+            } else {
+                return true; 
             }
         } else if (userTier == 3){
-            if (capacity < 200){
+            if (prize < 200){
                 return false; 
+            } else {
+                return true; 
             }
         } else {
             return true; 

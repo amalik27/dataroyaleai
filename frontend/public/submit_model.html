@@ -178,13 +178,16 @@
       }
     }
 
-    function login() {
-      const loggedIn = true;
-  
-      if (loggedIn) {
-        document.getElementById('competitionFormContainer').style.display = 'block';
-      }
-    }
+  function login() {
+    const loggedIn = true;
+
+  if (loggedIn) {
+    document.getElementById('competitionFormContainer').style.display = 'block';
+    document.getElementById('loginForm').style.display = 'none'; // Hide the login form
+  }
+}
+
+
   </script>
 </body>
 
