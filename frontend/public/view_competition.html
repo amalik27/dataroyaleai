@@ -96,54 +96,84 @@
         }
         console.log("here"); 
         const competitions = await response.text();
-        console.log(competitions); 
-        return competitions;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(competitions, 'text/html');
+        const competitionTextArray = [];
+        const competitionCards = doc.querySelectorAll('.competition-card');
+
+        competitionCards.forEach(card => {
+          // Extract text content from current card
+          const cardText = card.textContent.trim(); 
+          const lines = cardText.split('\n').map(line => line.trim());
+
+          const competition = {};
+
+          const title = lines[0].trim();
+          competition['Title'] = title;
+
+          lines.slice(1).forEach(line => {
+              const [key, value] = line.split(':').map(part => part.trim());
+              if (key && value) {
+                  competition[key] = value;
+              }
+          });
+          competitionTextArray.push(competition);
+        });
+
+        console.log(competitionTextArray);
+        return competitions, competitionTextArray;
       } catch (error) {
         throw new Error(`Error fetching competitions: ${error.message}`);
       }
     }
 
     // Function to display competitions on the page
-    async function displayCompetitions(competitions) {
-      const competitionContainer = document.getElementById('competitionContainer');
-      competitionContainer.innerHTML = ''; // Clear any existing competitions
-
       async function displayCompetitions(competitions) {
-  const competitionContainer = document.getElementById('competitionContainer');
-  competitionContainer.innerHTML = ''; // Clear any existing competitions
+        const competitionContainer = document.getElementById('competitionContainer');
+        competitionContainer.innerHTML = ''; // Clear any existing competitions
 
-  competitions.forEach(competition => {
-    const competitionCard = document.createElement('div');
-    competitionCard.classList.add('competition-card');
-    const titleElement = document.createElement('h2');
-    titleElement.textContent = competition.title;
-    const descriptionElement = document.createElement('p');
-    descriptionElement.textContent = competition.description;
-    
-    // Append title and description to the card
-    competitionCard.appendChild(titleElement);
-    competitionCard.appendChild(descriptionElement);
+        competitions.forEach(competition => {
+          const competitionCard = document.createElement('div');
+          competitionCard.classList.add('competition-card');
+          const titleElement = document.createElement('h2');
+          titleElement.textContent = competition.Title;
+          const descriptionElement = document.createElement('p');
+          descriptionElement.textContent = competition.Description;
+          
+          // Append title and description to the card
+          competitionCard.appendChild(titleElement);
+          competitionCard.appendChild(descriptionElement);
 
-    // Append the card to the container
-    competitionContainer.appendChild(competitionCard);
-  });
-}
-
-    }
-
+          // Append the card to the container
+          competitionContainer.appendChild(competitionCard);
+        });
+      }
+      
     // Function to search competitions
     async function searchCompetitions() {
-      const searchInput = document.getElementById('searchInput').value.toLowerCase();
-      const competitions = await fetchCompetitions();
-      const filteredCompetitions = competitions.filter(competition => {
-        return competition.title.toLowerCase().includes(searchInput) ||
-               competition.description.toLowerCase().includes(searchInput);
-      });
-      displayCompetitions(filteredCompetitions);
-    }
-
-    window.onload = () => {
-      searchCompetitions(); // Display all competitions initially
+      const searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
+      try {
+        const competitions = await fetchCompetitions(); // Fetch competitions from server
+        const filteredCompetitions = competitions.filter(competition => {
+          // Check if search input matches title or description (case-insensitive)
+          return competition.Title.toLowerCase().includes(searchInput) ||
+                 competition.Description.toLowerCase().includes(searchInput);
+        });
+        console.log(filteredCompetitions);
+        displayCompetitions(filteredCompetitions); // Display filtered competitions
+      } catch (error) {
+        console.error(`Error searching competitions: ${error.message}`);
+        alert('Failed to search competitions. Please try again.');
+      }
+  }
+    window.onload = async () => {
+      try {
+        const competitions = await fetchCompetitions(); // Fetch all competitions initially
+        displayCompetitions(competitions); // Display all competitions on page load
+      } catch (error) {
+        console.error(`Error loading competitions: ${error.message}`);
+        alert('Failed to load competitions. Please refresh the page.');
+      }
     };
   </script>
 </body>
