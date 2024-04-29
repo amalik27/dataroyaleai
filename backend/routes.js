@@ -87,7 +87,7 @@ function processRequest(req, res) {
             res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
 
-    } else if (pathname === '/competitions/create') { // Competitions Endpoint
+    } else if (pathname === '/competitions/create') { // Competition Creation and Management
         if (req.method === 'GET') {
             // View All Competitions
             // let body = '';
@@ -183,7 +183,7 @@ function processRequest(req, res) {
             });
 
         }
-    } else if (pathname === '/competitions'){
+    } else if (pathname === '/competitions'){ // Viewing All Competitions
         if (req.method === 'GET') {
             // View All Competitions
             competitionController.viewAllCompetitions()
@@ -215,8 +215,88 @@ function processRequest(req, res) {
                 res.end('Internal Server Error');
             });
         }
-    } else if (pathname === '/competitions/join') {
-            if (req.method === 'POST') {
+    } else if (pathname === '/competitions/join/leaderboard'){ // View Leaderboard
+        // if (req.method === 'GET'){
+        //     // let body = '';
+
+        //     // req.on('data', (chunk) => {
+        //     //     body += chunk.toString();
+        //     // });
+
+        //     // req.on('end', async () => {
+        //     //     const { compid } = JSON.parse(body);
+
+        //     //     const allJoined = await competitionController.viewLeaderboard(compid);
+
+        //     //     if (!allJoined || allJoined.length == 0) {
+        //     //         res.writeHead(404, { 'Content-Type': 'application/json' });
+        //     //         res.end(JSON.stringify({ success: false, message: 'Competition does not exist/Nobody has joined this competition.' }));
+        //     //         return;
+        //     //     }
+        //     //     res.writeHead(200, { 'Content-Type': 'application/json' });
+        //     //     res.end(JSON.stringify({ success: true, message: allJoined }));
+        //     // });
+
+
+        // }
+
+        // const handleLeaderboardRequest = async () => {
+        //     if (req.method === 'GET'){
+        //         const urlParams = new URLSearchParams(req.url);
+        //         const compid = urlParams.get('compid');
+    
+        //         if (!compid) {
+        //             res.writeHead(400, { 'Content-Type': 'application/json' });
+        //             res.end(JSON.stringify({ success: false, message: 'Competition ID is required.' }));
+        //             return;
+        //         }
+    
+        //         const allJoined = await competitionController.viewLeaderboard(compid);
+    
+        //         if (!allJoined || allJoined.length == 0) {
+        //             res.writeHead(404, { 'Content-Type': 'application/json' });
+        //             res.end(JSON.stringify({ success: false, message: 'Competition does not exist/Nobody has joined this competition.' }));
+        //             return;
+        //         }
+    
+        //         res.writeHead(200, { 'Content-Type': 'application/json' });
+        //         res.end(JSON.stringify({ success: true, message: allJoined }));
+        //     } else {
+        //         res.writeHead(405, { 'Content-Type': 'application/json' });
+        //         res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
+        //     }
+        // };
+    
+        // // Call the async function
+        // handleLeaderboardRequest();
+        if (req.method === 'GET') {
+            // Parse the URL to extract query parameters
+            const queryObject = url.parse(req.url, true).query;
+            const compid = queryObject.compid;
+    
+            // Read the HTML file
+            fs.readFile('../frontend/public/view_leaderboard.html', (err, data) => {
+                if (err) {
+                    // If there's an error reading the file, send a 500 Internal Server Error response
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('Internal Server Error');
+                } else {
+                    // If the file is read successfully, replace placeholders in the HTML with compid and send it as a response
+                    const html = data.toString().replace('<!--COMPID-->', compid); // Replace placeholder with compid
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(html);
+                }
+            });
+        } else {
+            // If the method is not GET, send a 405 Method Not Allowed response
+            res.writeHead(405, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
+        }
+    
+
+    
+    } else if (pathname === '/competitions/join') { // Joining a Competition, Submitting a Model
+        if (req.method === 'POST') {
             // Join Competition
             let body = '';
 
@@ -1199,8 +1279,6 @@ function generateCompetitionHTML(competitions) {
                 <p><strong>Prize:</strong> ${competition.prize}</p>
                 <p><strong>Description:</strong> ${competition.desc}</p>
                 <p><strong>Player Capacity:</strong> ${competition.player_cap}</p>
-                <p><strong>Date Created:</strong> ${competition.date_created}</p>
-                <p><strong>File Path:</strong> ${competition.file_path}</p>
             </div>
         `;
     });

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Leaderboard</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Noto Sans JP", Arial, sans-serif;
+      background: linear-gradient(45deg, #5c10b9, #2b6cce);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .leaderboard-container {
+      text-align: center;
+    }
+
+    .leaderboard-header {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .leaderboard-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .leaderboard-item {
+      background-color: #fff;
+      color: #333;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+      width: 300px;
+      margin: 0 auto;
+    }
+
+    .leaderboard-item h2 {
+      font-size: 18px;
+      margin-top: 0;
+    }
+
+    .leaderboard-item p {
+      margin: 10px 0;
+    }
+
+    .search-container {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .search-input {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      margin-right: 10px;
+      width: 300px;
+    }
+
+    .search-button {
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: none;
+      background-color: #e91e63;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .search-button:hover {
+      background-color: #d81b60;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="leaderboard-container">
+    <h1 class="leaderboard-header">View Leaderboard</h1>
+    <div class="search-container">
+      <!-- Input field for entering the competition ID -->
+      <input type="text" id="compIdInput" class="search-input" placeholder="Enter Competition ID">
+      <!-- Button to trigger the search -->
+      <button onclick="searchLeaderboard()" class="search-button">Search</button>
+    </div>
+    <!-- Hidden input field to store the competition ID -->
+    <input type="hidden" id="compIdPlaceholder">
+    <!-- List to display the leaderboard items -->
+    <ul id="leaderboardList" class="leaderboard-list">
+      <!-- Leaderboard items will be dynamically added here -->
+    </ul>
+  </div>
+
+  <!-- JavaScript code -->
+  <script>
+    async function searchLeaderboard() {
+      const compId = document.getElementById('compIdInput').value;
+
+      const response = await fetch('http://localhost:3000/competitions/join/leaderboard?compid=' + compId, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      const leaderboardList = document.getElementById('leaderboardList');
+
+      leaderboardList.innerHTML = '';
+
+      if (data.success) {
+        data.message.forEach(item => {
+          const listItem = document.createElement('li');
+          listItem.classList.add('leaderboard-item');
+          listItem.innerHTML = `
+            <h2>User ID: ${item.user_id}</h2>
+            <p>Score: ${item.score}</p>
+          `;
+          leaderboardList.appendChild(listItem);
+        });
+      } else {
+        const listItem = document.createElement('li');
+        listItem.classList.add('leaderboard-item');
+        listItem.textContent = data.message;
+        leaderboardList.appendChild(listItem);
+      }
+    }
+  </script>
+</body>
+
+</html>

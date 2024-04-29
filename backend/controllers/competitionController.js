@@ -1338,6 +1338,12 @@ function emptyFolder(filepath) {
 }
 
 
+/**
+ * Restrict capacity amounts based on tier.
+ * @author @deshnadoshi
+ * @param {*} user_id user ID. 
+ * @param {*} capacity Competition capacity. 
+ */
 async function tierBasedCapacity(user_id, capacity){
     try {
         const user = await readUserById(user_id);
@@ -1372,6 +1378,12 @@ async function tierBasedCapacity(user_id, capacity){
     }
 }
 
+/**
+ * Restrict prize money amounts based on tier. 
+ * @author @deshnadoshi
+ * @param {*} user_id user ID. 
+ * @param {*} prize Prize amount. 
+ */
 async function tierBasedPrize(user_id, prize){
     try {
         const user = await readUserById(user_id);
