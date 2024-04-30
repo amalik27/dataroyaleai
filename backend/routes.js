@@ -895,9 +895,9 @@ async function processRequest(req, res){
                 try {
                     console.log(body);
                     const { message, api_token } = JSON.parse(body);
-                    if (!message) {
+                    if (!message || !api_token || !message.body || !message.body.processID || !message.type) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
-                        res.end('Message is required.');
+                        res.end('Complete message and api token are required.');
                         return;
                     }
                     if(!(await Prometheus.database.validateUserAPIKey(api_token))){
@@ -958,9 +958,9 @@ async function processRequest(req, res){
             req.on('end', async () => {
                 try {
                     const { message, api_token} = JSON.parse(postData);
-                    if (!message || !message.processID || !message.body) {
+                    if (!message || !message.processID || !message.body|| !api_token) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
-                        res.end('Complete message with processID and body is required.');
+                        res.end('Complete message with processID, api token, and body is required.');
                         return;
                     }
                     if(!(await Prometheus.database.validateUserAPIKey(api_token))){
@@ -969,7 +969,9 @@ async function processRequest(req, res){
                         return;
                     }
                     const { processID, body } = message;
-                    const { cpus, memory, containerID, model } = body;
+                    let { cpus, memory, containerID, model } = body;
+                    cpus = parseFloat(cpus);
+                    memory = parseFloat(memory);
                     const container = new Container(cpus, memory, containerID, model);
                     console.log(container.toString());
                     Prometheus.initializeContainer(processID, container);
@@ -1008,6 +1010,13 @@ async function processRequest(req, res){
                     }
                     await Prometheus.database.checkUserCredits(processID);
                     console.log(`Forwarding request to container ${containerID} for process ${processID}.`);
+                    const health = await Prometheus.healthCheck(processID, containerID);
+                    if (!(health.status==="healthy")) {
+                        res.writeHead(500, { 'Content-Type': 'text/plain' });
+                        res.end('500 Internal Server Error: Container is not healthy.');
+                        return;
+                    }
+
                     const data = await Prometheus.forward(processID, containerID, body);
                     console.log(data);
                     await Prometheus.database.deductUserCredits(processID);
@@ -1041,8 +1050,6 @@ async function processRequest(req, res){
         }
     }
     else if (pathname.includes("/prometheus/updatePublishedStatus")) {
-        const updateRegex = /\/manager\/updatePublishedStatus(?:\?.*?)?/;
-        const match = path.match(updateRegex);
         if (req.method === 'POST') {
             let body = '';
             req.on('data', chunk => {
@@ -1092,7 +1099,7 @@ async function processRequest(req, res){
             req.on('end', async () => {
                 try {
                     const { processID,api_token } = JSON.parse(body);
-                    if (!processID) {
+                    if (!processID|| !api_token) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Process ID is required.');
                         return;
@@ -1105,6 +1112,38 @@ async function processRequest(req, res){
                     Prometheus.killProcessDaemon(processID);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
                     res.end('Process killed.');
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/prometheus/containerKill")) {
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                try {
+                    const { processID, containerID ,api_token } = JSON.parse(body);
+                    if (!processID || !containerID || !api_token) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Process ID, Container ID, and api key are required.');
+                        return;
+                    }
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
+                        return;
+                    }
+                    Prometheus.killContainer(processID,containerID);
+                    res.writeHead(200, { 'Content-Type': 'text/plain' });
+                    res.end('Container killed.');
                 } catch (error) {
                     res.writeHead(500, { 'Content-Type': 'text/plain' });
                     res.end('500 Internal Server Error: ' + error.message);
