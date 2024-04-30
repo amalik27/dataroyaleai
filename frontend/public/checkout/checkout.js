@@ -46,7 +46,7 @@ async function handleSubmit(e) {
     elements,
     confirmParams: {
       // TODO: Change to the actual finished page
-      return_url: "http://127.0.0.1:5500/frontend/public/checkout/checkout.html",
+      return_url: "http://127.0.0.1:5500/frontend/public/checkout/purchase.html",
     },
   });
 
