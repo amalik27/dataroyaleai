@@ -83,6 +83,7 @@ function processRequest(req, res){
                     res.end(JSON.stringify({ success: false, message: 'Error creating payment intent' }));
                     return;
                 }
+                //await notificationUtils.send_mail("mgrimalovsky@gmail.com ", "Data Royale Team", "mgrimalovsky@gmail.com", "Matthew Grimalovsky", "Order Submitted", "Test Notification", "<center><h1>Thank you for your purchase.</h1><br/><h3>To view your receipt, click <a href='#'>here</a></h3></center>")
                 res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'});
                 res.end(JSON.stringify({ success: true, message: payment_intent})); //store in user window or in cookies
             });
