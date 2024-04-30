@@ -11,6 +11,7 @@ const userController = require('./controllers/userController');
 const competitionController = require('./controllers/competitionController'); 
 const courseController = require('./controllers/courseController');
 const paymentController = require('./controllers/paymentController');
+const creditController = require('./controllers/creditController');
 
 const subscriptionController = require('./controllers/subscriptionController');
 const { parse } = require('querystring');
@@ -593,7 +594,81 @@ function processRequest(req, res){
             res.end('Method Not Allowed');
           }
       
-    } //api platform
+    } //addcredits
+    else if (pathname.includes("/addCredits")) {
+        if (req.method === 'PATCH') {
+            const contentType = req.headers['content-type'];
+            if (!contentType) {
+                res.writeHead(400, { 'Content-Type': 'text/plain' });
+                return res.end('Content-Type header is required');
+            }
+            if (contentType !== 'application/json') {
+                res.writeHead(415, { 'Content-Type': 'text/plain' });
+                return res.end(`Unsupported Content-Type. Supported type: application/json`);
+            }
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+    
+            req.on('end', async () => {
+                try {
+                    // const parsedInput = JSON.parse(input);
+                    // let user10 = new Object;
+                    // user10.id = parsedInput.id;
+                    // user10.cost = parsedInput.credits;
+                    const message = await creditController.addCredits(body);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ message }));
+                    
+                } catch (error) {
+                    console.error(error);
+                    res.writeHead(400, { 'Content-Type': 'text/plain' });
+                    res.end('Error parsing the request body');
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end(`Method ${req.method} not allowed. Supported method: PATCH`);
+        }
+    } //subcredits
+    else if (pathname.includes("/subCredits")) {
+        if (req.method === 'PATCH') {
+            const contentType = req.headers['content-type'];
+            if (!contentType) {
+                res.writeHead(400, { 'Content-Type': 'text/plain' });
+                return res.end('Content-Type header is required');
+            }
+            if (contentType !== 'application/json') {
+                res.writeHead(415, { 'Content-Type': 'text/plain' });
+                return res.end(`Unsupported Content-Type. Supported type: application/json`);
+            }
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+    
+            req.on('end', async () => {
+                try {
+                    // const parsedInput = JSON.parse(input);
+                    // let user10 = new Object;
+                    // user10.id = parsedInput.id;
+                    // user10.cost = parsedInput.credits;
+                    const message = await creditController.subtractCredits(body);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ message }));
+                    
+                } catch (error) {
+                    console.error(error);
+                    res.writeHead(400, { 'Content-Type': 'text/plain' });
+                    res.end('Error parsing the request body');
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end(`Method ${req.method} not allowed. Supported method: PATCH`);
+        }
+    }//api platform
     else if (pathname.includes("/prometheus/displayUsage")) {
         const displayUsageRegex = /\/manager\/displayUsage(?:\?.*?)?/;
         const match = path.match(displayUsageRegex);

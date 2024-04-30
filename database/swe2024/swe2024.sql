@@ -98,8 +98,8 @@ CREATE TABLE IF NOT EXISTS`subscription_database` (
   `id` int(30) NOT NULL,
   `user` varchar(30) NOT NULL,
   `email` varchar(30) NOT NULL,
-  `purchase_date` datetime NOT NULL,
-  `expire_date` datetime NOT NULL,
+  `purchase_date` datetime,
+  `expire_date` datetime,
   `tier` int(30) NOT NULL,
   `cost` int(30) NOT NULL,
   `credits` int(30) NOT NULL,
@@ -107,10 +107,8 @@ CREATE TABLE IF NOT EXISTS`subscription_database` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `subscription_database` (`id`, `user`, `email`, `purchase_date`, `expire_date`, `tier`, `cost`, `credits`, `api_token`) VALUES
-(1, 'user1', 'test1@gmail.com', '20240318T002458', '20240418T002458', 1, 100, 375, `VvVmzazIy3UPf3km`),
-(2, 'user2', 'test2@gmail.com', '20240317T204601', '20240417T204601', 1, 100, 250, `2ho5qDRPFO99FtAm`),
-(3, 'user3', 'test3@gmail.com', '20240314T200000', '20250314T200000', 1, 1000, 300, `JkOWIiSUOnaDDL7Z`);
-COMMIT;
+(1, 'user1', 'test1@gmail.com', '20240318T002458', '20240418T002458', 1, 100, 2200, 'VvVmzazIy3UPf3km'),
+(3, 'user3', 'test3@gmail.com', '20240314T200000', '20250314T200000', 1, 1000, 50, 'JkOWIiSUOnaDDL7Z');
 
 -- --------------------------------------------------------
 
@@ -157,8 +155,8 @@ CREATE TABLE IF NOT EXISTS`users` (
 
 
 INSERT INTO `users` (`id`, `username`, `email`, `salt`, `password_encrypted`, `role`, `tier`, `credits`, `reg_date`, `api_token`) VALUES
-(1, 'user1', 'test1@gmail.com', '7obtPxa5i4KG7rsA', 'e427aa220500aec74cdfc054c8e61d963d6d68dfb9deb6ae0dbff384d1f6d56b', 'competitor', 1, 50, '2024-04-01 08:15:17', 'VvVmzazIy3UPf3km'),
-(2, 'user2', 'test2@gmail.com', 'z70G5WVZSWCzLl7z', '7b2a429be0a5ea37326b2e4a892aa0bc34a517f0b7be0f97ddb6a8db7113b7e3', 'competitor', 1, 50, '2024-04-01 08:17:04', '2ho5qDRPFO99FtAm'),
+(1, 'user1', 'test1@gmail.com', '7obtPxa5i4KG7rsA', 'e427aa220500aec74cdfc054c8e61d963d6d68dfb9deb6ae0dbff384d1f6d56b', 'competitor', 1, 2200, '2024-04-01 08:15:17', 'VvVmzazIy3UPf3km'),
+(2, 'user2', 'test2@gmail.com', 'z70G5WVZSWCzLl7z', '7b2a429be0a5ea37326b2e4a892aa0bc34a517f0b7be0f97ddb6a8db7113b7e3', 'competitor', 1, 200, '2024-04-01 08:17:04', '2ho5qDRPFO99FtAm'),
 (3, 'user3', 'test3@gmail.com', 'Qzkh3LAHsjliAhCI', 'a70a6bc6517d94c0446af8e5d69d5ee45279d8c84d9fd686e474a75130432aa2', 'competitor', 1, 50, '2024-04-01 08:17:58', 'JkOWIiSUOnaDDL7Z');
 
 -- --------------------------------------------------------
