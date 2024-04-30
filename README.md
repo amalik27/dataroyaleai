@@ -21,4 +21,3 @@ Group Project for SWE
 
 ## Note
 All worries, complaints, errors, annoyances, and tribulations will only be accepted in written form.
-yo
