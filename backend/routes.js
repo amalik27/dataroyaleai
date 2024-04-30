@@ -574,12 +574,6 @@ function processRequest(req, res){
         
             req.on('end', async () => {
               try {
-                // let parsedBody;
-                // if (contentType === 'application/json') {
-                //   parsedBody = JSON.parse(body);
-                // } else if (contentType === 'text/plain') {
-                //   parsedBody = body;
-                // }
                 var output = await subscriptionController.selectOption(body, req, res);
                 res.writeHead(200, { 'Content-Type': contentType });
                 res.end(output);
@@ -613,10 +607,6 @@ function processRequest(req, res){
     
             req.on('end', async () => {
                 try {
-                    // const parsedInput = JSON.parse(input);
-                    // let user10 = new Object;
-                    // user10.id = parsedInput.id;
-                    // user10.cost = parsedInput.credits;
                     const message = await creditController.addCredits(body);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ message }));
@@ -650,10 +640,6 @@ function processRequest(req, res){
     
             req.on('end', async () => {
                 try {
-                    // const parsedInput = JSON.parse(input);
-                    // let user10 = new Object;
-                    // user10.id = parsedInput.id;
-                    // user10.cost = parsedInput.credits;
                     const message = await creditController.subtractCredits(body);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ message }));
