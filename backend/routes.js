@@ -83,12 +83,11 @@ function processRequest(req, res){
                     res.end(JSON.stringify({ success: false, message: 'Error creating payment intent' }));
                     return;
                 }
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: payment_intent.id})); //store in user window or in cookies
+                res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'});
+                res.end(JSON.stringify({ success: true, message: payment_intent})); //store in user window or in cookies
             });
         
         } else {
-            res.writeHead(405, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
 

@@ -33,6 +33,7 @@ async function createPaymentIntent(credits, id, currency) {
             amount: getOrderAmount(credits),
             currency: currency,
         });
+        console.log(paymentIntent.client_secret)
         return paymentIntent;
     } catch (err) {
         console.log(err)
