@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Leaderboard</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Noto Sans JP", Arial, sans-serif;
+      background: linear-gradient(45deg, #5c10b9, #2b6cce);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .leaderboard-container {
+      text-align: center;
+    }
+
+    .leaderboard-header {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .leaderboard-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .leaderboard-item {
+      background-color: #fff;
+      color: #333;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+      width: 300px;
+      margin: 0 auto;
+    }
+
+    .leaderboard-item h2 {
+      font-size: 18px;
+      margin-top: 0;
+    }
+
+    .leaderboard-item p {
+      margin: 10px 0;
+    }
+
+    .search-container {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .search-input {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      margin-right: 10px;
+      width: 300px;
+    }
+
+    .search-button {
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: none;
+      background-color: #e91e63;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .search-button:hover {
+      background-color: #d81b60;
+    }
+
+    .submission-card {
+      background-color: #fff;
+      color: #333;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin: 20px;
+      width: 300px;
+    }
+  </style>
+</head>
+
+<body>
+    <h1 class="leaderboard-header">View Leaderboard</h1>
+    <div class="search-container">
+      <!-- Input field for entering the competition ID -->
+      <input type="text" id="compIdInput" class="search-input" placeholder="Enter Competition ID">
+      <!-- Button to trigger the search -->
+      <button onclick="searchLeaderboard()" class="search-button">Search</button>
+    </div>
+
+    <div class="leaderboard-container" id="leaderboardContainer">
+      <!-- Leaderboard items will be dynamically added here -->
+    </div>
+    
+
+  <!-- JavaScript code -->
+  <script>
+    async function searchLeaderboard() {
+      const compId = document.getElementById('compIdInput').value;
+      const response = await fetch('http://localhost:3000/competitions/join/leaderboard', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/html'
+        }, 
+        body: compId
+      });
+      const submissions = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(submissions, 'text/html');
+      const submissionTextArray = [];
+      const submissionCards = doc.querySelectorAll('.submission-card');
+
+      submissionCards.forEach(submission => {
+        // Extract text content from current card
+        const cardText = submission.textContent.trim(); 
+        const lines = cardText.split('\n').map(line => line.trim());
+
+        const sub = {};
+
+        lines.forEach(line => {
+            const [key, value] = line.split(':').map(part => part.trim());
+            if (key && value) {
+                sub[key] = value;
+            }
+        });
+        submissionTextArray.push(sub);
+      });
+
+      console.log(submissionTextArray);
+      displayLeaderboard(submissionTextArray);
+
+    }
+
+    async function displayLeaderboard(leaderboard) {
+        const leaderboardContainer = document.getElementById('leaderboardContainer');
+        leaderboardContainer.innerHTML = ''; // Clear any existing leaderboard
+        console.log(leaderboard);
+        leaderboard.forEach(submission => {
+          console.log(submission);
+          const leaderboardCard = document.createElement('div');
+          leaderboardCard.classList.add('submission-card');
+          const useridElement = document.createElement('p');
+          useridElement.textContent = "User ID: " + submission.UserID;
+          const scoreElement = document.createElement('p');
+          scoreElement.textContent = "Score: " + submission.Score;
+          
+          // Append title and description to the card
+          leaderboardCard.appendChild(useridElement);
+          leaderboardCard.appendChild(scoreElement);
+
+          // Append the card to the container
+          leaderboardContainer.appendChild(leaderboardCard);
+        });
+      }
+
+    window.onload = async () => {
+      try {
+        //const competitions = await fetchCompetitions(); // Fetch all competitions initially
+        //displayCompetitions(competitions); // Display all competitions on page load
+      } catch (error) {
+        //console.error(`Error loading competitions: ${error.message}`);
+        //alert('Failed to load competitions. Please refresh the page.');
+      }
+    };
+  </script>
+</body>
+
+</html>
