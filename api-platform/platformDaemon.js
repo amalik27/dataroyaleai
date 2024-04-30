@@ -172,11 +172,11 @@ class PlatformDaemon extends EventEmitter{
     // Check if the containerID is present in the portMap
     if (this.portMap.has(Number(containerID))) {
         // Return the port assigned to the containerID
-        console.log(this.portMap.get(Number(containerID)))
+        //console.log(this.portMap.get(Number(containerID)))
         return this.portMap.get(Number(containerID));
     } else {
         // Throw an error if the containerID is not found in the portMap
-        throw new Error(`Container ID ${containerID} not found in port mapping.`);
+        throw new Error(`Container ID ${containerID} not found in port mapping. Port Mapping: ${Array.from(this.portMap.entries())}`);
     }
   }
 
@@ -231,14 +231,14 @@ class PlatformDaemon extends EventEmitter{
     console.log(port);
     
     // Running the Docker container
-    let runResult = shell.exec(`docker run -d --memory=${container.memory}m --cpus=${container.cpu} -p ${port}:${STARTING_PORT} --network=swe2024_my-bridge-network ${container.containerID} `, { silent: silent });
+    let runResult = shell.exec(`docker run -d --memory=${Number(container.memory).toFixed(3)}m --cpus=${Number(container.cpu).toFixed(3)} -p ${port}:${STARTING_PORT} --network=swe2024_my-bridge-network ${container.containerID} `, { silent: silent });
     if (runResult.code !== 0) {
       throw new Error(chalk.red(`Failed to start container ${container.containerID} with exit code ${runResult.code}: ${runResult.stderr}`));
     }
 
   
     console.log(`${container.containerID} running image ${container.model} is listening on port ${port} with memory cap ${container.memory}m with cpu availability ${container.cpu}. | Build and run exit codes were ${buildResult.code} and ${runResult.code}.`);
-    console.log(`Remaining Resources - CPU: ${(this.containerStack.getMaxCPU() - this.containerStack.getCurrentCPU()).toFixed(2)}, Memory: ${(this.containerStack.getMaxMemory() - this.containerStack.getCurrentMemory()).toFixed(2)} MB. ContainerStack length: ${this.containerStack.stack.length.toString()}`);
+    console.log(`Remaining Resources - CPU: ${Number(this.containerStack.getMaxCPU() - this.containerStack.getCurrentCPU()).toFixed(2)}, Memory: ${Number(this.containerStack.getMaxMemory() - this.containerStack.getCurrentMemory()).toFixed(2)} MB. ContainerStack length: ${this.containerStack.stack.length.toString()}`);
 
   }
 
@@ -254,7 +254,7 @@ class PlatformDaemon extends EventEmitter{
           }
           shell.exec(`docker inspect --format='{{json .State.Health.Status}}' ${containerID}`, { silent: silent }, (inspectCode, inspectStdout, inspectStderr) => {
             if (inspectCode !== 0 || inspectStderr) {
-              reject(new Error(`Error inspecting container: ${inspectStderr || 'Unknown error'} stdout: ${inspectStdout}`));
+              reject(new Error(`Error inspecting container with code ${inspectCode}: ${inspectStderr || 'Unknown error'} stdout: ${inspectStdout}`));
             } else {
               // Parse the health status
               const status = inspectStdout.trim().replace(/^"|"$/g, ''); // Remove surrounding quotes
@@ -365,9 +365,9 @@ class PlatformDaemon extends EventEmitter{
       }
       //Get container name from docker ps as json converted
       let containerName  = shell.exec(`docker ps | grep ${containerID} | awk '{print $NF}'`,{ silent: true }).trim();
-      console.log(containerName);
+      //console.log(containerName);
       let address = shell.exec(`docker network inspect swe2024_my-bridge-network --format '{{range .Containers}}{{if eq .Name "${containerName}"}}{{.IPv4Address}}{{end}}{{end}}' | cut -d'/' -f1`, { silent: true }).trim();
-      console.log(address);
+      //console.log(address, port);
 
       const options = {
         hostname: address,

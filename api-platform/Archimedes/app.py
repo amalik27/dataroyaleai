@@ -8,11 +8,11 @@ app = Flask(__name__)
 def calculate_hypotenuse():
     time.sleep(2) #Pretend it is a long calculation
     data = request.get_json()
-    r = data['r']
-    g = data['g']
-    v = data['v']
+    r = data['r <number>']
+    g = data['g <number>']
+    v = data['v <number>']
     F = -1*r*g*v
-    return jsonify({"Buoyant Force": F}), 200
+    return jsonify({"Buoyant Force <number>": F}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)

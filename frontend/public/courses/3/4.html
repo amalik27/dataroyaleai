@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lesson 1: Introduction to Datasets</title>
+    <title>Lesson 4: Introduction to AI Models</title>
     <meta name="course-id" content="3">
     <meta name="course-name" content="Introduction to Datasets">
     <meta name="course-description" content="This course will introduce you to the basics of Datasets.">
@@ -48,6 +48,7 @@
             text-decoration: none;
             margin-top: 20px;
             display: inline-block;
+            margin-right: 10px;
         }
 
         .btn:hover {
@@ -58,34 +59,45 @@
 
 <body>
     <div class="lesson-container">
-        <h1>Lesson 1: Introduction to Datasets</h1>
-        <p>Welcome to Lesson 1 of our course on AI models!</p>
-        <p>In this lesson, we'll cover the basics of datasets and their significance in machine learning and AI.</p>
-        <p>A dataset is a collection of data, often organized in a structured format, used for training, testing, and
-            validating machine learning models.</p>
-        <p>The quality and size of the dataset greatly influence the performance and accuracy of AI models. High-quality
-            datasets ensure better generalization and robustness of models.</p>
-        <p>Datasets can be categorized into various types based on their sources, formats, and characteristics. Common
-            types include:</p>
+        <h1>Lesson 4: Introduction to AI Models</h1>
+        <p>Now that we've covered the basics, let's explore various AI models used in different applications.</p>
+        <p>AI models are mathematical representations of real-world processes that enable computers to make predictions
+            or decisions.</p>
+        <p>Decision trees are a type of AI model used for classification and regression tasks. They partition the input
+            space into regions and make predictions based on the majority class or average value within each region.</p>
+        <p>Support vector machines are another type of AI model used for classification and regression. They find the
+            optimal hyperplane that separates the input data into different classes or predicts continuous outcomes.</p>
+        <p>Other popular AI models include k-nearest neighbors, naive Bayes, and random forests, each with its strengths
+            and weaknesses.</p>
+        <p>Understanding AI models is essential for selecting the appropriate model for a given task and optimizing its
+            performance.</p>
+        <p>In addition to exploring AI models, let's dive deeper into datasets, understanding their role and importance
+            in the development and evaluation of AI models:</p>
         <ul>
-            <li><strong>Structured Datasets:</strong> Data organized into a tabular format with rows and columns, such
-                as CSV files, databases, and spreadsheets.</li>
-            <li><strong>Unstructured Datasets:</strong> Data that lacks a predefined structure, such as text documents,
-                images, audio, and video files.</li>
-            <li><strong>Semi-Structured Datasets:</strong> Data that does not conform to a strict structure but has some
-                organization, like JSON, XML, and HTML files.</li>
+            <li><strong>Data Collection:</strong> Strategies for collecting diverse and representative datasets to
+                ensure model generalization and robustness.</li>
+            <li><strong>Data Labeling:</strong> Techniques for annotating and labeling data to provide supervision for
+                supervised learning tasks.</li>
+            <li><strong>Data Bias:</strong> Identification and mitigation of bias in datasets to prevent unfair or
+                discriminatory model behavior.</li>
+            <li><strong>Data Privacy:</strong> Considerations for handling sensitive or personal data in compliance with
+                privacy regulations and ethical standards.</li>
         </ul>
-        <p>Access to diverse and comprehensive datasets is crucial for training AI models across different domains and
-            applications.</p>
-        <p>Throughout this course, we'll explore various datasets used in AI projects and understand how they contribute
-            to model development and evaluation.</p>
-        <button class="btn" id="lesson2">Proceed to Lesson 2</button>
-        <button class="btn" id="backToDashboard">Back to Dashboard</button>
+        <p>By understanding these aspects of datasets, AI practitioners can effectively leverage data to build reliable
+            and ethical AI models.</p>
+        <p>
+            <button class="btn" id="lesson3">Go back to Lesson 3</button>
+            <button class="btn" id="lesson5">Proceed to Lesson 5</button>
+            <button class="btn" id="backToDashboard">Go back to Dashboard</button>
     </div>
 
     <script>
-        document.getElementById("lesson2").addEventListener("click", function (event) {
-            handleLessonLinkClick(event, 2);
+        document.getElementById("lesson3").addEventListener("click", function (event) {
+            handleLessonLinkClick(event, 3);
+        });
+
+        document.getElementById("lesson5").addEventListener("click", function (event) {
+            handleLessonLinkClick(event, 5);
         });
 
         document.getElementById("backToDashboard").addEventListener("click", function (event) {
@@ -114,7 +126,7 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Course progress updated susccessfully:', data);
+                    console.log('Course progress updated successfully:', data);
                     window.location.href = url;
                 })
                 .catch(error => {
