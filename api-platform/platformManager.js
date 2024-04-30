@@ -723,6 +723,11 @@ class DatabaseSystem {
         try {
             const results = await this.query(query);
             console.log(results);
+            //Convert each RowDataPacket into object
+            results.forEach((row, index) => {
+                results[index] = { submission_id: row.submission_id, user_id: row.user_id };
+            });
+            console.log(results);
             return results;
         } catch (err) {
             console.error('Failed to retrieve published submissions:', err);

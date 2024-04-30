@@ -231,14 +231,14 @@ class PlatformDaemon extends EventEmitter{
     console.log(port);
     
     // Running the Docker container
-    let runResult = shell.exec(`docker run -d --memory=${container.memory.toPrecision(3)}m --cpus=${container.cpu.toPrecision(3)} -p ${port}:${STARTING_PORT} --network=swe2024_my-bridge-network ${container.containerID} `, { silent: silent });
+    let runResult = shell.exec(`docker run -d --memory=${Number(container.memory).toFixed(3)}m --cpus=${Number(container.cpu).toFixed(3)} -p ${port}:${STARTING_PORT} --network=swe2024_my-bridge-network ${container.containerID} `, { silent: silent });
     if (runResult.code !== 0) {
       throw new Error(chalk.red(`Failed to start container ${container.containerID} with exit code ${runResult.code}: ${runResult.stderr}`));
     }
 
   
     console.log(`${container.containerID} running image ${container.model} is listening on port ${port} with memory cap ${container.memory}m with cpu availability ${container.cpu}. | Build and run exit codes were ${buildResult.code} and ${runResult.code}.`);
-    console.log(`Remaining Resources - CPU: ${(this.containerStack.getMaxCPU() - this.containerStack.getCurrentCPU()).toFixed(2)}, Memory: ${(this.containerStack.getMaxMemory() - this.containerStack.getCurrentMemory()).toFixed(2)} MB. ContainerStack length: ${this.containerStack.stack.length.toString()}`);
+    console.log(`Remaining Resources - CPU: ${Number(this.containerStack.getMaxCPU() - this.containerStack.getCurrentCPU()).toFixed(2)}, Memory: ${Number(this.containerStack.getMaxMemory() - this.containerStack.getCurrentMemory()).toFixed(2)} MB. ContainerStack length: ${this.containerStack.stack.length.toString()}`);
 
   }
 

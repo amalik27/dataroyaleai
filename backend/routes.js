@@ -14,7 +14,7 @@ const paymentController = require('./controllers/paymentController');
 const subscriptionController = require('./controllers/subscriptionController');
 const { parse } = require('querystring');
 
-const { PlatformDaemonManager, getSystemState } = require('../api-platform/platformManager.js');
+const { Prometheus, PlatformDaemonManager, getSystemState } = require('../api-platform/platformManager.js');
 const { Athena, AthenaManager } = require('../api-platform/athenaManager.js');
 const { Container } = require('../api-platform/platformDaemon');
 var chalk = require(`chalk`);
@@ -791,9 +791,9 @@ async function processRequest(req, res){
         const match = path.match(submissionsRegex);
         if (req.method === 'GET') {
             try {
-                const models =Prometheus.database.getAllModels();
+                const models = await Prometheus.database.getAllPublishedSubmissions();
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(submissions));
+                res.end(JSON.stringify(models));
             } catch (error) {
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
                 res.end('500 Internal Server Error: ' + error.message);
