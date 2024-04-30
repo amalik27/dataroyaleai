@@ -959,110 +959,110 @@ async function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/athena/database")) {
-        const databaseRegex = /\/athena\/database(?:\?.*?)?/;
-        const match = path.match(databaseRegex);
-        if (req.method === 'GET') {
-            try {
-                const dbState = Athena.databaseSystem.getDBState();
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(dbState));
-            } catch (error) {
-                res.writeHead(500, { 'Content-Type': 'text/plain' });
-                res.end('500 Internal Server Error: ' + error.message);
-            }
-        } else {
-            res.writeHead(405, { 'Content-Type': 'text/plain' });
-            res.end('405 Method Not Allowed');
-        }
-    }
-    else if (pathname.includes("/athena/database/addCompetition")) {
-        const addCompetitionRegex = /\/athena\/database\/addCompetition(?:\?.*?)?/;
-        const match = path.match(addCompetitionRegex);
-        if (req.method === 'POST') {
-            let body = '';
-            req.on('data', (chunk) => {
-                body += chunk.toString();
-            });
-            req.on('end', () => {
-                try {
-                    const { competitionID, competitionName, competitionDescription, competitionDataset } = JSON.parse(body);
-                    if (!competitionID || !competitionName || !competitionDescription || !competitionDataset) {
-                        res.writeHead(400, { 'Content-Type': 'text/plain' });
-                        res.end('Competition ID, name, description, and dataset are required.');
-                        return;
-                    }
-                    Athena.databaseSystem.createCompetition(competitionID, competitionName, competitionDescription, competitionDataset);
-                    res.writeHead(200, { 'Content-Type': 'text/plain' });
-                    res.end('Competition added.');
-                } catch (error) {
-                    res.writeHead(500, { 'Content-Type': 'text/plain' });
-                    res.end('500 Internal Server Error: ' + error.message);
-                }
-            });
-        } else {
-            res.writeHead(405, { 'Content-Type': 'text/plain' });
-            res.end('405 Method Not Allowed');
-        }
-    }
-    else if (pathname.includes("/athena/database/addUserSubmission")) {
-        const addUserSubmissionRegex = /\/athena\/database\/addUserSubmission(?:\?.*?)?/;
-        const match = path.match(addUserSubmissionRegex);
-        if (req.method === 'POST') {
-            let body = '';
-            req.on('data', (chunk) => {
-                body += chunk.toString();
-            });
-            req.on('end', () => {
-                try {
-                    const { competitionID, userID, filePath } = JSON.parse(body);
-                    if (!competitionID || !userID || !filePath) {
-                        res.writeHead(400, { 'Content-Type': 'text/plain' });
-                        res.end('Competition ID, user ID, and file path are required.');
-                        return;
-                    }
-                    Athena.databaseSystem.addUserSubmission(competitionID, userID, filePath);
-                    res.writeHead(200, { 'Content-Type': 'text/plain' });
-                    res.end('User submission added.');
-                } catch (error) {
-                    res.writeHead(500, { 'Content-Type': 'text/plain' });
-                    res.end('500 Internal Server Error: ' + error.message);
-                }
-            });
-        } else {
-            res.writeHead(405, { 'Content-Type': 'text/plain' });
-            res.end('405 Method Not Allowed');
-        }
-    }
-    else if (pathname.includes("/athena/database/addScoreToLeaderboard")) {
-        const addScoreToLeaderboardRegex = /\/athena\/database\/addScoreToLeaderboard(?:\?.*?)?/;
-        const match = path.match(addScoreToLeaderboardRegex);
-        if (req.method === 'POST') {
-            let body = '';
-            req.on('data', (chunk) => {
-                body += chunk.toString();
-            });
-            req.on('end', () => {
-                try {
-                    const { competitionID, userID, score } = JSON.parse(body);
-                    if (!competitionID || !userID || !score) {
-                        res.writeHead(400, { 'Content-Type': 'text/plain' });
-                        res.end('Competition ID, user ID, and score are required.');
-                        return;
-                    }
-                    Athena.databaseSystem.addScoreToLeaderboard(competitionID, userID, score);
-                    res.writeHead(200, { 'Content-Type': 'text/plain' });
-                    res.end('Score added to leaderboard.');
-                } catch (error) {
-                    res.writeHead(500, { 'Content-Type': 'text/plain' });
-                    res.end('500 Internal Server Error: ' + error.message);
-                }
-            });
-        } else {
-            res.writeHead(405, { 'Content-Type': 'text/plain' });
-            res.end('405 Method Not Allowed');
-        }
-    }
+    // else if (pathname.includes("/athena/database")) {
+    //     const databaseRegex = /\/athena\/database(?:\?.*?)?/;
+    //     const match = path.match(databaseRegex);
+    //     if (req.method === 'GET') {
+    //         try {
+    //             const dbState = Athena.databaseSystem.getDBState();
+    //             res.writeHead(200, { 'Content-Type': 'application/json' });
+    //             res.end(JSON.stringify(dbState));
+    //         } catch (error) {
+    //             res.writeHead(500, { 'Content-Type': 'text/plain' });
+    //             res.end('500 Internal Server Error: ' + error.message);
+    //         }
+    //     } else {
+    //         res.writeHead(405, { 'Content-Type': 'text/plain' });
+    //         res.end('405 Method Not Allowed');
+    //     }
+    // }
+    // else if (pathname.includes("/athena/database/addCompetition")) {
+    //     const addCompetitionRegex = /\/athena\/database\/addCompetition(?:\?.*?)?/;
+    //     const match = path.match(addCompetitionRegex);
+    //     if (req.method === 'POST') {
+    //         let body = '';
+    //         req.on('data', (chunk) => {
+    //             body += chunk.toString();
+    //         });
+    //         req.on('end', () => {
+    //             try {
+    //                 const { competitionID, competitionName, competitionDescription, competitionDataset } = JSON.parse(body);
+    //                 if (!competitionID || !competitionName || !competitionDescription || !competitionDataset) {
+    //                     res.writeHead(400, { 'Content-Type': 'text/plain' });
+    //                     res.end('Competition ID, name, description, and dataset are required.');
+    //                     return;
+    //                 }
+    //                 Athena.databaseSystem.createCompetition(competitionID, competitionName, competitionDescription, competitionDataset);
+    //                 res.writeHead(200, { 'Content-Type': 'text/plain' });
+    //                 res.end('Competition added.');
+    //             } catch (error) {
+    //                 res.writeHead(500, { 'Content-Type': 'text/plain' });
+    //                 res.end('500 Internal Server Error: ' + error.message);
+    //             }
+    //         });
+    //     } else {
+    //         res.writeHead(405, { 'Content-Type': 'text/plain' });
+    //         res.end('405 Method Not Allowed');
+    //     }
+    // }
+    // else if (pathname.includes("/athena/database/addUserSubmission")) {
+    //     const addUserSubmissionRegex = /\/athena\/database\/addUserSubmission(?:\?.*?)?/;
+    //     const match = path.match(addUserSubmissionRegex);
+    //     if (req.method === 'POST') {
+    //         let body = '';
+    //         req.on('data', (chunk) => {
+    //             body += chunk.toString();
+    //         });
+    //         req.on('end', () => {
+    //             try {
+    //                 const { competitionID, userID, filePath } = JSON.parse(body);
+    //                 if (!competitionID || !userID || !filePath) {
+    //                     res.writeHead(400, { 'Content-Type': 'text/plain' });
+    //                     res.end('Competition ID, user ID, and file path are required.');
+    //                     return;
+    //                 }
+    //                 Athena.databaseSystem.addUserSubmission(competitionID, userID, filePath);
+    //                 res.writeHead(200, { 'Content-Type': 'text/plain' });
+    //                 res.end('User submission added.');
+    //             } catch (error) {
+    //                 res.writeHead(500, { 'Content-Type': 'text/plain' });
+    //                 res.end('500 Internal Server Error: ' + error.message);
+    //             }
+    //         });
+    //     } else {
+    //         res.writeHead(405, { 'Content-Type': 'text/plain' });
+    //         res.end('405 Method Not Allowed');
+    //     }
+    // }
+    // else if (pathname.includes("/athena/database/addScoreToLeaderboard")) {
+    //     const addScoreToLeaderboardRegex = /\/athena\/database\/addScoreToLeaderboard(?:\?.*?)?/;
+    //     const match = path.match(addScoreToLeaderboardRegex);
+    //     if (req.method === 'POST') {
+    //         let body = '';
+    //         req.on('data', (chunk) => {
+    //             body += chunk.toString();
+    //         });
+    //         req.on('end', () => {
+    //             try {
+    //                 const { competitionID, userID, score } = JSON.parse(body);
+    //                 if (!competitionID || !userID || !score) {
+    //                     res.writeHead(400, { 'Content-Type': 'text/plain' });
+    //                     res.end('Competition ID, user ID, and score are required.');
+    //                     return;
+    //                 }
+    //                 Athena.databaseSystem.addScoreToLeaderboard(competitionID, userID, score);
+    //                 res.writeHead(200, { 'Content-Type': 'text/plain' });
+    //                 res.end('Score added to leaderboard.');
+    //             } catch (error) {
+    //                 res.writeHead(500, { 'Content-Type': 'text/plain' });
+    //                 res.end('500 Internal Server Error: ' + error.message);
+    //             }
+    //         });
+    //     } else {
+    //         res.writeHead(405, { 'Content-Type': 'text/plain' });
+    //         res.end('405 Method Not Allowed');
+    //     }
+    // }
     else if (pathname.includes("/athena/database/getLeaderboard")) {
         const getLeaderboardRegex = /\/athena\/database\/getLeaderboard(?:\?.*?)?/;
         const match = path.match(getLeaderboardRegex);
