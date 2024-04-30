@@ -1012,7 +1012,6 @@ async function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    
     else if (pathname.includes("/prometheus/getAllPublishedSubmissions")) {
         const submissionsRegex = /\/manager\/getAllPublishedSubmissions(?:\?.*?)?/;
         const match = path.match(submissionsRegex);
@@ -1124,68 +1123,68 @@ async function processRequest(req, res){
             res.end('405 Method Not Allowed');
         }
     }
-    else if (pathname.includes("/prometheus/queue")) {
-        const queueRegex = /\/manager\/queue(?:\?.*?)?/;
-        const match = path.match(queueRegex);
-        if (req.method === 'GET') {
-            try {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(Prometheus.queue));
-            } catch (error) {
-                res.writeHead(500, { 'Content-Type': 'text/plain' });
-                res.end('500 Internal Server Error: ' + error.message);
-            }
-        } else {
-            res.writeHead(405, { 'Content-Type': 'text/plain' });
-            res.end('405 Method Not Allowed');
-        }
-    }
-    else if (pathname.includes("/athena/displayUsage")) {
-        const athenaUsageRegex = /\/athena\/displayUsage(?:\?.*?)?/;
-        const match = path.match(athenaUsageRegex);
-        if (req.method === 'GET') {
-            try {
-                const result = getSystemState(Athena);
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(result));
-            } catch (error) {
-                res.writeHead(500, { 'Content-Type': 'text/plain' });
-                res.end('500 Internal Server Error: ' + error.message);
-            }
-        } else {
-            res.writeHead(405, { 'Content-Type': 'text/plain' });
-            res.end('405 Method Not Allowed');
-        }
-    }
-    else if (pathname.includes("/athena/addMessage")) {
-        const addMessageRegex = /\/athena\/addMessage(?:\?.*?)?/;
-        const match = path.match(addMessageRegex);
-        if (req.method === 'POST') {
-            let body = '';
-            req.on('data', (chunk) => {
-                body += chunk.toString();
-            });
-            req.on('end', () => {
-                try {
-                    const { message } = JSON.parse(body);
-                    if (!message) {
-                        res.writeHead(400, { 'Content-Type': 'text/plain' });
-                        res.end('Message is required.');
-                        return;
-                    }
-                    const id = Athena.addMessageToQueue(message);
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ messageID: id }));
-                } catch (error) {
-                    res.writeHead(500, { 'Content-Type': 'text/plain' });
-                    res.end('500 Internal Server Error: ' + error.message);
-                }
-            });
-        } else {
-            res.writeHead(405, { 'Content-Type': 'text/plain' });
-            res.end('405 Method Not Allowed');
-        }
-    }
+    // else if (pathname.includes("/prometheus/queue")) {
+    //     const queueRegex = /\/manager\/queue(?:\?.*?)?/;
+    //     const match = path.match(queueRegex);
+    //     if (req.method === 'GET') {
+    //         try {
+    //             res.writeHead(200, { 'Content-Type': 'application/json' });
+    //             res.end(JSON.stringify(Prometheus.queue));
+    //         } catch (error) {
+    //             res.writeHead(500, { 'Content-Type': 'text/plain' });
+    //             res.end('500 Internal Server Error: ' + error.message);
+    //         }
+    //     } else {
+    //         res.writeHead(405, { 'Content-Type': 'text/plain' });
+    //         res.end('405 Method Not Allowed');
+    //     }
+    // }
+    // else if (pathname.includes("/athena/displayUsage")) {
+    //     const athenaUsageRegex = /\/athena\/displayUsage(?:\?.*?)?/;
+    //     const match = path.match(athenaUsageRegex);
+    //     if (req.method === 'GET') {
+    //         try {
+    //             const result = getSystemState(Athena);
+    //             res.writeHead(200, { 'Content-Type': 'application/json' });
+    //             res.end(JSON.stringify(result));
+    //         } catch (error) {
+    //             res.writeHead(500, { 'Content-Type': 'text/plain' });
+    //             res.end('500 Internal Server Error: ' + error.message);
+    //         }
+    //     } else {
+    //         res.writeHead(405, { 'Content-Type': 'text/plain' });
+    //         res.end('405 Method Not Allowed');
+    //     }
+    // }
+    // else if (pathname.includes("/athena/addMessage")) {
+    //     const addMessageRegex = /\/athena\/addMessage(?:\?.*?)?/;
+    //     const match = path.match(addMessageRegex);
+    //     if (req.method === 'POST') {
+    //         let body = '';
+    //         req.on('data', (chunk) => {
+    //             body += chunk.toString();
+    //         });
+    //         req.on('end', () => {
+    //             try {
+    //                 const { message } = JSON.parse(body);
+    //                 if (!message) {
+    //                     res.writeHead(400, { 'Content-Type': 'text/plain' });
+    //                     res.end('Message is required.');
+    //                     return;
+    //                 }
+    //                 const id = Athena.addMessageToQueue(message);
+    //                 res.writeHead(200, { 'Content-Type': 'application/json' });
+    //                 res.end(JSON.stringify({ messageID: id }));
+    //             } catch (error) {
+    //                 res.writeHead(500, { 'Content-Type': 'text/plain' });
+    //                 res.end('500 Internal Server Error: ' + error.message);
+    //             }
+    //         });
+    //     } else {
+    //         res.writeHead(405, { 'Content-Type': 'text/plain' });
+    //         res.end('405 Method Not Allowed');
+    //     }
+    // }
     // else if (pathname.includes("/athena/database")) {
     //     const databaseRegex = /\/athena\/database(?:\?.*?)?/;
     //     const match = path.match(databaseRegex);
