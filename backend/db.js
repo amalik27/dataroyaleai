@@ -10,7 +10,7 @@ const connection = mysql.createConnection({
     user: 'tester', // changed to work locally
     password: 'tester', // changed to work locally
     database: 'swe2024',
-    port: process.env.DB_PORT || '3001' //If you want to run tests we assume this 3001:3306 mapping
+    port: process.env.DB_PORT || '8889' //If you want to run tests we assume this 3001:3306 mapping
 });
 
     connection.connect((err) => {

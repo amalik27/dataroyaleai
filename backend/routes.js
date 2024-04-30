@@ -10,6 +10,7 @@ const userController = require('./controllers/userController');
 const competitionController = require('./controllers/competitionController');
 const courseController = require('./controllers/courseController');
 const paymentController = require('./controllers/paymentController');
+const creditController = require('./controllers/creditController');
 
 const subscriptionController = require('./controllers/subscriptionController');
 const { parse } = require('querystring');
@@ -862,8 +863,8 @@ async function processRequest(req, res){
         } else {
             res.writeHead(405, { 'Content-Type': 'text/plain' });
             res.end('Method Not Allowed');
-        }
-
+          }
+      
     } //api platform
     else if (pathname.includes("/prometheus/displayUsage")) {
         const displayUsageRegex = /\/manager\/displayUsage(?:\?.*?)?/;

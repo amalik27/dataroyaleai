@@ -70,6 +70,7 @@ async function loginUser(username, password) {
         const reg_date_utc_str = reg_date_utc.toISOString().slice(0, 19).replace('T', ' ');
         updateUserById(user.id, user.username, user.email, user.salt, user.password_encrypted, user.role, user.tier, user.credits, reg_date_utc_str, new_api_token);
         updateCourseProgressApiTokens(user.api_token, new_api_token);
+        updateSubscriptionsApiTokens(user.api_token, new_api_token);
         return user.password_encrypted == passwordUtils.encrypt(password, user.salt);
     } catch (error) {
         console.error('Error logging in user:', error);
@@ -327,6 +328,16 @@ async function deleteAccount(username, password) {
         return { success: true, message: "Account deleted successfully" };
     } catch (error) {
         console.error("Error deleting account:", error);
+        throw error;
+    }
+}
+
+async function updateSubscriptionsApiTokens(old_api_token, new_api_token) {
+    try {
+        const sql = `UPDATE subscriptions SET api_token = ? WHERE api_token = ?`;
+        await db.query(sql, [new_api_token, old_api_token]);
+    } catch (error) {
+        console.error('Error updating subscriptions:', error);
         throw error;
     }
 }
