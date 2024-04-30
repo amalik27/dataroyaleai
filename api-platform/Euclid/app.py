@@ -9,7 +9,7 @@ def calculate_sine():
     data = request.get_json()
     if 'angle <number>' not in data:
         return jsonify({"error": "Missing angle parameter"}), 400
-    angle = data['angle']
+    angle = data['angle <number>']
     try:
         angle = float(angle)
     except ValueError:

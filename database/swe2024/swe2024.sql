@@ -59,9 +59,10 @@ CREATE TABLE IF NOT EXISTS`competitions` (
 --
 
 INSERT INTO `competitions` (`id`, `userid`, `title`, `deadline`, `prize`, `metrics`, `description`, `player_cap`, `date_created`, `inputs_outputs`, `file_path`) VALUES
-(42161251, 1, "Noisy Wave Competition", "2024-04-06", 120, json_object("size", 3, "speed", 1, "accuracy", 5), "A competiton to figure out to approximate this wave of ours.", 120, "2024-03-20", json_object("inputs", json_array("angle"), "outputs", json_array("result")), "../api-platform/TestDatasets/sine_wave.zip"),
-(71393633, 2, "Competition B", "2024-06-06", 120, json_object("size", 3, "speed", 1, "accuracy", 5), "A sample Competition", 120, "2024-03-20", json_object("inputs", json_array("images"), "outputs", json_array("name")), "./backend/controllers/goodcat.zip"), 
-(1765057604, 3, "Digit Recognizer", "2024-05-13", 200, json_object("speed", 1, "accuracy", 2, "filesize", 3), "In this competition, your goal is to correctly identify digits from a dataset of tens of thousands of handwritten images. We encourage you to experiment with different algorithms to learn first-hand what works well and how techniques compare.", 150, "2024-04-02", json_object("inputs", json_array("imageid"), "outputs", json_array("label")), "database\\apifiles\\validCompDB.zip");
+(42161251, 1, "Noisy Wave Competition", "2024-05-06", 10000, json_object("mse", 3, "speed", 1, "accuracy", 5), "A competiton to figure out to approximate this wave of ours.", 120, "2024-03-20", json_object("inputs", json_array("angle <number>"), "outputs", json_array("result <number>")), "../api-platform/TestDatasets/sine_wave.zip"),
+(23456879, 1, "Pythag Competition", "2024-04-06", 100, json_object("rmse", 3, "mse", 1, "r2", 5), "A competiton to figure out the pythagorean theorem,", 120, "2024-03-20", json_object("inputs", json_array("a <number>","b <number>"), "outputs", json_array("hypotenuse <number>")), "../api-platform/TestDatasets/pythag.zip"),
+(71393633, 2, "Competition B", "2024-06-06", 120, json_object("mse", 3, "speed", 1, "accuracy", 5), "A sample Competition", 120, "2024-03-20", json_object("inputs", json_array("images"), "outputs", json_array("name")), "./backend/controllers/goodcat.zip"), 
+(1765057604, 3, "Digit Recognizer", "2024-05-13", 200, json_object("speed", 1, "accuracy", 2, "mse", 3), "In this competition, your goal is to correctly identify digits from a dataset of tens of thousands of handwritten images. We encourage you to experiment with different algorithms to learn first-hand what works well and how techniques compare.", 150, "2024-04-02", json_object("inputs", json_array("imageid"), "outputs", json_array("label")), "database\\apifiles\\validCompDB.zip");
 
 -- --------------------------------------------------------
 
@@ -92,9 +93,10 @@ CREATE TABLE IF NOT EXISTS`submissions` (
 
 
 INSERT INTO `submissions` (`comp_id`, `submission_id`, `score`, `file_path`, `user_id`, `published`) VALUES
-(42161251, 9, NULL, '.../api-platform/Euclid', 1, false),
-(42161251, 2, NULL, '.../api-platform/Euclid', 2, false);
-
+(42161251, 8675954, NULL, '../api-platform/Euclid/', 1, true),
+(42161251, 2890754, NULL, '../api-platform/Euclid/', 2, false),
+(23456879, 5234543, NULL, '../api-platform/Pythagoras/', 1, true), 
+(23456879, 5763454, NULL, '../api-platform/Pythagoras/', 2, false);
 -- --------------------------------------------------------
 -- docker exec -it swe2024-db-1 bash
 --
@@ -131,9 +133,9 @@ CREATE TABLE IF NOT EXISTS`tiers` (
 --
 
 INSERT INTO `tiers` (`TierLevel`, `Guarantee`, `Overload`, `ports`, `Uptime`, `OverloadUptime`) VALUES
-(1, 20, '10', 5, '2400', '10'),
-(2, 30, '15', 3, '1800', '5'),
-(3, 40, '20', 1, '1200', '0');
+(1, 40, 20, 5, 2400, 10),
+(2, 30, 15, 3, 1800, 5),
+(3, 20, 10, 1, 1200, 0);
 
 -- --------------------------------------------------------
 

@@ -53,7 +53,7 @@ function getSystemState(manager) {
 
 
 class PlatformDaemonManager {
-    constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier,name = "Prometheus", databaseSystem =new DatabaseSystem()) {
+    constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier,name = "Prometheus", databaseSystem =new DatabaseSystem(), resourceMonitor = PlatformResourceMonitor) {
         this.name = name
         this.daemons = new Map();
         this.messageQueue = [];
@@ -63,7 +63,7 @@ class PlatformDaemonManager {
         this.interval = null;
         // Initialize resource monitor with blocks and ports range
         this.database = databaseSystem
-        this.resourceMonitor = new PlatformResourceMonitor(blocksPerTier, portsAllowed,this.database, this.name);
+        this.resourceMonitor = new resourceMonitor(blocksPerTier, portsAllowed,this.database, this.name);
         //Listen for deallocation events
         this.resourceMonitor.on('overloadDeallocated', (processID,blocks) => {
             //We deallocate the blocks from the process
@@ -696,7 +696,7 @@ class DatabaseSystem {
                 return resources;
 
             } else {
-                throw new Error('Tier not found');
+                throw new Error('Tier not found: ' + tier);
             }
         } catch (err) {
             throw err;
@@ -796,7 +796,7 @@ class OverloadResourceAllocationError extends ResourceAllocationError {
 }
 let Prometheus = new PlatformDaemonManager(4, 4000, 500, blocksPerTier = [40, 30, 50]);
 Prometheus.startMonitoring(1000);
-module.exports = { Prometheus, PlatformDaemonManager , getSystemState, DaemonNotFoundError, DatabaseSystem, GuaranteeResourceAllocationError, OverloadResourceAllocationError};
+module.exports = { Prometheus, PlatformDaemonManager , getSystemState, DaemonNotFoundError, DatabaseSystem, PlatformResourceMonitor, GuaranteeResourceAllocationError, OverloadResourceAllocationError, AlreadyRegisteredError};
 
   
   
