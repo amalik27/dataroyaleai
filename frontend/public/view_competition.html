@@ -94,7 +94,6 @@
         if (!response.ok) {
           throw new Error('Failed to fetch competitions');
         }
-        console.log("here"); 
         const competitions = await response.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(competitions, 'text/html');

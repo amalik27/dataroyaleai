@@ -269,26 +269,53 @@ function processRequest(req, res) {
     
         // // Call the async function
         // handleLeaderboardRequest();
-        if (req.method === 'GET') {
-            // Parse the URL to extract query parameters
-            const queryObject = url.parse(req.url, true).query;
-            const compid = queryObject.compid;
-    
-            // Read the HTML file
-            fs.readFile('../frontend/public/view_leaderboard.html', (err, data) => {
-                if (err) {
-                    // If there's an error reading the file, send a 500 Internal Server Error response
+        if (req.method === 'POST') {
+            let body = '';
+
+            req.on('data', chunk => {
+                body += chunk.toString(); // Accumulate incoming data
+            });
+            req.on('end', async () => {
+                // Parse the URL to extract query parameters
+
+                competitionController.viewLeaderboard(body)
+                .then(leaderboard => {
+                    // Serve the HTML file with competition data inserted
+                    const filePath = pathModule.join(__dirname, '../frontend/public/view_leaderboard.html');
+                    fs.readFile(filePath, (err, data) => {
+                        if (err) {
+                            console.error('Error loading view_leaderboard.html:', err);
+                            res.writeHead(500, { 'Content-Type': 'text/plain' });
+                            res.end('Error loading view_leaderboard.html');
+                        } else {
+                            const htmlWithData = data.toString().replace('<!-- Leaderboard items will be dynamically added here -->', generateLeaderboardHTML(leaderboard));
+                            res.writeHead(200, { 'Content-Type': 'text/html' });
+                            res.end(htmlWithData);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching competitions:', error);
                     res.writeHead(500, { 'Content-Type': 'text/plain' });
                     res.end('Internal Server Error');
-                } else {
-                    // If the file is read successfully, replace placeholders in the HTML with compid and send it as a response
-                    const html = data.toString().replace('<!--COMPID-->', compid); // Replace placeholder with compid
-                    res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(html);
-                }
+                });
             });
-        } else {
-            // If the method is not GET, send a 405 Method Not Allowed response
+        } else if (req.method === "GET") {
+            const filePath = pathModule.join(__dirname, '../frontend/public/view_leaderboard.html');
+                fs.readFile(filePath, (err, data) => {
+                    if (err) {
+                        console.error('Error loading view_leaderboard.html:', err);
+                        res.writeHead(500, { 'Content-Type': 'text/plain' });
+                        res.end('Error loading view_leaderboard.html');
+                    } else {
+                        const htmlWithData = data.toString();
+                        res.writeHead(200, { 'Content-Type': 'text/html' });
+                        res.end(htmlWithData);
+                    }
+                });
+        } 
+        else {
+            // If the method is not POST, send a 405 Method Not Allowed response
             res.writeHead(405, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
@@ -1284,4 +1311,18 @@ function generateCompetitionHTML(competitions) {
     });
     return html;
 }
+
+function generateLeaderboardHTML(leaderboard) {
+    let html = '';
+    leaderboard.forEach(submission => {
+        html += `
+        <div class="submission-card">
+            <p><strong>UserID:</strong> ${submission.user_id}</p>
+            <p><strong>Score:</strong> ${submission.score}</p>
+        </div>
+    `;
+    });
+    return html;
+}
+
 

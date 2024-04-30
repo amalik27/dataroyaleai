@@ -79,11 +79,20 @@
     .search-button:hover {
       background-color: #d81b60;
     }
+
+    .submission-card {
+      background-color: #fff;
+      color: #333;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin: 20px;
+      width: 300px;
+    }
   </style>
 </head>
 
 <body>
-  <div class="leaderboard-container">
     <h1 class="leaderboard-header">View Leaderboard</h1>
     <div class="search-container">
       <!-- Input field for entering the competition ID -->
@@ -91,49 +100,81 @@
       <!-- Button to trigger the search -->
       <button onclick="searchLeaderboard()" class="search-button">Search</button>
     </div>
-    <!-- Hidden input field to store the competition ID -->
-    <input type="hidden" id="compIdPlaceholder">
-    <!-- List to display the leaderboard items -->
-    <ul id="leaderboardList" class="leaderboard-list">
+
+    <div class="leaderboard-container" id="leaderboardContainer">
       <!-- Leaderboard items will be dynamically added here -->
-    </ul>
-  </div>
+    </div>
+    
 
   <!-- JavaScript code -->
   <script>
     async function searchLeaderboard() {
       const compId = document.getElementById('compIdInput').value;
-
-      const response = await fetch('http://localhost:3000/competitions/join/leaderboard?compid=' + compId, {
-        method: 'GET',
+      const response = await fetch('http://localhost:3000/competitions/join/leaderboard', {
+        method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'text/html'
+        }, 
+        body: compId
+      });
+      const submissions = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(submissions, 'text/html');
+      const submissionTextArray = [];
+      const submissionCards = doc.querySelectorAll('.submission-card');
+
+      submissionCards.forEach(submission => {
+        // Extract text content from current card
+        const cardText = submission.textContent.trim(); 
+        const lines = cardText.split('\n').map(line => line.trim());
+
+        const sub = {};
+
+        lines.forEach(line => {
+            const [key, value] = line.split(':').map(part => part.trim());
+            if (key && value) {
+                sub[key] = value;
+            }
+        });
+        submissionTextArray.push(sub);
       });
 
-      const data = await response.json();
+      console.log(submissionTextArray);
+      displayLeaderboard(submissionTextArray);
 
-      const leaderboardList = document.getElementById('leaderboardList');
-
-      leaderboardList.innerHTML = '';
-
-      if (data.success) {
-        data.message.forEach(item => {
-          const listItem = document.createElement('li');
-          listItem.classList.add('leaderboard-item');
-          listItem.innerHTML = `
-            <h2>User ID: ${item.user_id}</h2>
-            <p>Score: ${item.score}</p>
-          `;
-          leaderboardList.appendChild(listItem);
-        });
-      } else {
-        const listItem = document.createElement('li');
-        listItem.classList.add('leaderboard-item');
-        listItem.textContent = data.message;
-        leaderboardList.appendChild(listItem);
-      }
     }
+
+    async function displayLeaderboard(leaderboard) {
+        const leaderboardContainer = document.getElementById('leaderboardContainer');
+        leaderboardContainer.innerHTML = ''; // Clear any existing leaderboard
+        console.log(leaderboard);
+        leaderboard.forEach(submission => {
+          console.log(submission);
+          const leaderboardCard = document.createElement('div');
+          leaderboardCard.classList.add('submission-card');
+          const useridElement = document.createElement('p');
+          useridElement.textContent = "User ID: " + submission.UserID;
+          const scoreElement = document.createElement('p');
+          scoreElement.textContent = "Score: " + submission.Score;
+          
+          // Append title and description to the card
+          leaderboardCard.appendChild(useridElement);
+          leaderboardCard.appendChild(scoreElement);
+
+          // Append the card to the container
+          leaderboardContainer.appendChild(leaderboardCard);
+        });
+      }
+
+    window.onload = async () => {
+      try {
+        //const competitions = await fetchCompetitions(); // Fetch all competitions initially
+        //displayCompetitions(competitions); // Display all competitions on page load
+      } catch (error) {
+        //console.error(`Error loading competitions: ${error.message}`);
+        //alert('Failed to load competitions. Please refresh the page.');
+      }
+    };
   </script>
 </body>
 

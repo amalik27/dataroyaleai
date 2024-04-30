@@ -1275,10 +1275,9 @@ async function viewLeaderboard(compid){
         try {
             
             const queryStr = `SELECT * FROM submissions WHERE comp_id = ? ORDER BY score DESC`;
-    
             db.query(queryStr, [compid], (err, leaderboard) => {
                 if (err) {
-                    console.error("Error executing query:", err);
+                    console.log("Error executing query:", err);
                     return reject("Error in retrieving leaderboard.");
                 } else {
                     const formattedLeaderboard = leaderboard.map(stats => {
@@ -1287,7 +1286,6 @@ async function viewLeaderboard(compid){
                             score: stats.score
                         };
                     });
-
                     return resolve(formattedLeaderboard);
                 }
             });
