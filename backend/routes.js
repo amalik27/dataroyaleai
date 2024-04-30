@@ -73,26 +73,36 @@ async function processRequest(req, res){
             res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
 
-    } else if (pathname === '/competitions/create') { // Competitions Endpoint
+    } else if (pathname === '/competitions/create') { // Competition Creation and Management
         if (req.method === 'GET') {
             // View All Competitions
-            let body = '';
+            // let body = '';
 
-            req.on('data', (chunk) => {
-                body += chunk.toString();
-            });
+            // req.on('data', (chunk) => {
+            //     body += chunk.toString();
+            // });
 
-            req.on('end', async () => {
+            // req.on('end', async () => {
 
-                const allCompetitions = await competitionController.viewAllCompetitions();
+            //     const allCompetitions = await competitionController.viewAllCompetitions();
 
-                if (!allCompetitions || allCompetitions.length == 0) {
-                    res.writeHead(404, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Competitions not found' }));
-                    return;
+            //     if (!allCompetitions || allCompetitions.length == 0) {
+            //         res.writeHead(404, { 'Content-Type': 'application/json' });
+            //         res.end(JSON.stringify({ success: false, message: 'Competitions not found' }));
+            //         return;
+            //     }
+            //     res.writeHead(200, { 'Content-Type': 'application/json' });
+            //     res.end(JSON.stringify({ success: true, message: allCompetitions }));
+            // });
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'create_competition.html');
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    res.end('Error loading create_competition.html');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
                 }
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: allCompetitions }));
             });
 
 
@@ -105,16 +115,16 @@ async function processRequest(req, res){
             });
 
             req.on('end', async () => {
-                const { userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath } = JSON.parse(body);
+                const {username, password, userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath } = JSON.parse(body);
 
-                if (!userid || !title || !deadline || !prize || !desc || !cap || !metrics || !inputs_outputs || !filepath) {
+                if (!username || !password || !userid || !title || !deadline || !prize || !desc || !cap || !metrics || !inputs_outputs || !filepath) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing competition fields in JSON body' }));
                     return;
                 }
 
                 try {
-                    const getCreateResult = await competitionController.createCompetition(userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath);
+                    const getCreateResult = await competitionController.createCompetition(username, password, userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath);
                     if (getCreateResult == true) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: true, message: "Competition created successfully." }));
@@ -159,8 +169,146 @@ async function processRequest(req, res){
             });
 
         }
+    } else if (pathname === '/competitions'){ // Viewing All Competitions
+        if (req.method === 'GET') {
+            // View All Competitions
+            competitionController.viewAllCompetitions()
+            .then(allCompetitions => {
+                if (!allCompetitions || allCompetitions.length === 0) {
+                    res.writeHead(404, { 'Content-Type': 'text/plain' });
+                    res.end('Competitions not found');
+                    return;
+                }
+        
+                // Serve the HTML file with competition data inserted
+                const filePath = pathModule.join(__dirname, '../frontend/public/view_competition.html');
+                fs.readFile(filePath, (err, data) => {
+                    if (err) {
+                        console.error('Error loading view_competition.html:', err);
+                        res.writeHead(500, { 'Content-Type': 'text/plain' });
+                        res.end('Error loading view_competition.html');
+                    } else {
+                        const htmlWithData = data.toString().replace('<!-- Competitions will be dynamically inserted here -->', generateCompetitionHTML(allCompetitions));
+        
+                        res.writeHead(200, { 'Content-Type': 'text/html' });
+                        res.end(htmlWithData);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching competitions:', error);
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('Internal Server Error');
+            });
+        }
+    } else if (pathname === '/competitions/join/leaderboard'){ // View Leaderboard
+        // if (req.method === 'GET'){
+        //     // let body = '';
 
-    } else if (pathname === '/competitions/join') {
+        //     // req.on('data', (chunk) => {
+        //     //     body += chunk.toString();
+        //     // });
+
+        //     // req.on('end', async () => {
+        //     //     const { compid } = JSON.parse(body);
+
+        //     //     const allJoined = await competitionController.viewLeaderboard(compid);
+
+        //     //     if (!allJoined || allJoined.length == 0) {
+        //     //         res.writeHead(404, { 'Content-Type': 'application/json' });
+        //     //         res.end(JSON.stringify({ success: false, message: 'Competition does not exist/Nobody has joined this competition.' }));
+        //     //         return;
+        //     //     }
+        //     //     res.writeHead(200, { 'Content-Type': 'application/json' });
+        //     //     res.end(JSON.stringify({ success: true, message: allJoined }));
+        //     // });
+
+
+        // }
+
+        // const handleLeaderboardRequest = async () => {
+        //     if (req.method === 'GET'){
+        //         const urlParams = new URLSearchParams(req.url);
+        //         const compid = urlParams.get('compid');
+    
+        //         if (!compid) {
+        //             res.writeHead(400, { 'Content-Type': 'application/json' });
+        //             res.end(JSON.stringify({ success: false, message: 'Competition ID is required.' }));
+        //             return;
+        //         }
+    
+        //         const allJoined = await competitionController.viewLeaderboard(compid);
+    
+        //         if (!allJoined || allJoined.length == 0) {
+        //             res.writeHead(404, { 'Content-Type': 'application/json' });
+        //             res.end(JSON.stringify({ success: false, message: 'Competition does not exist/Nobody has joined this competition.' }));
+        //             return;
+        //         }
+    
+        //         res.writeHead(200, { 'Content-Type': 'application/json' });
+        //         res.end(JSON.stringify({ success: true, message: allJoined }));
+        //     } else {
+        //         res.writeHead(405, { 'Content-Type': 'application/json' });
+        //         res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
+        //     }
+        // };
+    
+        // // Call the async function
+        // handleLeaderboardRequest();
+        if (req.method === 'POST') {
+            let body = '';
+
+            req.on('data', chunk => {
+                body += chunk.toString(); // Accumulate incoming data
+            });
+            req.on('end', async () => {
+                // Parse the URL to extract query parameters
+
+                competitionController.viewLeaderboard(body)
+                .then(leaderboard => {
+                    // Serve the HTML file with competition data inserted
+                    const filePath = pathModule.join(__dirname, '../frontend/public/view_leaderboard.html');
+                    fs.readFile(filePath, (err, data) => {
+                        if (err) {
+                            console.error('Error loading view_leaderboard.html:', err);
+                            res.writeHead(500, { 'Content-Type': 'text/plain' });
+                            res.end('Error loading view_leaderboard.html');
+                        } else {
+                            const htmlWithData = data.toString().replace('<!-- Leaderboard items will be dynamically added here -->', generateLeaderboardHTML(leaderboard));
+                            res.writeHead(200, { 'Content-Type': 'text/html' });
+                            res.end(htmlWithData);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching competitions:', error);
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('Internal Server Error');
+                });
+            });
+        } else if (req.method === "GET") {
+            const filePath = pathModule.join(__dirname, '../frontend/public/view_leaderboard.html');
+                fs.readFile(filePath, (err, data) => {
+                    if (err) {
+                        console.error('Error loading view_leaderboard.html:', err);
+                        res.writeHead(500, { 'Content-Type': 'text/plain' });
+                        res.end('Error loading view_leaderboard.html');
+                    } else {
+                        const htmlWithData = data.toString();
+                        res.writeHead(200, { 'Content-Type': 'text/html' });
+                        res.end(htmlWithData);
+                    }
+                });
+        } 
+        else {
+            // If the method is not POST, send a 405 Method Not Allowed response
+            res.writeHead(405, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
+        }
+    
+
+    
+    } else if (pathname === '/competitions/join') { // Joining a Competition, Submitting a Model
         if (req.method === 'POST') {
             // Join Competition
             let body = '';
@@ -270,27 +418,106 @@ async function processRequest(req, res){
 
         } else if (req.method === 'GET') {
             // View Leaderboard
-            let body = '';
+            // let body = '';
 
-            req.on('data', (chunk) => {
-                body += chunk.toString();
-            });
+            // req.on('data', (chunk) => {
+            //     body += chunk.toString();
+            // });
 
-            req.on('end', async () => {
-                const { compid } = JSON.parse(body);
+            // req.on('end', async () => {
+            //     const { compid } = JSON.parse(body);
 
-                const allJoined = await competitionController.viewLeaderboard(compid);
+            //     const allJoined = await competitionController.viewLeaderboard(compid);
 
-                if (!allJoined || allJoined.length == 0) {
-                    res.writeHead(404, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Competition does not exist/Nobody has joined this competition.' }));
-                    return;
+            //     if (!allJoined || allJoined.length == 0) {
+            //         res.writeHead(404, { 'Content-Type': 'application/json' });
+            //         res.end(JSON.stringify({ success: false, message: 'Competition does not exist/Nobody has joined this competition.' }));
+            //         return;
+            //     }
+            //     res.writeHead(200, { 'Content-Type': 'application/json' });
+            //     res.end(JSON.stringify({ success: true, message: allJoined }));
+            // });
+
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'submit_model.html');
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    res.end('Error loading submit_model.html');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
                 }
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: allJoined }));
             });
         }
+    } else if (pathname === '/competitions/join/new'){
+        if (req.method === 'GET') {
+            // View Leaderboard
+            // let body = '';
 
+            // req.on('data', (chunk) => {
+            //     body += chunk.toString();
+            // });
+
+            // req.on('end', async () => {
+            //     const { compid } = JSON.parse(body);
+
+            //     const allJoined = await competitionController.viewLeaderboard(compid);
+
+            //     if (!allJoined || allJoined.length == 0) {
+            //         res.writeHead(404, { 'Content-Type': 'application/json' });
+            //         res.end(JSON.stringify({ success: false, message: 'Competition does not exist/Nobody has joined this competition.' }));
+            //         return;
+            //     }
+            //     res.writeHead(200, { 'Content-Type': 'application/json' });
+            //     res.end(JSON.stringify({ success: true, message: allJoined }));
+            // });
+
+            const filePath = pathModule.join(__dirname, '..', 'frontend', 'public', 'join_competition.html');
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    res.end('Error loading submit_model.html');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end(data);
+                }
+            });
+        } else if (req.method === 'POST'){
+                        // Join Competition
+                        let body = '';
+
+                        req.on('data', (chunk) => {
+                            body += chunk.toString();
+                        });
+            
+                        req.on('end', async () => {
+            
+                            const { userid, compid } = JSON.parse(body);
+            
+            
+                            if (!userid || !compid) {
+                                res.writeHead(400, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ success: false, message: 'Bad Request: Missing join fields in JSON body' }));
+                                return;
+                            }
+            
+                            try {
+                                const getJoinResult = await competitionController.joinCompetition(userid, compid);
+                                if (getJoinResult == true) {
+                                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                                    res.end(JSON.stringify({ success: true, message: "Competition joined successfully." }));
+                                } else {
+                                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                                    res.end(JSON.stringify({ success: false, message: getJoinResult }));
+            
+                                }
+                            } catch (error) {
+                                res.writeHead(400, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ success: false, message: error }));
+                            }
+                        });
+            
+        }
     } else if (pathname === '/payment') { //Payment Endpoint For Exchanging USD for Credits
         if (req.method === 'GET') { //get current status of payment
             //console.log("Checking status of a payment.")
@@ -1094,3 +1321,34 @@ async function processRequest(req, res){
 module.exports = {
     processRequest,
 };
+
+function generateCompetitionHTML(competitions) {
+    let html = '';
+    competitions.forEach(competition => {
+        html += `
+            <div class="competition-card">
+                <h2>${competition.title}</h2>
+                <p><strong>Deadline:</strong> ${competition.deadline}</p>
+                <p><strong>Prize:</strong> ${competition.prize}</p>
+                <p><strong>Description:</strong> ${competition.desc}</p>
+                <p><strong>Player Capacity:</strong> ${competition.player_cap}</p>
+            </div>
+        `;
+    });
+    return html;
+}
+
+function generateLeaderboardHTML(leaderboard) {
+    let html = '';
+    leaderboard.forEach(submission => {
+        html += `
+        <div class="submission-card">
+            <p><strong>UserID:</strong> ${submission.user_id}</p>
+            <p><strong>Score:</strong> ${submission.score}</p>
+        </div>
+    `;
+    });
+    return html;
+}
+
+

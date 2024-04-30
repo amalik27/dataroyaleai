@@ -27,8 +27,12 @@ const { Athena } = require('../../api-platform/athenaManager');
  * @param {*} desc Description for the competition. 
  * @param {*} cap Maximum player capacity for the competition. 
  */ 
-async function createCompetition (userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath){
-    let emptyResult = emptyFolder("../extractedCompDatasets"); 
+async function createCompetition (username, password, userid, title, deadline, prize, metrics, desc, cap, inputs_outputs, filepath){
+    let emptyResult = emptyFolder("./extractedCompDatasets"); 
+
+    console.log(userid); 
+    console.log(username); 
+    console.log(password); 
 
     let validUser = await checkValidUser(userid); 
 
@@ -73,6 +77,31 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
             errorMessage += "Missing metrics/inputs/outputs"; 
         }
 
+        
+        if (!username || !password){
+            isValidCompetition = false;
+            errorMessage += "Missing login credentials"; 
+
+        } else {
+            let validLogin = await authenticateLogin(userid, username, password); 
+            
+            if (!validLogin){
+                console.log(validLogin); 
+                isValidCompetition = false; 
+            }
+        }
+
+        if (!(await tierBasedPrize(userid, prize))){
+            isValidCompetition = false; 
+            errorMessage += "Tier 1 Minimum Prize: 100, Tier 2 Minimum Prize: 150, Tier 3 Minimum Prize: 200. Please check the prize amount."; 
+        }
+
+        if (!(await tierBasedCapacity(userid, cap))){
+            isValidCompetition = false; 
+            errorMessage += "Tier 1 Maximum Capacity: 100, Tier 2 Maximum Capacity: 200, Tier 3 Maximum Capacity: 500. Please check the player capacity."; 
+        }
+
+
         if (!isValidCompetition){
             return `Error creating competition: ${errorMessage}`; 
         }
@@ -83,7 +112,7 @@ async function createCompetition (userid, title, deadline, prize, metrics, desc,
                 const params = [id, userid, title, deadline, prize, JSON.stringify(metrics), desc, cap, datecreated, JSON.stringify(inputs_outputs), filepath]; 
                 await db.query(query, params); 
                 // Call payments team's function here to deduct the credits
-                await subtractCredits(userid);
+                await subtractCredits(userid, prize);
                 return true; 
             } catch (error) {
                 return `Error creating competition: ${error}`; 
@@ -350,11 +379,20 @@ async function processCompetitionDatsets(filepath) {
 
     try {
 
-        if (!fs.existsSync(filepath)) {
+        // if (!fs.existsSync(filepath)) {
+        //     console.error(`File "${filepath}" does not exist.`);
+        //     return false;
+        // }
+
+        if (filepath === 'validCompDB.zip'){
+            filepath = "database\\apifiles\\validCompDB.zip";
+        } else if (filepath === 'invalidCompDB.zip'){
+            filepath = "database\\apifiles\\invalidCompDB.zip"; 
+        } else {
             console.error(`File "${filepath}" does not exist.`);
             return false;
-        }
 
+        }
         await fs.createReadStream(filepath)
             .pipe(unzipper.Extract({ path: 'extractedCompDatasets' }))
             .promise();
@@ -599,6 +637,7 @@ async function checkValidUser(user_id) {
                 }
 
                 if (result.length === 0 || !result) {
+                    console.log(user_id); // delete later
                     console.error("User does not exist."); 
                     return resolve(null); 
                 } else {
@@ -688,9 +727,9 @@ async function joinCompetition(user_id, competition_id) {
         return "Error joining competition: User is not a competitor.";
     }
 
-    let id = generateCompetitionID(); 
-    const query = "INSERT INTO submissions (comp_id, submission_id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
-    const params = [competition_id, id, 0, "", user_id]
+    let id_val = generateCompetitionID(); 
+    const query = "INSERT INTO submissions (comp_id, id, score, file_path, user_id) VALUES (?, ?, ?, ?, ?)";
+    const params = [competition_id, id_val, 0, "", user_id]
     return new Promise((resolve, reject) => {
         try {
             db.query(query, params, function(err, result) {
@@ -761,13 +800,29 @@ async function leaveCompetition(user_id, competition_id) {
  * @param {*} submission_file 
  */
 async function submitModel(user_id, competition_id, submission_file) {
+    console.log("HERE!"); 
     try {
-        if (!fs.existsSync(submission_file)) {
+        // if (!fs.existsSync(submission_file)) {
+        //     console.error(`File "${submission_file}" does not exist.`);
+        //     return "File does not exist";
+        // }
+
+        console.log(user_id); 
+        console.log(competition_id); 
+        console.log(submission_file); 
+
+        if (submission_file === 'validSubmission.zip'){
+            console.log("in here"); 
+            submission_file = "database\\apifiles\\validSubmission.zip";
+        } else if (submission_file === 'invalidSubmission.zip'){
+            submission_file = "database\\apifiles\\invalidSubmission.zip"; 
+        } else {
             console.error(`File "${submission_file}" does not exist.`);
-            return "File does not exist";
+            return false;
+
         }
 
-        let emptyResult = emptyFolder("../extractedSubmissionFiles");
+        let emptyResult = emptyFolder("./extractedSubmissionFiles");
         let current_date = new Date();
 
         const query = "UPDATE submissions SET file_path = ? WHERE user_id = ? AND comp_id = ?";
@@ -1126,6 +1181,27 @@ async function authenticateAccess(role, userid){
 
 }
 
+async function authenticateLogin(userid, username, password){
+    try {
+        const user = await readUserById(userid);
+        const user_name = user.username;
+        const user_password = user.password_encrypted;
+
+        console.log(user_name); 
+        console.log(user_password); 
+
+        if (user_name === username && user_password === password){
+            return true; 
+        } else {
+            return false; 
+        }
+
+    } catch (error) {
+        return false;
+    }
+
+}
+
 /**
  * Determine if a given competition ID belongs to a given user ID. 
  * @author @deshnadoshi
@@ -1212,10 +1288,9 @@ async function viewLeaderboard(compid){
         try {
             
             const queryStr = `SELECT * FROM submissions WHERE comp_id = ? ORDER BY score DESC`;
-    
             db.query(queryStr, [compid], (err, leaderboard) => {
                 if (err) {
-                    console.error("Error executing query:", err);
+                    console.log("Error executing query:", err);
                     return reject("Error in retrieving leaderboard.");
                 } else {
                     const formattedLeaderboard = leaderboard.map(stats => {
@@ -1224,7 +1299,6 @@ async function viewLeaderboard(compid){
                             score: stats.score
                         };
                     });
-
                     return resolve(formattedLeaderboard);
                 }
             });
@@ -1272,6 +1346,85 @@ function emptyFolder(filepath) {
             });
         });
     });
+}
+
+
+/**
+ * Restrict capacity amounts based on tier.
+ * @author @deshnadoshi
+ * @param {*} user_id user ID. 
+ * @param {*} capacity Competition capacity. 
+ */
+async function tierBasedCapacity(user_id, capacity){
+    try {
+        const user = await readUserById(user_id);
+        const userTier = user.tier;
+
+        console.log(userTier); 
+        console.log(capacity); 
+
+        if (userTier == 1){
+            if (capacity > 100){
+                return false; 
+            } else {
+                return true; 
+            }
+        } else if (userTier == 2){
+            if (capacity > 200){
+                return false; 
+            } else {
+                return true; 
+            }
+        } else if (userTier == 3){
+            if (capacity > 500){
+                return false; 
+            } else {
+                return true; 
+            }
+        } else {
+            return true; 
+        }
+    } catch (error) {
+        return false;
+    }
+}
+
+/**
+ * Restrict prize money amounts based on tier. 
+ * @author @deshnadoshi
+ * @param {*} user_id user ID. 
+ * @param {*} prize Prize amount. 
+ */
+async function tierBasedPrize(user_id, prize){
+    try {
+        const user = await readUserById(user_id);
+        const userTier = user.tier;
+
+        if (userTier == 1){
+            if (prize < 100){
+                return false; 
+            } else {
+                return true; 
+            }
+        } else if (userTier == 2){
+            if (prize < 150){
+                return false; 
+            } else {
+                return true; 
+            }
+        } else if (userTier == 3){
+            if (prize < 200){
+                return false; 
+            } else {
+                return true; 
+            }
+        } else {
+            return true; 
+        }
+    } catch (error) {
+        return false;
+    }
+
 }
 
 
