@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Competition</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Noto Sans JP", Arial, sans-serif;
+      background: linear-gradient(45deg, #5c10b9, #2b6cce);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .welcome-container {
+      text-align: center;
+      padding-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+
+    .form-container {
+      margin-bottom: 20px;
+    }
+
+    .button-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .btn {
+      background-color: #e91e63;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+      margin-left: 10px;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background-color: #d81b60;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    #competitionFormContainer {
+      display: none;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="welcome-container">
+    <div class="login-container">
+      <h2>Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" placeholder="Enter your username" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        </div>
+        <div class="button-container">
+          <button type="button" onclick="login()" class="btn">Login</button>
+        </div>
+      </form>
+    </div>
+    
+    <div id="competitionFormContainer">
+      <h1>Create Competition</h1>
+      <div class="form-container">
+        <form id="createCompetitionForm">
+          <div class="form-group">
+            <label for="userid">User ID:</label>
+            <input type="text" id="userid" name="userid" placeholder="Enter your user ID" required>
+          </div>
+          <div class="form-group">
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" placeholder="Enter the competition title" required>
+          </div>
+          <div class="form-group">
+            <label for="deadline">Deadline:</label>
+            <input type="date" id="deadline" name="deadline" required>
+          </div>
+          <div class="form-group">
+            <label for="prize">Prize:</label>
+            <input type="number" id="prize" name="prize" placeholder="Enter the prize credits" required>
+          </div>
+          <div class="form-group">
+            <label for="desc">Description:</label><br>
+            <textarea id="desc" name="desc" rows="4" cols="50" placeholder="Enter the competition description" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="cap">Player Capacity:</label>
+            <input type="number" id="cap" name="cap" placeholder="Enter the maximum player capacity" required>
+          </div>
+          <div class="form-group">
+            <label for="metrics">Metrics:</label><br>
+            <textarea id="metrics" name="metrics" rows="2" placeholder="Enter metrics (speed, accuracy, file size) separated by commas" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="inputs_outputs">Inputs/Outputs:</label><br>
+            <textarea id="inputs_outputs" name="inputs_outputs" rows="4" placeholder="Enter inputs and outputs separated by commas" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="filepath">File Path:</label>
+            <input type="file" id="filepath" name="filepath" required>
+          </div>
+          <div class="button-container">
+            <button type="button" onclick="createCompetition()" class="btn">Create Competition</button>
+          </div>
+          <div class="button-container">
+            <button type="button" onclick="viewCompetitions()" class="btn">View Competitions</button>
+          </div>
+        </form>
+      </div>
+      <div class="button-container">
+        <a href="/login" class="btn">Back to Login</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    async function createCompetition() {
+      const form = document.getElementById('createCompetitionForm');
+      const formData = new FormData(form);
+
+      const form2 = document.getElementById('loginForm'); 
+      const formData2 = new FormData(form2); 
+  
+      const metrics = formData.get('metrics');
+      const inputs_outputs = formData.get('inputs_outputs');
+
+      const fileInput = document.getElementById('filepath');
+      const file = fileInput.files[0]["name"]; // Get the uploaded file
+  
+      const requestBody = {
+        username: formData2.get('username'),
+        password: formData2.get('password'),
+        userid: formData.get('userid'),
+        title: formData.get('title'),
+        deadline: formData.get('deadline'),
+        prize: parseInt(formData.get('prize')),
+        desc: formData.get('desc'),
+        cap: parseInt(formData.get('cap')),
+        metrics: JSON.parse(metrics),
+        inputs_outputs: JSON.parse(inputs_outputs),
+        filepath: file
+      };
+  
+      //const fileInput = document.getElementById('filepath');
+      //const file = fileInput.files[0]; // Get the uploaded file
+  
+      if (!file) {
+        console.error('No file selected');
+        return;
+      }
+  /*
+      const requestBody = {
+        competitionData: competitionData,
+        file: file,
+      };
+*/
+      console.log(requestBody);
+  
+      try {
+        const response = await fetch('http://localhost:3000/competitions/create', {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+  
+        console.log(response);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Server responded with error (${response.status}): ${errorText}`);
+          throw new Error('Network response was not ok.');
+        }
+  
+        const data = await response.json();
+  
+        if (data.success) {
+          alert('Competition created successfully!');
+          window.location.href = 'http://localhost:3000/dashboard'; // Redirect to dashboard upon successful competition creation
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (error) {
+        console.log("hi");
+        console.log(error); 
+        console.error('Error:', error);
+        alert('An error occurred while creating the competition. Please try again.');
+      }
+    }
+  
+    function viewCompetitions() {
+      window.location.href = 'view_competition.html';
+    }
+  
+  function login() {
+    const loggedIn = true;
+
+  if (loggedIn) {
+    document.getElementById('competitionFormContainer').style.display = 'block';
+    document.getElementById('loginForm').style.display = 'none'; // Hide the login form
+  }
+}
+  </script>
+  </body>
+
+</html>

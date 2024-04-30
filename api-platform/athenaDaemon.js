@@ -1,10 +1,12 @@
 const { PlatformDaemon } = require("./platformDaemon");
 const csv = require('csv-parser');
 const fs = require('fs');
-const chalk = require('chalk');
-const { default: container } = require("node-docker-api/lib/container");
-const shell = require('shelljs');
-const EventEmitter = require('events')
+const unzipper = require('unzipper');
+const { PassThrough } = require('stream');  // Import PassThrough from the stream module
+var shell = require('shelljs');
+
+
+
 
 class AthenaDaemon extends PlatformDaemon {
     constructor( port, maxCPU, maxMemory, processID, maxUptime) {
@@ -16,24 +18,61 @@ class AthenaDaemon extends PlatformDaemon {
     }
 
     async evaluateModel(filePath, containerID, columnNamesX, columnNamesY,metrics) {
-        while(this.queue[0] != containerID){
-            //Wait for some time
+        //Throw error any input is undefined
+        if (!filePath || !containerID || !columnNamesX || !columnNamesY || !metrics) {
+            throw new Error('Missing required input(s)');
         }
-        const results = [];
-        const readStream = fs.createReadStream(filePath);
+        console.log("Beginning Evaluating model process...");
+        // while(this.queue[0] != containerID){
+        //     //Wait for some time
+        // }
         this.dataRecording = true;
-        
-        const readCSV = new Promise((resolve, reject) => {
-            readStream
-                .pipe(csv())
-                .on('data', (data) => results.push(data))
-                .on('end', () => resolve(results)) // Resolve with results
-                .on('error', error => reject(error));
+
+        // Unzip the file and then read the 'testing.csv' after it has been extracted
+        let csvResults = []; // Declare variable to hold the CSV results
+
+        await new Promise((resolve, reject) => {
+            fs.createReadStream(filePath)
+            .pipe(unzipper.Parse())
+            .on('entry', function (entry) {
+                const fileName = entry.path;
+                const type = entry.type; // 'Directory' or 'File'
+                if (fileName === "testing.csv") {
+                    // Pipe the entry directly into a ReadStream for CSV parsing
+                    const csvStream = entry.pipe(new PassThrough());
+                    const results = [];
+
+                    // Read CSV from stream
+                    csvStream
+                    .pipe(csv())
+                    .on('data', (data) => {
+                        //console.log(data['result <number>'])
+                        //console.log(columnNamesY,data[columnNamesY[0]]);
+                        return results.push(data);
+                    })
+                    .on('end', () => {
+                        csvResults = results; // Save the results to csvResults
+                        resolve(); // Resolve the promise after all data is processed
+                    })
+                    .on('error', error => reject(error));
+
+                } else {
+                    entry.autodrain(); // Ignore entries that are not 'testing.csv'
+                }
+            })
+            .on('error', reject) // Handle any errors during unzip
+            .on('finish', () => {
+                if (!csvResults.length) reject(new Error('No CSV data extracted.'));
+            });
+        })
+        .catch(error => {
+            console.error('Failed to process file:', error);
         });
-    
-        const csvResults = await readCSV; // Now this contains the results directly
-    
-        const labels = csvResults.map(row => row[columnNamesY]);        
+        console.log(`[Athena Daemon - ${this.processID}] Testing Dataset Loaded...Evaluating model...`   )
+        //console.log(csvResults);
+        //labels equals all values from csvResults  for all column names in columnNamesY
+        const labels = csvResults.map(row => columnNamesY.map(columnName => row[columnName]));  
+        //console.log(labels);
         // Wrap the entire operation in a promise to be awaited
         let score;
         
@@ -52,16 +91,22 @@ class AthenaDaemon extends PlatformDaemon {
                     //Start timer
                     const start = new Date();
                     const predictions = await Promise.all(csvResults.map(row => {
+                        
                         const body = this.bodyMapper(row, columnNamesX, columnNamesY).inputs;
 
-
-                        let out = this.forward({ containerID, body }).then(response => JSON.parse(response).result);
-
+                        
+                        
+                        let out = this.forward({ containerID, body }).then(response => {
+                            //console.log(`Result: ${JSON.stringify(body)} is ${response}`);
+                            return JSON.parse(response)[columnNamesY[0]]
+                        }); 
                         return out;
                     }));
                     this.stopDataRecording(containerID)
                     await this.killContainers([{containerID:containerID}]);
                     this.queue.shift();
+                    
+                    console.log(`Queue: ${this.queue}`)
                     //Stop Timer
                     const end = new Date();
                     this.timeElapsed = (end - start) / 1000;
@@ -77,7 +122,9 @@ class AthenaDaemon extends PlatformDaemon {
             });
         });
         
-        
+        if(this.queue.length==0){
+            this.emit('queueEmpty');
+        }
         return score; // Return the awaited score from the promise
     }
 
@@ -144,6 +191,7 @@ class AthenaDaemon extends PlatformDaemon {
 
 
     bodyMapper(row, inputColumns, outputColumns) {
+        //console.log(`Mapping row to body: ${JSON.stringify(row)}, ${inputColumns}, ${outputColumns}`);
         let requestBody = { inputs: {}, outputs: {} };
         
         // Assuming inputColumns and outputColumns are arrays of column names
@@ -170,10 +218,11 @@ class AthenaDaemon extends PlatformDaemon {
             console.log(metric,weight);
             if(metric=='speed'|| metric == 'accuracy' || metric == 'precision' || metric == 'recall' || metric == 'f1'){
                 num+= this.model_performance(predictions, labels, metric) * weight;
-            } else {    
+            } else {
                 den+= this.model_performance(predictions, labels, metric) * weight;
             }
         });
+        console.log(num);
         return num/den
     }
 
@@ -223,7 +272,7 @@ class AthenaDaemon extends PlatformDaemon {
         }
         //R-squared
         if(metric === 'r2'){
-            const mean = labels.reduce((a, b) => a + b) / labels.length;
+            const mean = labels.reduce((a, b) =>  parseFloat(a) + parseFloat(a)) / labels.length;
             const ssTot = labels.reduce((acc, cur) => acc + Math.pow(cur - mean, 2), 0);
             const ssRes = predictions.reduce((acc, cur, i) => acc + Math.pow(cur - labels[i], 2), 0);
             return 1 - (ssRes / ssTot);

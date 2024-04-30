@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prometheus Dashboard</title>
+    <link rel="stylesheet" href="platform_styles.css">
+</head>
+<body>
+        <div class="sidebar">
+            <ul>
+                <li><p class = "icon">Data Royale</p></li>
+                <li><button class="nav-btn">Dashboard</button></li>
+                <li><button class="nav-btn">Settings</button></li>
+            </ul>
+        </div>
+        <div class="back-panel">
+            <div class="main-panel">
+                <h1>Prometheus Control Dashboard</h1>
+                <h2>Dashboard</h2>
+                <p>Welcome to the Prometheus Control Dashboard. Here you can manage your Prometheus instances, view resources and change settings.</p>
+                <div class="utils">
+                    <div class="graph">
+                        <h3>Resource Usage</h3>
+                        <canvas id="myChart" width="400" height="400"></canvas>
+                    </div>
+                    <div id="buttons_below_graph">
+                        <ul>
+                            <li><button class="nav-btn">Status</button></li>
+                            <li><div class="disp-box">Credits: 214</button><div>
+                        </ul>
+                    </div>
+    
+                </div>
+                
+            </div>
+        </div>
+        
+    <script src="script.js"></script>
+</body>
+</html>

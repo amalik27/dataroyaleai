@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join a Competition</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Noto Sans JP", Arial, sans-serif;
+      background: linear-gradient(45deg, #5c10b9, #2b6cce);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .welcome-container {
+      text-align: center;
+      padding-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+
+    .form-container {
+      margin-bottom: 20px;
+    }
+
+    .button-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .btn {
+      background-color: #e91e63;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+      margin-left: 10px;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background-color: #d81b60;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    #competitionFormContainer {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="welcome-container">
+    <!-- Login Form -->
+    <div class="login-container">
+      <h2>Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" placeholder="Enter your username" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        </div>
+        <div class="button-container">
+          <button type="button" onclick="login()" class="btn">Login</button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Competition Submission Form -->
+    <div id="competitionFormContainer">
+      <h1>Join Competition</h1>
+      <div class="form-container">
+        <form id="submitModelForm">
+          <div class="form-group">
+            <label for="userid">User ID:</label>
+            <input type="text" id="userid" name="userid" placeholder="Enter your user ID" required>
+          </div>
+          <div class="form-group">
+            <label for="competitionid">Competition ID:</label>
+            <input type="text" id="competitionid" name="competitionid" placeholder="Enter the competition ID" required>
+          </div>
+          <div class="button-container">
+            <button type="button" onclick="submitModel()" class="btn">Join</button>
+          </div>
+        </form>
+      </div>
+      <div class="button-container">
+        <a href="/login" class="btn">Back to Login</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function submitModel() {
+      const form = document.getElementById('submitModelForm');
+      const formData = new FormData(form);
+
+  
+      const requestBody = {
+        compid: formData.get('competitionid'),
+        userid: formData.get('userid')
+      };
+
+      console.log("USERID:", userid); 
+      console.log("CID:", competitionid); 
+  
+      //const fileInput = document.getElementById('filepath');
+      //const file = fileInput.files[0]; // Get the uploaded file
+  
+    //   if (!file) {
+    //     console.error('No file selected');
+    //     return;
+    //   }
+  /*
+      const requestBody = {
+        competitionData: competitionData,
+        file: file,
+      };
+*/
+      console.log("BODY:\n\n", requestBody);
+  
+      try {
+        const response = await fetch('http://localhost:3000/competitions/join/new', {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+  
+        console.log(response);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Server responded with error (${response.status}): ${errorText}`);
+          throw new Error('Network response was not ok.');
+        }
+  
+        const data = await response.json();
+  
+        if (data.success) {
+          alert('Competition joined successfully!');
+          window.location.href = 'http://localhost:3000/dashboard'; // Redirect to dashboard upon successful competition creation
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (error) {
+        console.log("hi");
+        console.log(error); 
+        console.error('Error:', error);
+        alert('An error occurred while joining the competition. Please try again.');
+      }
+    }
+
+  function login() {
+    const loggedIn = true;
+
+  if (loggedIn) {
+    document.getElementById('competitionFormContainer').style.display = 'block';
+    document.getElementById('loginForm').style.display = 'none'; // Hide the login form
+  }
+}
+
+
+
+  </script>
+</body>
+
+</html>
