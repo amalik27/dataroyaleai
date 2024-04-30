@@ -2,7 +2,7 @@
  * @Author: Nikita Filippov <nikfilippov1@gmail.com>
  * @Description: Module containing functions related to course management and user progress tracking in a learning management system.
  * @Author: Neha Murthy <nnm53@scarletmail.rutgers.edu>
- * @Description: Functions (getCourseDetailsById, markCourseCompletion,readCompletedCoursesByApiToken,readInProgressCoursesByApiToken,getTotalCourseCount )
+ * @Description: Functions (getCourseDetailsById, markCourseCompletion,readCompletedCoursesByApiToken,readInProgressCoursesByApiToken,getTotalCourseCount, FetchCourses )
  */
 
 const db = require('../db');
@@ -239,6 +239,29 @@ async function getTotalCourseCount() {
         throw error;
     }
 }
+async function fetchCourses(apiToken, fetchFunc) {
+    try {
+        const response = await fetchFunc('http://localhost:3000/courses', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'api_token': apiToken
+            }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            return data;
+        } else {
+            throw new Error('Failed to fetch courses');
+        }
+    } catch (error) {
+        console.error('Error fetching courses:', error);
+        return [];
+    }
+}
+
+
+
 
 module.exports = {
     readAllCoursesThatUserCanBuyOrAccessByApiToken,
@@ -251,5 +274,6 @@ module.exports = {
     markCourseCompletion,
     readCompletedCoursesByApiToken,
     readInProgressCoursesByApiToken,
-    getTotalCourseCount
+    getTotalCourseCount,
+    fetchCourses
 };
