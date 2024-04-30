@@ -1051,6 +1051,12 @@ async function processRequest(req, res){
             req.on('end', async () => {
                 try {
                     const data = JSON.parse(body);
+                    const api_token = data.api_token;
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
+                        return;
+                    }
                     const submission_id = parseInt(data.submission_id);
                     const published = typeof data.published === 'boolean' ? data.published : (data.published === 'true');
     
