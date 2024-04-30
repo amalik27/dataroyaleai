@@ -890,13 +890,18 @@ async function processRequest(req, res){
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
-            req.on('end', () => {
+            req.on('end', async () => {
                 try {
                     console.log(body);
-                    const { message } = JSON.parse(body);
+                    const { message, api_token } = JSON.parse(body);
                     if (!message) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Message is required.');
+                        return;
+                    }
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
                         return;
                     }
                     const id = Prometheus.addMessageToQueue(message);
@@ -949,12 +954,17 @@ async function processRequest(req, res){
             req.on('data', (chunk) => {
                 postData += chunk.toString();
             });
-            req.on('end', () => {
+            req.on('end', async () => {
                 try {
-                    const { message } = JSON.parse(postData);
+                    const { message, api_token} = JSON.parse(postData);
                     if (!message || !message.processID || !message.body) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Complete message with processID and body is required.');
+                        return;
+                    }
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
                         return;
                     }
                     const { processID, body } = message;
@@ -984,7 +994,7 @@ async function processRequest(req, res){
             });
             req.on('end', async () => {
                 try {
-                    const { processID, containerID, body,api_token } = JSON.parse(postMsg);
+                    const { processID, containerID, body, api_token } = JSON.parse(postMsg);
                     if (!processID || !containerID || !body || !api_token) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Process ID, Container ID, and Body are required.');
@@ -1072,12 +1082,17 @@ async function processRequest(req, res){
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
-            req.on('end', () => {
+            req.on('end', async () => {
                 try {
-                    const { processID } = JSON.parse(body);
+                    const { processID,api_token } = JSON.parse(body);
                     if (!processID) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Process ID is required.');
+                        return;
+                    }
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
                         return;
                     }
                     Prometheus.killProcessDaemon(processID);
@@ -1103,10 +1118,15 @@ async function processRequest(req, res){
             });
             req.on('end', async () => {
                 try {
-                    const { processID, containerID } = JSON.parse(body);
+                    const { processID, containerID, api_token  } = JSON.parse(body);
                     if (!processID || !containerID) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Process ID and Container ID are required.');
+                        return;
+                    }
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
                         return;
                     }
                     const health = await Prometheus.healthCheck(processID, containerID);
