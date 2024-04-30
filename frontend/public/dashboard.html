@@ -10,10 +10,10 @@
       margin: 0;
       padding: 0;
       font-family: "Noto Sans JP", Arial, sans-serif;
-      background: linear-gradient(to right, #8e44ad, #ff00ff);
+      background: linear-gradient(45deg, #5c10b9, #2b6cce);
       height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       color: white;
     }
@@ -28,7 +28,7 @@
     }
 
     .btn {
-      background-color: #2b2b2c;
+      background-color: #e91e63;
       color: white;
       border: none;
       padding: 10px 20px;
@@ -42,46 +42,47 @@
     }
 
     .btn:hover {
-      background-color: #1f1f20;
+      background-color: #d81b60;
     }
 
-    .progress-bar {
-      width: 200px;
-      height: 20px;
-      background-color: #3e3e3f;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-top: 20px;
+    .form-group {
+      margin-bottom: 20px;
     }
 
-    .progress {
-      width: 50%; /* Example progress */
-      height: 100%;
-      background-color: #e91e63;
-      transition: width 0.5s ease;
-    }
-
-    #credits-container,
-    #tier-container,
-    #logout-btn {
+    #credits-container {
       position: fixed;
       top: 10px;
       left: 10px;
-      background-color: #2b2b2c;
+      background-color: #8400ff;
       padding: 10px;
       border-radius: 5px;
       box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
     }
 
-    #logout-btn {
-      right: 10px;
-      left: auto;
+    #credits {
+      font-weight: bold;
+      margin-right: 10px;
     }
 
-    #credits,
+    #tier-container {
+      position: fixed;
+      top: 60px;
+      left: 10px;
+      background-color: #8400ff;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+
     #tier {
       font-weight: bold;
       margin-right: 10px;
+    }
+
+    #logout-btn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
     }
   </style>
 </head>
@@ -197,14 +198,7 @@
           const url = `http://localhost:3000/course&id=${course.courseId}&api_token=${apiToken}`;
           window.location.href = url;
         });
-        const progressBarContainer = document.createElement('div');
-        progressBarContainer.classList.add('progress-bar');
-        const progressBar = document.createElement('div');
-        progressBar.classList.add('progress');
-        progressBar.style.width = '50%'; // Example progress
-        progressBarContainer.appendChild(progressBar);
         buttonContainer.appendChild(button);
-        buttonContainer.appendChild(progressBarContainer);
       });
     }
 
