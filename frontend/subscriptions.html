@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscription Options</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Noto Sans JP", Arial, sans-serif;
+      background: linear-gradient(45deg, #5c10b9, #2b6cce);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .container {
+      text-align: center;
+    }
+
+    .tier-container {
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      background-color: #e91e63;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+      margin: 10px;
+    }
+
+    .btn:hover {
+      background-color: #d81b60;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Subscription Options</h2>
+    <div class="tier-container">
+      <button id="cancelSubscriptionBtn" class="btn">Cancel Subscription</button>
+    </div>
+    <div class="tier-container">
+      <button id="subscribeTier1MonthBtn" class="btn">Tier 1 Subscription 1 Month</button>
+    </div>
+    <div class="tier-container">
+      <button id="subscribeTier1YearBtn" class="btn">Tier 1 Subscription 1 Year</button>
+    </div>
+    <div class="tier-container">
+      <button id="subscribeTier2MonthBtn" class="btn">Tier 2 Subscription 1 Month</button>
+    </div>
+    <div class="tier-container">
+      <button id="subscribeTier2YearBtn" class="btn">Tier 2 Subscription 1 Year</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("cancelSubscriptionBtn").addEventListener("click", function() {
+      sendRequest("CANCEL");
+    });
+
+    document.getElementById("subscribeTier1MonthBtn").addEventListener("click", function() {
+      sendRequest("PURCHASE", "Tier 1", "month");
+    });
+
+    document.getElementById("subscribeTier1YearBtn").addEventListener("click", function() {
+      sendRequest("PURCHASE", "Tier 1", "year");
+    });
+
+    document.getElementById("subscribeTier2MonthBtn").addEventListener("click", function() {
+      sendRequest("PURCHASE", "Tier 2", "month");
+    });
+
+    document.getElementById("subscribeTier2YearBtn").addEventListener("click", function() {
+      sendRequest("PURCHASE", "Tier 2", "year");
+    });
+
+    function sendRequest(action, tier, duration) {
+      const payload = {
+        request: {
+          select: action,
+          tier: tier,
+          duration: duration
+        }
+        // Add other necessary properties here based on your backend requirements
+      };
+
+      fetch('/subscription', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          // Handle response from server
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+    }
+  </script>
+</body>
+
+</html>
