@@ -150,7 +150,6 @@ class PlatformDaemon extends EventEmitter{
     const portsArray = Array.from(this.ports);
     let hashIndex = containerID % portsArray.length;
     let port = portsArray[hashIndex];
-    
     // 2. Find an unclaimed port, incrementing by 1 on collision
     while (this.portMap.has(port)) {
         hashIndex = (hashIndex + 1) % portsArray.length;
@@ -173,11 +172,11 @@ class PlatformDaemon extends EventEmitter{
     // Check if the containerID is present in the portMap
     if (this.portMap.has(Number(containerID))) {
         // Return the port assigned to the containerID
-       
+        //console.log(this.portMap.get(Number(containerID)))
         return this.portMap.get(Number(containerID));
     } else {
         // Throw an error if the containerID is not found in the portMap
-        throw new Error(`Container ID ${containerID} not found in port mapping.`);
+        throw new Error(`Container ID ${containerID} not found in port mapping. Port Mapping: ${Array.from(this.portMap.entries())}`);
     }
   }
 
@@ -229,17 +228,17 @@ class PlatformDaemon extends EventEmitter{
 
     //Let the errors, if any surface to monitoring chronjob
     let port = this.addToPortMap(parseInt(container.containerID)); 
-
+    console.log(port);
     
     // Running the Docker container
-    let runResult = shell.exec(`docker run -d --memory=${container.memory}m --cpus=${container.cpu} -p ${port}:${STARTING_PORT} ${container.containerID}`, { silent: silent });
+    let runResult = shell.exec(`docker run -d --memory=${Number(container.memory).toFixed(3)}m --cpus=${Number(container.cpu).toFixed(3)} -p ${port}:${STARTING_PORT} --network=swe2024_my-bridge-network ${container.containerID} `, { silent: silent });
     if (runResult.code !== 0) {
       throw new Error(chalk.red(`Failed to start container ${container.containerID} with exit code ${runResult.code}: ${runResult.stderr}`));
     }
 
   
     console.log(`${container.containerID} running image ${container.model} is listening on port ${port} with memory cap ${container.memory}m with cpu availability ${container.cpu}. | Build and run exit codes were ${buildResult.code} and ${runResult.code}.`);
-    console.log(`Remaining Resources - CPU: ${(this.containerStack.getMaxCPU() - this.containerStack.getCurrentCPU()).toFixed(2)}, Memory: ${(this.containerStack.getMaxMemory() - this.containerStack.getCurrentMemory()).toFixed(2)} MB. ContainerStack length: ${this.containerStack.stack.length.toString()}`);
+    console.log(`Remaining Resources - CPU: ${Number(this.containerStack.getMaxCPU() - this.containerStack.getCurrentCPU()).toFixed(2)}, Memory: ${Number(this.containerStack.getMaxMemory() - this.containerStack.getCurrentMemory()).toFixed(2)} MB. ContainerStack length: ${this.containerStack.stack.length.toString()}`);
 
   }
 
@@ -255,7 +254,7 @@ class PlatformDaemon extends EventEmitter{
           }
           shell.exec(`docker inspect --format='{{json .State.Health.Status}}' ${containerID}`, { silent: silent }, (inspectCode, inspectStdout, inspectStderr) => {
             if (inspectCode !== 0 || inspectStderr) {
-              reject(new Error(`Error inspecting container: ${inspectStderr || 'Unknown error'} stdout: ${inspectStdout}`));
+              reject(new Error(`Error inspecting container with code ${inspectCode}: ${inspectStderr || 'Unknown error'} stdout: ${inspectStdout}`));
             } else {
               // Parse the health status
               const status = inspectStdout.trim().replace(/^"|"$/g, ''); // Remove surrounding quotes
@@ -353,23 +352,26 @@ class PlatformDaemon extends EventEmitter{
    * @param {JSON} req is the JSON data of the request as we recieve it.
    * @param {String} address is the address we are considering sending this to. To improve modularity, I added an address field. Hypothetically in future implementations, one could have these daemons running on one machine with the containers on another.
    */
-  async forward(req, address = '127.0.0.1') {
+  async forward(req) {
     // Wrap the request in a promise to handle it asynchronously
     return new Promise((resolve, reject) => {
       // Extract the container ID from the request.
       const containerID = req.containerID;
       let port = 0;
-      try{
-        
+      try{      
         port = this.getPortByID(containerID); // Assumes containerID is an integer.
       } catch (e) {
         reject(`Problem with request: ${e.message}`);
       }
-      
+      //Get container name from docker ps as json converted
+      let containerName  = shell.exec(`docker ps | grep ${containerID} | awk '{print $NF}'`,{ silent: true }).trim();
+      //console.log(containerName);
+      let address = shell.exec(`docker network inspect swe2024_my-bridge-network --format '{{range .Containers}}{{if eq .Name "${containerName}"}}{{.IPv4Address}}{{end}}{{end}}' | cut -d'/' -f1`, { silent: true }).trim();
+      //console.log(address, port);
 
       const options = {
         hostname: address,
-        port: port,
+        port: STARTING_PORT, //This is because of the docker network. We are using the same port for all containers.
         path: '/',
         method: 'POST',
         headers: {
@@ -393,7 +395,6 @@ class PlatformDaemon extends EventEmitter{
         // Reject the promise on request error
         reject(`problem with request: ${e.message}`);
       });
-
       // End the request
       forwardReq.end();
     }).catch((error) => {

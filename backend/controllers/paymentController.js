@@ -21,13 +21,13 @@ async function checkPurchase(credits) { //helper function to be placed in /utils
     return true;
 }
 
-const addCredits = (id, credits) => {
-  return
-}
+// const addCredits = (id, credits) => {
+//   return
+// }
 
-const subtractCredits = (id, credits) => {
-  return
-}
+// const subtractCredits = (id, credits) => {
+//   return
+// }
 
 async function createPaymentIntent(credits, id, currency) {
     try {
@@ -115,8 +115,8 @@ async function handleSubmit(e) {
   }
 
   module.exports = {
-    addCredits,
-    subtractCredits,
+    //addCredits,
+    //subtractCredits,
     createPaymentIntent,
     confirmPaymentIntent,
     initialize,

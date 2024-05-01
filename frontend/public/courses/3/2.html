@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 2: Understanding Datasets</title>
+    <meta name="course-id" content="3">
+    <meta name="course-name" content="Introduction to Datasets">
+    <meta name="course-description" content="This course will introduce you to the basics of Datasets.">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Noto Sans JP", Arial, sans-serif;
+            background: linear-gradient(45deg, #5c10b9, #2b6cce);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .lesson-container {
+            text-align: center;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .lesson-container h1 {
+            margin-bottom: 20px;
+        }
+
+        .lesson-container p {
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            background-color: #e91e63;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            margin-top: 20px;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background-color: #d81b60;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="lesson-container">
+        <h1>Lesson 2: Understanding Datasets</h1>
+        <p>In this lesson, we'll explore the significance of datasets in machine learning and artificial intelligence.
+        </p>
+        <p>Datasets form the foundation of machine learning projects, providing the necessary training, testing, and
+            validation data for AI models.</p>
+        <p>Understanding the characteristics and properties of datasets is crucial for selecting appropriate data for
+            model development and evaluation.</p>
+        <p>Key aspects to consider when working with datasets include:</p>
+        <ul>
+            <li><strong>Data Quality:</strong> Ensuring that the data is accurate, complete, and representative of the
+                problem domain.</li>
+            <li><strong>Data Preprocessing:</strong> Cleaning, transforming, and organizing the data to prepare it for
+                analysis and model training.</li>
+            <li><strong>Feature Selection:</strong> Identifying relevant features or attributes that contribute to the
+                predictive power of the model.</li>
+            <li><strong>Dataset Size:</strong> Balancing the trade-off between dataset size and model complexity to
+                avoid overfitting or underfitting.</li>
+        </ul>
+        <p>By understanding the characteristics of datasets, machine learning practitioners can make informed decisions
+            during the model development process.</p>
+        <p>
+            <button class="btn" id="lesson1">Go back to Lesson 1</button>
+            <button class="btn" id="lesson3">Proceed to Lesson 3</button>
+            <button class="btn" id="backToDashboard">Go back to Dashboard</button>
+    </div>
+
+    <script>
+        document.getElementById("lesson1").addEventListener("click", function (event) {
+            handleLessonLinkClick(event, 1);
+        });
+
+        document.getElementById("lesson3").addEventListener("click", function (event) {
+            handleLessonLinkClick(event, 3);
+        });
+
+        document.getElementById("backToDashboard").addEventListener("click", function (event) {
+            window.location.href = "./dashboard";
+        });
+
+        function handleLessonLinkClick(event, lessonNumber) {
+            event.preventDefault();
+            var url = `http://localhost:3000/course&id=3&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
+            updateCourseProgress(url);
+            window.location.href = url
+        }
+
+        function updateCourseProgress(url) {
+            var options = {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            fetch(url, options)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Course progress updated successfully:', data);
+                    window.location.href = url;
+                })
+                .catch(error => {
+                    console.error('There was a problem updating course progress:', error);
+                });
+        }
+    </script>
+</body>
+
+</html>

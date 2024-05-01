@@ -7,6 +7,8 @@
 <br>
 <a href="https://www.youtube.com/watch?v=_E6fqzHvxds">Demo 1</a>
 
+
+
 ## Initial Setup Steps 
 - Open up an editor of your choice
 - Make sure you have NPM, NodeJS, Git installed
@@ -23,19 +25,18 @@
 - You can find the stripe keys here: https://dashboard.stripe.com/test/apikeys
 - You can find the Mailjet keys here: https://app.mailjet.com/account/apikeys
 
-## Set Up Database
+## Docker compose setup
+- Install docker
+- If docker is not started put command ```sudo systemctl start docker``` or ```sudo service docker start```
+- Assuming you have docker installed on linux (Ubuntu 20.04 LTS preferred). You should be able to simply run
+  ```docker compose up --build```
+
+## Set Up Database <These instructions should be deprecated as of the docker compose addition>
 - Start up MAMP, and click "Start Servers".  Then, navigate to this link: http://localhost/phpMyAdmin/?lang=en 
 - Click "Import", and upload the database found in database/swe2024. Press "go" at the bottom of the page to complete the action. This database contains all of the tables you'll need for this project
 - Run `npm run server` to start up your server on port 3000
 - Navigate to `http://localhost:3000/` in your browser and you should see a message
 - Refer to the code in backend/routes and backend/controllers for more complex requests
-
- ## Set Up API Platform
- (MUST BE WORKING ON LINUX MACHINE, UBUNTU PREFERRED)
-- Import ```tiers.sql``` file into php myadmin
-- Verify that the 3 rows are correct inside the ```tiers.sql``` file
-- Install docker - if docker is not started put command (```sudo systemctl start docker```) or (```sudo service docker start```)
-- All file paths must be begin from root folder
 
 ## Set Up Payments/Subscriptions
 - For testing: `npm run payment-test` (make sure to CTRL+C after to leave the asynchronous server loop)
@@ -45,3 +46,15 @@
 ## Set up Competition Management
 - For testing: `npm run competition-test` (make sure to CTRL+C after to leave the asynchronous server loop)
 - The API is also available for use according to the demo video.
+
+
+### Some footnote commands
+For starting the db container for testing without docker compose use ```docker run -d -p 3001:3306 db```
+Note, we need a bridge network named `swe2024_my-bridge-network` for successful running of this application as the user containers will all connect to it for IP assignment.
+
+
+
+### for using sql
+docker exec -it swe2024-db-1 bash
+mysql -u root -p
+use swe2024

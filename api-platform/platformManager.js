@@ -53,7 +53,7 @@ function getSystemState(manager) {
 
 
 class PlatformDaemonManager {
-    constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier,name = "Prometheus", databaseSystem =new DatabaseSystem()) {
+    constructor(maxCPU, maxMemory, portsAllowed, blocksPerTier,name = "Prometheus", databaseSystem =new DatabaseSystem(), resourceMonitor = PlatformResourceMonitor) {
         this.name = name
         this.daemons = new Map();
         this.messageQueue = [];
@@ -63,7 +63,7 @@ class PlatformDaemonManager {
         this.interval = null;
         // Initialize resource monitor with blocks and ports range
         this.database = databaseSystem
-        this.resourceMonitor = new PlatformResourceMonitor(blocksPerTier, portsAllowed,this.database, this.name);
+        this.resourceMonitor = new resourceMonitor(blocksPerTier, portsAllowed,this.database, this.name);
         //Listen for deallocation events
         this.resourceMonitor.on('overloadDeallocated', (processID,blocks) => {
             //We deallocate the blocks from the process
@@ -80,6 +80,7 @@ class PlatformDaemonManager {
 
     //Needed for continuous monitoring of the queue asynchronously, allowing for reshuffles.
     startMonitoring(intervalTime) {
+        console.log(chalk.blue(`[${this.name}] Starting monitoring`));
         if (!this.interval) {
           this.interval = setInterval(async () => {
             if (this.messageQueue.length!=0) {
@@ -157,12 +158,12 @@ class PlatformDaemonManager {
         message.status = "QUEUED";
         this.messageQueue.push(message);
         // Sort the queue first by tier and then by priority within each tier
-        this.messageQueue.sort((a, b) => {
-            if (a.tier === b.tier) {
-                return a.priority - b.priority;
-            }
-            return a.tier - b.tier;
-        });
+        // this.messageQueue.sort((a, b) => {
+        //     if (a.tier === b.tier) {
+        //         return a.priority - b.priority;
+        //     }
+        //     return a.tier - b.tier;
+        // });
         return message.id;
     }
 
@@ -624,14 +625,51 @@ class DatabaseSystem {
         //tier 2 = 30 Guarantee, 15 Overload, 45 seconds uptime, 5 seconds overload time
         //tier 3 = 40 Guarantee, 20 Overload, 35 seconds uptime, 0 seconds overload time
         //Add to db via sql
-        const query = `INSERT INTO tiers (TierLevel, Guarantee, Overload, Uptime, OverloadUptime) VALUES (1, 20, 10, 60, 10), (2, 30, 15, 45, 5), (3, 40, 20, 35, 0)`;
-        db.query(query, (err, results) => {
+        //const query = `INSERT INTO tiers (TierLevel, Guarantee, Overload, Uptime, OverloadUptime) VALUES (1, 20, 10, 60, 10), (2, 30, 15, 45, 5), (3, 40, 20, 35, 0)`;
+        /*
+	 * db.query(query, (err, results) => {
             if (err) {
                 console.error('Error adding tiers:', err.code);
             } else {
                 console.log('Tiers added successfully');
             }
-        });
+        });*/
+    }
+
+    async validateUserAPIKey(apiKey,user) {
+        const query = 'SELECT username FROM users WHERE api_token = ?';
+        try {
+            const results = await this.query(query, [apiKey]);
+            if (results.length > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    //Given user and amount, check if user has requisite credits
+    async checkUserCredits(username) {
+        //PAYMENT HANDLING LOGIC FOR DETERMINING COST GOES HERE
+        let amount = 5; // Suppose 5 credits are required per call for now
+
+        const sql = "SELECT credits FROM users WHERE username = ?";
+        const results = await this.query(sql, [username]);
+        if (results.length > 0 && results[0].credits >= amount) {
+            return ;
+        } else {
+            return false;
+        }
+    }
+    //Deduct user credits
+    async deductUserCredits(username) {
+        //PAYMENT HANDLING LOGIC FOR DETERMINING COST GOES HERE
+        let amount = 5; // Suppose 5 credits are required per call  for now
+
+        const sql = "UPDATE users SET credits = credits - ? WHERE username = ?";
+        await this.query(sql, [amount, username]);
     }
 
     async getUserTier(username) {
@@ -658,7 +696,7 @@ class DatabaseSystem {
                 return resources;
 
             } else {
-                throw new Error('Tier not found');
+                throw new Error('Tier not found: ' + tier);
             }
         } catch (err) {
             throw err;
@@ -678,6 +716,47 @@ class DatabaseSystem {
             throw err;
         }
     }
+
+    async getAllPublishedSubmissions() {
+        // Specify the columns you want to fetch in the SELECT clause
+        const query = 'SELECT submission_id, user_id FROM submissions WHERE published = TRUE';
+        try {
+            const results = await this.query(query);
+            console.log(results);
+            //Convert each RowDataPacket into object
+            results.forEach((row, index) => {
+                results[index] = { submission_id: row.submission_id, user_id: row.user_id };
+            });
+            console.log(results);
+            return results;
+        } catch (err) {
+            console.error('Failed to retrieve published submissions:', err);
+            throw err;
+        }
+    }
+    
+    async updatePublishedStatus(submission_id, published) {
+        // Ensure the inputs are of the correct type
+        if (!Number.isInteger(submission_id) || typeof published !== 'boolean') {
+            throw new Error("Invalid input types: submission_id must be an integer, and published must be a boolean.");
+        }
+    
+        const query = 'UPDATE submissions SET published = ? WHERE submission_id = ?';
+        try {
+            const result = await this.query(query, [published, submission_id]);
+            if (result.affectedRows === 0) {
+                console.log(`No submission found with ID ${submission_id}, or no change needed.`);
+            } else {
+                console.log(`Updated submission ${submission_id} to published status ${published}.`);
+            }
+        } catch (err) {
+            console.error('Failed to update published status:', err);
+            throw err;
+        }
+    }
+    
+    
+
 }
 
 
@@ -720,8 +799,9 @@ class OverloadResourceAllocationError extends ResourceAllocationError {
         this.name = "OverloadResourceAllocationError";
     }
 }
-
-module.exports = { PlatformDaemonManager , getSystemState, DaemonNotFoundError, DatabaseSystem, GuaranteeResourceAllocationError, OverloadResourceAllocationError};
+let Prometheus = new PlatformDaemonManager(4, 4000, 500, blocksPerTier = [40, 30, 50]);
+Prometheus.startMonitoring(1000);
+module.exports = { Prometheus, PlatformDaemonManager , getSystemState, DaemonNotFoundError, DatabaseSystem, PlatformResourceMonitor, GuaranteeResourceAllocationError, OverloadResourceAllocationError, AlreadyRegisteredError};
 
   
   

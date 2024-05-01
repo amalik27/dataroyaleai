@@ -1,45 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Course 3</title>
-        <meta name="course-id" content="3">
-        <meta name="course-name" content="Introduction to Nothing">
-        <meta name="course-description" content="This course will introduce you to Nothing.">
-    </head>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 1: Introduction to Datasets</title>
+    <meta name="course-id" content="3">
+    <meta name="course-name" content="Introduction to Datasets">
+    <meta name="course-description" content="This course will introduce you to the basics of Datasets.">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Noto Sans JP", Arial, sans-serif;
+            background: linear-gradient(45deg, #5c10b9, #2b6cce);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .lesson-container {
+            text-align: center;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .lesson-container h1 {
+            margin-bottom: 20px;
+        }
+
+        .lesson-container p {
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            background-color: #e91e63;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            margin-top: 20px;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background-color: #d81b60;
+        }
+    </style>
+</head>
+
 <body>
-    <header>
-        <h1>Course 3: Introduction to Nothing</h1>
-    </header>
-    <main>
-        <section id="overview">
-            <h2>Course Overview</h2>
-            <p>This course will introduce you to the basics of web development, including HTML, CSS, and JavaScript.</p>
-        </section>
-        <section id="lessons">
-            <h2>Lessons</h2>
-            <ul>
-                <li><a href="#lesson1">Lesson 1: HTML Basics</a></li>
-                <li><a href="#lesson2">Lesson 2: CSS Fundamentals</a></li>
-                <li><a href="#lesson3">Lesson 3: JavaScript Essentials</a></li>
-            </ul>
-        </section>
-        <section id="lesson1">
-            <h2>Lesson 1: HTML Basics</h2>
-            <p>In this lesson, you will learn the fundamentals of HTML, including tags, elements, and attributes.</p>
-        </section>
-        <section id="lesson2">
-            <h2>Lesson 2: CSS Fundamentals</h2>
-            <p>This lesson covers basic CSS syntax, selectors, and styling elements.</p>
-        </section>
-        <section id="lesson3">
-            <h2>Lesson 3: JavaScript Essentials</h2>
-            <p>In this lesson, you will explore essential JavaScript concepts for web development.</p>
-        </section>
-    </main>
-    <footer>
-        <p>&copy; 2024 Course 2</p>
-    </footer>
+    <div class="lesson-container">
+        <h1>Lesson 1: Introduction to Datasets</h1>
+        <p>Welcome to Lesson 1 of our course on AI models!</p>
+        <p>In this lesson, we'll cover the basics of datasets and their significance in machine learning and AI.</p>
+        <p>A dataset is a collection of data, often organized in a structured format, used for training, testing, and
+            validating machine learning models.</p>
+        <p>The quality and size of the dataset greatly influence the performance and accuracy of AI models. High-quality
+            datasets ensure better generalization and robustness of models.</p>
+        <p>Datasets can be categorized into various types based on their sources, formats, and characteristics. Common
+            types include:</p>
+        <ul>
+            <li><strong>Structured Datasets:</strong> Data organized into a tabular format with rows and columns, such
+                as CSV files, databases, and spreadsheets.</li>
+            <li><strong>Unstructured Datasets:</strong> Data that lacks a predefined structure, such as text documents,
+                images, audio, and video files.</li>
+            <li><strong>Semi-Structured Datasets:</strong> Data that does not conform to a strict structure but has some
+                organization, like JSON, XML, and HTML files.</li>
+        </ul>
+        <p>Access to diverse and comprehensive datasets is crucial for training AI models across different domains and
+            applications.</p>
+        <p>Throughout this course, we'll explore various datasets used in AI projects and understand how they contribute
+            to model development and evaluation.</p>
+        <button class="btn" id="lesson2">Proceed to Lesson 2</button>
+        <button class="btn" id="backToDashboard">Back to Dashboard</button>
+    </div>
+
+    <script>
+        document.getElementById("lesson2").addEventListener("click", function (event) {
+            handleLessonLinkClick(event, 2);
+        });
+
+        document.getElementById("backToDashboard").addEventListener("click", function (event) {
+            window.location.href = "./dashboard";
+        });
+
+        function handleLessonLinkClick(event, lessonNumber) {
+            event.preventDefault();
+            var url = `http://localhost:3000/course&id=3&page=${lessonNumber}&api_token=${localStorage.getItem('api_token')}`;
+            updateCourseProgress(url);
+            window.location.href = url
+        }
+
+        function updateCourseProgress(url) {
+            var options = {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+            fetch(url, options)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Course progress updated susccessfully:', data);
+                    window.location.href = url;
+                })
+                .catch(error => {
+                    console.error('There was a problem updating course progress:', error);
+                });
+        }
+    </script>
 </body>
+
 </html>
