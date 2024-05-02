@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Purchase Credits</title>
+    <meta name="description" content="Initial Page to Select Credits to Purchase" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="purchase.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+    <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+</head>
+<body>
+    <div>
+    <div id="header-div">Data Royale</h1></div>
+    <div id="range-container" style="align-items: center">
+        <div id="credits-text" style="text-align: center;">1 credit</div>
+        <div id="price-text" style="text-align: center;">1 credit</div>
+        <div>
+            <!-- <label for="steps-range" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Range steps</label> -->
+            <input id="steps-range" type="range" min="0" max="5" value="2.5" step="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+        </div>
+        <button id="submit-btn" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Buy Now</button>
+    </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+    <script src="purchase.js"></script>
+</body>
+</html>

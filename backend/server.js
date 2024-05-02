@@ -7,6 +7,10 @@ const http = require('http');
 const routes = require('./routes');
 
 const server = http.createServer((req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*')
+    //res.setHeader('Access-Control-Max-Age', 2592000);
     routes.processRequest(req, res);
 });
 
