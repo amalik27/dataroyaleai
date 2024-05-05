@@ -30,9 +30,11 @@ async function addCredits(input){
                 if (err) reject(err);
                 
                 if (result.affectedRows === 0) {
-                    reject('No user found with the provided id');
+                    console.log('No user found with the provided id : ' + user10.id);
+                    reject('No user found with the provided id: ' + user10.id);
                 } else {
-                    resolve('Credits added successfully');
+                    console.log('Credits added successfully to user with id: ' + user10.id + ' and cost: ' + user10.cost + ' credits');
+                    resolve('Credits added successfully to user with id: ' + user10.id + ' and cost: ' + user10.cost + ' credits');
                 }
             });
             db.query('UPDATE subscription_database SET credits = credits + ? WHERE id = ?', [user10.cost, user10.id], (err, result) => {
@@ -41,7 +43,8 @@ async function addCredits(input){
                 if (result.affectedRows === 0) {
                     reject('No user found with the provided id');
                 } else {
-                    resolve('Credits added successfully');
+                    console.log('Credits added successfully to user with id: ' + user10.id + ' and cost: ' + user10.cost + ' credits');
+                    resolve('Credits added successfully to user with id: ' + user10.id + ' and cost: ' + user10.cost + ' credits');
                 }
                 // db.end();
             });
@@ -62,9 +65,11 @@ async function subtractCredits(input) {
                 if (err) reject(err);
                 
                 if (result.affectedRows === 0) {
+                    console.log('Not enough credits or no user found with the provided id');
                     reject('Not enough credits or no user found with the provided id');
                 } else {
-                    resolve('Credits subtracted successfully');
+                    console.log('Credits subtracted successfully to user with id: ' + user10.id + ' and cost: ' + user10.cost + ' credits');
+                    resolve('Credits subtracted successfully to user with id: ' + user10.id + ' and cost: ' + user10.cost + ' credits');
                 }   
                 //db.end();
             });
@@ -72,9 +77,11 @@ async function subtractCredits(input) {
                 if (err) reject(err);
                 
                 if (result.affectedRows === 0) {
-                    reject('No user found with the provided id');
+                    console.log('Not enough credits or no user found with the provided id');
+                    reject('Not enough credits or no user found with the provided id');
                 } else {
-                    resolve('Credits added successfully');
+                    console.log('Credits subtracted successfully to user with id: ' + user10.id + ' and cost: ' + user10.cost + ' credits');
+                    resolve('Credits subtracted successfully to user with id: ' + user10.id + ' and cost: ' + user10.cost + ' credits');
                 }
                 // db.end();
             });

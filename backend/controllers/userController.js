@@ -27,11 +27,18 @@ async function createUser(username, email, salt, password_encrypted, role, tier,
 
 // Function to register a new user with validation checks.
 async function registerUser(username, email, password, role) {
+    const alphanumericRegex = /^[a-zA-Z0-9]+$/;
+    if (username.length < 4 || username.length > 30) {
+        throw new Error('Invalid username, should be between 5 and 30 symbols');
+    }
+    if (!alphanumericRegex.test(username)) {
+        throw new Error('Invalid username, should contain only alphanumeric characters');
+    }
     if (!isValidEmail(email)) {
         throw new Error('Invalid email address');
     }
-    if (zxcvbn(password).score < 3) {
-        throw new Error("Weak password");
+    if (zxcvbn(password).score < 2) {
+        throw new Error('Weak password');
     }
     const salt = generateRandomString(16);
     const password_encrypted = passwordUtils.encrypt(password, salt);
@@ -50,8 +57,8 @@ async function registerUser(username, email, password, role) {
     const hashPrefix = passwordUtils.encryptSHA1(password).slice(0, 5);
     try {
         const count = await getPwnedPasswordCount(hashPrefix);
-        if (count > 10000) {
-            throw new Error("Password has been compromised. Please choose a different password.");
+        if (count > 8000) {
+            throw new Error('Password has been compromised. Please choose a different password');
         }
         await createUser(username, email, salt, password_encrypted, role, tier, credits, reg_date, api_token);
     } catch (error) {
@@ -334,7 +341,7 @@ async function deleteAccount(username, password) {
 
 async function updateSubscriptionsApiTokens(old_api_token, new_api_token) {
     try {
-        const sql = `UPDATE subscriptions SET api_token = ? WHERE api_token = ?`;
+        const sql = `UPDATE subscription_database SET api_token = ? WHERE api_token = ?`;
         await db.query(sql, [new_api_token, old_api_token]);
     } catch (error) {
         console.error('Error updating subscriptions:', error);

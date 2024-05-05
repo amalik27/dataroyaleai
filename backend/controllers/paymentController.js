@@ -1,4 +1,6 @@
 /*
+Author: Matthew Grimalovsky
+Email: mg1803@scarletmail.rutgers
 To get started: go to stripe.com, sign up, and get your secret and public key
 Add these keys to your .env file
 DON'T OVERUSE .... 6k email limit, 1.5k contacts limit
@@ -33,6 +35,7 @@ async function createPaymentIntent(credits, id, currency) {
             amount: getOrderAmount(credits),
             currency: currency,
         });
+        //console.log(paymentIntent.client_secret)
         return paymentIntent;
     } catch (err) {
         console.log(err)
