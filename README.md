@@ -31,6 +31,7 @@
 - If docker is not started put command ```sudo systemctl start docker``` or ```sudo service docker start```
 - Assuming you have docker installed on linux (Ubuntu 20.04 LTS preferred). You should be able to simply run
   ```docker compose up --build```
+  This step should automatically configure a MySQL database container. If for whatever reason this fails please see the steps that follow:
 
 ## Set Up Database <These instructions should be deprecated as of the docker compose addition>
 - Start up MAMP, and click "Start Servers".  Then, navigate to this link: http://localhost/phpMyAdmin/?lang=en 
@@ -38,6 +39,8 @@
 - Run `npm run server` to start up your server on port 3000
 - Navigate to `http://localhost:3000/` in your browser and you should see a message
 - Refer to the code in backend/routes and backend/controllers for more complex requests
+
+**NOTE:** If the server errors out saying something along the lines of that it cannot connect to the database, please ensure the db.js file has the correct port in use.
 
 ## Set Up Payments/Subscriptions
 - For testing: `npm run payment-test` (make sure to CTRL+C after to leave the asynchronous server loop)
