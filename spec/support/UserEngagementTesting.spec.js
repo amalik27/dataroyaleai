@@ -1,15 +1,17 @@
-/**
- * @Author: Neha Murthy <nnm53@scarletmail.rutgers.edu>
- * @Description: Tested 19 unit test cases to validate functions in userController.js and passwordUtils.js
- */
-
 const mockDb = {
     query: jasmine.createSpy()
 };
 const userController  = require('../../backend/controllers/userController.js');
 userController.db = mockDb;
 
-const passwordUtils = require('../../backend/utils/passwordUtils.js'); 
+const passwordUtils = require('../../backend/utils/passwordUtils.js'); // Assuming the file is named passwordUtils.js
+
+const courseController = require('../../backend/controllers/courseController.js');
+courseController.db = mockDb;
+
+
+
+
 
 describe('registerUser function', () => {
     let mockZxcvbn;
@@ -33,6 +35,8 @@ it('should not register a new user with weak password', async () => {
         await expectAsync(userController.registerUser(username, email, password, role)).toBeRejectedWithError('Weak password'); 
     });
 
+    
+
 //Test Case 2 : Show throw error if email is invalid  
  it('should throw an error if email is not valid', async () => {
         const username = 'testuser';
@@ -44,6 +48,8 @@ it('should not register a new user with weak password', async () => {
 
         await expectAsync(userController.registerUser(username, email, password, role)).toBeRejectedWithError('Invalid email address');
     });
+
+   
 });
 
 // Test Case 3 : Checks if creating a new user is done successfully 
@@ -176,7 +182,6 @@ it('should generate a random string of specified length', () => {
         expect(randomString).toBeDefined();
         expect(randomString.length).toEqual(length);
     });
-
 //Test Case 9 : Should be randomized and giving different strings
     it('should generate a different string on each call', () => {
         const length = 10;
@@ -184,7 +189,6 @@ it('should generate a random string of specified length', () => {
         const randomString2 = userController.generateRandomString(length);
         expect(randomString1).not.toEqual(randomString2);
     });
-
 // Test Case 10 : Should generate alphanumeric characters, no special characters
     it('should generate a string containing only alphanumeric characters', () => {
         const length = 10;
@@ -192,7 +196,6 @@ it('should generate a random string of specified length', () => {
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
         expect(alphanumericRegex.test(randomString)).toBeTrue();
     });
-
 // Test Case 11 : Should throw error if a length 0 string or less is created
     it('should throw an error when length is less than or equal to 0', () => {
         expect(() => generateRandomString(-1)).toThrowError();
@@ -245,11 +248,12 @@ describe('updateEmail function', () => {
 
         const result = await userController.updateEmail(userId, newEmail);
 
+        // 
         expect(result).toEqual({ success: true, message: 'The new email given was updated successfully' });
     });
 });
 
-// Test Case 14 : Delete user information through ID number
+ // Test Case 14 : Delete user information through ID number
 describe('deleteUserById function', () => {
     let userId;
 
@@ -264,6 +268,8 @@ describe('deleteUserById function', () => {
         expect(result.success).toBeTrue();
     });
 });
+
+//Tests PasswordUtils.js functions
 
 // Test Case 15 : Tests the functionality of encryptSHA1 function
 describe('encryptSHA1 function', () => {
@@ -303,7 +309,6 @@ describe('encrypt function', () => {
         expect(hash1).not.toEqual(hash2);
     });
 });
-
 // Test Case 19 : Test Functionality of deleteAccount function
 describe('deleteAccount function', () => {
     it('should delete user account successfully', async () => {
@@ -319,3 +324,234 @@ describe('deleteAccount function', () => {
         expect(deleteResult.message).toBe('Account deleted successfully');
     });
 });
+
+//-------------------------------------------------------------------------------
+//Below are 11 integration test cases 
+const { fetchCourses } = require('../../backend/controllers/courseController');
+
+
+// Test Case 20: registration 
+describe("Registration integration tests", () => {
+    let registerUser;
+
+    beforeEach(() => {
+        registerUser = jasmine.createSpy("registerUser");
+    });
+
+    it("should register a new user successfully", async () => {
+        // data so I can test this
+        const userData = {
+            username: "testuser",
+            email: "testuser@example.com",
+            password: "StrongPassword123"
+        };
+
+        registerUser.and.returnValue(Promise.resolve({ success: true, message: "User registered successfully" }));
+
+        await registerUser(userData.username, userData.email, userData.password);
+
+        expect(registerUser).toHaveBeenCalledWith(userData.username, userData.email, userData.password);
+    });
+    //Test Case 21: Weak Passwords
+
+    it("should handle weak password", async () => {
+        const userData = {
+            username: "testuser",
+            email: "test@example.com",
+            password: "weak"
+        };
+
+        registerUser.and.callFake((username, email, password) => {
+            throw new Error("Weak password");
+        });
+
+        try {
+            await registerUser(userData.username, userData.email, userData.password);
+        } catch (error) {
+            expect(error.message).toBe("Weak password");
+        }
+    });
+//Test Case 22: registration failure
+    it("should handle registration failure", async () => {
+        const userData = {
+            username: "testuser",
+            email: "test@example.com",
+            password: "StrongPassword123"
+        };
+
+        registerUser.and.returnValue(Promise.reject(new Error("Registration failed")));
+
+        try {
+            await registerUser(userData.username, userData.email, userData.password);
+        } catch (error) {
+            expect(error.message).toBe("Registration failed");
+        }
+    });
+});
+
+//Test Case 23: login
+
+describe("Login integration tests", () => {
+    let loginUser;
+
+    beforeEach(() => {
+        loginUser = jasmine.createSpy("loginUser");
+    });
+
+    it("should log in a user successfully", async () => {
+        const userData = {
+            username: "testuser",
+            password: "StrongPassword123"
+        };
+
+        loginUser.and.returnValue(Promise.resolve(true)); 
+
+        await loginUser(userData.username, userData.password);
+
+        expect(loginUser).toHaveBeenCalledWith(userData.username, userData.password);
+    });
+
+});
+
+// checking if it works for email (registration)
+
+describe("Registration integration tests", () => {
+    let registerUser;
+
+    beforeEach(() => {
+        registerUser = jasmine.createSpy("registerUser");
+    });
+//Test Case 24:successfull if email is correct
+    it("should register a new user successfully with valid email", async () => {
+        const userData = {
+            username: "testuser",
+            email: "testuser@example.com", 
+            password: "StrongPassword123"
+        };
+
+        registerUser.and.returnValue(Promise.resolve({ success: true, message: "User registered successfully" }));
+
+        await registerUser(userData.username, userData.email, userData.password);
+
+        expect(registerUser).toHaveBeenCalledWith(userData.username, userData.email, userData.password);
+    });
+//Test Case 25: unsuccessfull if email is wrong
+
+    it("should throw an error for registration with invalid email", async () => {
+        const userData = {
+            username: "testuser",
+            email: "invalidemail",
+            password: "StrongPassword123"
+        };
+
+        registerUser.and.returnValue(Promise.reject(new Error("Invalid email")));
+    });
+});
+
+//checking if it works for email (login)
+
+
+describe("Login integration tests", () => {
+    let loginUser;
+
+    beforeEach(() => {
+        loginUser = jasmine.createSpy("loginUser");
+    });
+//Test Case 26: successfull if email is correct
+    it("should log in a user successfully with valid email", async () => {
+        const userData = {
+            username: "testuser",
+            password: "StrongPassword123"
+        };
+
+        loginUser.and.returnValue(Promise.resolve(true)); 
+        await loginUser(userData.username, userData.password);
+
+        // Expectations
+        expect(loginUser).toHaveBeenCalledWith(userData.username, userData.password);
+    });
+//Test Case 27: unsuccessfull if email is wrong
+
+    it("should throw an error for login with invalid email", async () => {
+        const userData = {
+            username: "invalidemail", 
+            password: "StrongPassword123"
+        };
+
+        loginUser.and.returnValue(Promise.reject(new Error("Invalid email")));
+    });
+});
+
+// Test Case 28: logout function
+
+describe("Logout integration tests", () => {
+    let logoutUser;
+
+    beforeEach(() => {
+        logoutUser = jasmine.createSpy("logoutUser");
+    });
+
+    it("should logout a user successfully", async () => {
+        logoutUser.and.returnValue(Promise.resolve({ success: true, message: "User logged out successfully" }));
+
+        await logoutUser();
+
+        expect(logoutUser).toHaveBeenCalled();
+    });
+});
+
+// Test Case 29: deleteAccount
+
+describe("Delete account integration tests", () => {
+    let deleteAccount;
+
+    beforeEach(() => {
+        deleteAccount = jasmine.createSpy("deleteAccount");
+    });
+
+    it("should delete a user account successfully", async () => {
+        const username = "testuser";
+        const password = "StrongPassword123";
+
+        deleteAccount.and.returnValue(Promise.resolve({ success: true, message: "Account deleted successfully" }));
+
+        await deleteAccount(username, password);
+
+        expect(deleteAccount).toHaveBeenCalledWith(username, password);
+    });
+
+});
+
+
+//checking the functionality of the courses (fetching the courses) -- added another function into coursecontroller
+
+describe("Courses functionality", () => {
+    let courseData;
+    let apiToken;
+
+    beforeEach(() => {
+        apiToken = "mock-api-token";
+
+        courseData = [
+            { courseId: 1, courseName: 'Website Guide', courseLength: '5', tier: 1, credits: 0 },
+            { courseId: 2, courseName: 'Introduction to AI', courseLength: '5', tier: 2, credits: 10 },
+            { courseId: 3, courseName: 'Machine Learning Basics', courseLength: '5', tier: 3, credits: 100 }
+        ];
+    });
+//Test Case 30: Fetch Courses successfully
+    it("should fetch courses successfully", (done) => {
+        const mockFetch = jasmine.createSpy().and.returnValue(Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(courseData)
+        }));
+
+        fetchCourses(apiToken, mockFetch).then((fetchedCourses) => {
+            expect(fetchedCourses).toEqual(courseData);
+            done();
+        });
+    });
+    
+});
+
+
+

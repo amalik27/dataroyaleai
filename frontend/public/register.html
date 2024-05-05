@@ -90,19 +90,20 @@
         },
         body: JSON.stringify(json)
       })
-        .then(response => {
-          if (response.ok) {
-            return response.json();
-          }
-          throw new Error('Network response was not ok.');
-        })
-        .then(data => {
-          window.location.href = '/login';
-        })
-        .catch(error => {
-          alert('The inputed data is invalid, try again.');
-          console.error('Error:', error);
+      .then(response => {
+        return response.json().then(json => {
+          return { status: response.status, data: json };
         });
+      })
+      .then(({ status, data }) => {
+        if (status === 200) {
+          console.log('Success:', data);
+          window.location.href = '/login';
+        } else {
+          console.error('Error:', data);
+          alert(data.error);
+        }
+      })
     }
   </script>
 </body>
