@@ -1,0 +1,71 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(45deg, #5c10b9, #2b6cce);
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    height: 100vh;
+    width: 100vw;
+  }
+
+#header-div {
+  color: white;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  font-size: 4vw;
+  font-weight: bold;
+  margin-top: 10vh;
+  margin-bottom: 5vh;
+}
+
+#range-container {
+    width: 30vw;
+    min-width: 500px;
+    align-self: center;
+    background: rgb(255, 255, 255);
+    box-shadow: 0px 0px 0px 0.5px rgba(50, 50, 93, 0.1),
+      0px 2px 5px 0px rgba(50, 50, 93, 0.1), 0px 1px 1.5px 0px rgba(0, 0, 0, 0.07);
+    border-radius: 5px;
+    font-weight: bold;
+    padding: 40px;
+}
+#submit-btn {
+  background: #8400ff;
+  font-family: Arial, sans-serif;
+  color: #ffffff;
+  border-radius: 5px;
+  border: 0;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: block;
+  transition: all 0.2s ease;
+  box-shadow: 0px 4px 5.5px 0px rgba(0, 0, 0, 0.07);
+  width: 40%;
+  margin-top: 2vh;
+  margin-left: 30%;
+  margin-right: 30%;
+}
+#submit-btn:hover {
+  filter: contrast(115%);
+  background-color: #d81b60
+}
+#submit-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+#price-text {
+  color:#d81b60;
+  font-weight: bold;
+  font-size: 1.8vw;
+}
+#credits-text {
+  color:#d81b60;
+  font-weight: bold;
+  font-size: 3vw;
+}

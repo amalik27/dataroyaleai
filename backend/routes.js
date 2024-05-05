@@ -10,6 +10,8 @@ const userController = require('./controllers/userController');
 const competitionController = require('./controllers/competitionController');
 const courseController = require('./controllers/courseController');
 const paymentController = require('./controllers/paymentController');
+const notificationUtils = require('./utils/notificationUtils.js')
+const data_royale_email = "DataRoyaleAI@gmail.com"
 
 const subscriptionController = require('./controllers/subscriptionController');
 const { parse } = require('querystring');
@@ -45,9 +47,9 @@ async function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const { credits_purchased, user_id, currency } = await JSON.parse(body);
-                //console.log(credits_purchased, user_id, currency)
-                if (!credits_purchased || !user_id || !currency) {
+                const { credits_purchased, username, currency} = await JSON.parse(body);
+                //console.log(credits_purchased, username, currency)
+                if(!credits_purchased || !username || !currency) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
                     return;
@@ -58,18 +60,18 @@ async function processRequest(req, res){
                     res.end(JSON.stringify({ success: false, message: 'Invalid Credit Amount' }));
                     return;
                 }
-                let payment_intent = await paymentController.createPaymentIntent(credits_purchased, user_id, currency);
+                let payment_intent = await paymentController.createPaymentIntent(credits_purchased, username, currency);
                 if (!payment_intent) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Error creating payment intent' }));
                     return;
                 }
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: payment_intent.id })); //store in user window or in cookies
+                //await notificationUtils.send_mail("mgrimalovsky@gmail.com ", "Data Royale Team", "mgrimalovsky@gmail.com", "Matthew Grimalovsky", "Order Submitted", "Test Notification", "<center><h1>Thank you for your purchase.</h1><br/><h3>To view your receipt, click <a href='#'>here</a></h3></center>")
+                res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'});
+                res.end(JSON.stringify({ success: true, message: payment_intent})); //store in user window or in cookies
             });
 
         } else {
-            res.writeHead(405, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
 
@@ -520,36 +522,56 @@ async function processRequest(req, res){
         }
     } else if (pathname === '/payment') { //Payment Endpoint For Exchanging USD for Credits
         if (req.method === 'GET') { //get current status of payment
-            //console.log("Checking status of a payment.")
+            console.log("Checking status of a payment.")
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const { client_id } = await JSON.parse(body);
+                const {client_id, username, email} = await JSON.parse(body);
+                if(!client_id || !username || !email) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
+                    return;
+                }
                 const status = await paymentController.checkStatus(client_id);
                 if (!status) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Server error with checking status' }));
                     return;
                 }
+                if (!notificationUtils.checkEmail(email)) { // In this particular endpoint, this email verification simply serves as further authentication
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Invalid email. Please try again.' }));
+                    return;
+                }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, message: status }));
             });
         } else if (req.method === 'POST') { //actually submit the payment
-            //console.log("Submitting/Confirming payment.")
+            console.log("Submitting/Confirming payment.")
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const { client_id, payment_method } = await JSON.parse(body);
+                const {client_id, username, email, payment_method} = await JSON.parse(body);
+                if(!client_id || !username || !email) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
+                    return;
+                }
+                if (!notificationUtils.checkEmail(email)) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, message: 'Invalid email. Please try again.' }));
+                    return;
+                }
                 const status = await paymentController.checkStatus(client_id);
                 if (!status) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Server error with checking status' }));
                     return;
-                } else if (status === "processing") { //currently in payment processing mode
+                } else if (status === "processing") { //currently in payment processing mode, prevents multiple entries
                     console.log("Can't do that!")
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Currently involved in payment process' }));
@@ -558,13 +580,14 @@ async function processRequest(req, res){
 
                 const confirm = await paymentController.confirmPaymentIntent(client_id, payment_method);
                 const status2 = await paymentController.checkStatus(client_id);
-                //console.log(status2) //should output "success or something similar"
                 if (!confirm) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Error with submitting purchase' }));
                     return;
                 }
 
+                //Success
+                notificationUtils.send_mail(data_royale_email, "Data Royale", email, username, "Order Submitted", "Testing", html=false)
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, message: confirm }));
             });
@@ -803,9 +826,6 @@ async function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                console.log(given_page_number);
-                console.log(api_token);
-                console.log(course_id);
                 await courseController.updateCourseProgress(given_page_number, api_token, course_id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
@@ -862,8 +882,8 @@ async function processRequest(req, res){
         } else {
             res.writeHead(405, { 'Content-Type': 'text/plain' });
             res.end('Method Not Allowed');
-        }
-
+          }
+      
     } //api platform
     else if (pathname.includes("/prometheus/displayUsage")) {
         const displayUsageRegex = /\/manager\/displayUsage(?:\?.*?)?/;
@@ -890,13 +910,18 @@ async function processRequest(req, res){
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
-            req.on('end', () => {
+            req.on('end', async () => {
                 try {
                     console.log(body);
-                    const { message } = JSON.parse(body);
-                    if (!message) {
+                    const { message, api_token } = JSON.parse(body);
+                    if (!message || !api_token || !message.body || !message.body.processID || !message.type) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
-                        res.end('Message is required.');
+                        res.end('Complete message and api token are required.');
+                        return;
+                    }
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
                         return;
                     }
                     const id = Prometheus.addMessageToQueue(message);
@@ -949,16 +974,23 @@ async function processRequest(req, res){
             req.on('data', (chunk) => {
                 postData += chunk.toString();
             });
-            req.on('end', () => {
+            req.on('end', async () => {
                 try {
-                    const { message } = JSON.parse(postData);
-                    if (!message || !message.processID || !message.body) {
+                    const { message, api_token} = JSON.parse(postData);
+                    if (!message || !message.processID || !message.body|| !api_token) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
-                        res.end('Complete message with processID and body is required.');
+                        res.end('Complete message with processID, api token, and body is required.');
+                        return;
+                    }
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
                         return;
                     }
                     const { processID, body } = message;
-                    const { cpus, memory, containerID, model } = body;
+                    let { cpus, memory, containerID, model } = body;
+                    cpus = parseFloat(cpus);
+                    memory = parseFloat(memory);
                     const container = new Container(cpus, memory, containerID, model);
                     console.log(container.toString());
                     Prometheus.initializeContainer(processID, container);
@@ -984,7 +1016,7 @@ async function processRequest(req, res){
             });
             req.on('end', async () => {
                 try {
-                    const { processID, containerID, body,api_token } = JSON.parse(postMsg);
+                    const { processID, containerID, body, api_token } = JSON.parse(postMsg);
                     if (!processID || !containerID || !body || !api_token) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Process ID, Container ID, and Body are required.');
@@ -997,6 +1029,13 @@ async function processRequest(req, res){
                     }
                     await Prometheus.database.checkUserCredits(processID);
                     console.log(`Forwarding request to container ${containerID} for process ${processID}.`);
+                    const health = await Prometheus.healthCheck(processID, containerID);
+                    if (!(health.status==="healthy")) {
+                        res.writeHead(500, { 'Content-Type': 'text/plain' });
+                        res.end('500 Internal Server Error: Container is not healthy.');
+                        return;
+                    }
+
                     const data = await Prometheus.forward(processID, containerID, body);
                     console.log(data);
                     await Prometheus.database.deductUserCredits(processID);
@@ -1030,8 +1069,6 @@ async function processRequest(req, res){
         }
     }
     else if (pathname.includes("/prometheus/updatePublishedStatus")) {
-        const updateRegex = /\/manager\/updatePublishedStatus(?:\?.*?)?/;
-        const match = path.match(updateRegex);
         if (req.method === 'POST') {
             let body = '';
             req.on('data', chunk => {
@@ -1040,6 +1077,12 @@ async function processRequest(req, res){
             req.on('end', async () => {
                 try {
                     const data = JSON.parse(body);
+                    const api_token = data.api_token;
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
+                        return;
+                    }
                     const submission_id = parseInt(data.submission_id);
                     const published = typeof data.published === 'boolean' ? data.published : (data.published === 'true');
     
@@ -1072,17 +1115,54 @@ async function processRequest(req, res){
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
-            req.on('end', () => {
+            req.on('end', async () => {
                 try {
-                    const { processID } = JSON.parse(body);
-                    if (!processID) {
+                    const { processID,api_token } = JSON.parse(body);
+                    if (!processID|| !api_token) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Process ID is required.');
+                        return;
+                    }
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
                         return;
                     }
                     Prometheus.killProcessDaemon(processID);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
                     res.end('Process killed.');
+                } catch (error) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('500 Internal Server Error: ' + error.message);
+                }
+            });
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
+        }
+    }
+    else if (pathname.includes("/prometheus/containerKill")) {
+        if (req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+                body += chunk.toString();
+            });
+            req.on('end', async () => {
+                try {
+                    const { processID, containerID ,api_token } = JSON.parse(body);
+                    if (!processID || !containerID || !api_token) {
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('Process ID, Container ID, and api key are required.');
+                        return;
+                    }
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
+                        return;
+                    }
+                    Prometheus.killContainer(processID,containerID);
+                    res.writeHead(200, { 'Content-Type': 'text/plain' });
+                    res.end('Container killed.');
                 } catch (error) {
                     res.writeHead(500, { 'Content-Type': 'text/plain' });
                     res.end('500 Internal Server Error: ' + error.message);
@@ -1103,10 +1183,15 @@ async function processRequest(req, res){
             });
             req.on('end', async () => {
                 try {
-                    const { processID, containerID } = JSON.parse(body);
+                    const { processID, containerID, api_token  } = JSON.parse(body);
                     if (!processID || !containerID) {
                         res.writeHead(400, { 'Content-Type': 'text/plain' });
                         res.end('Process ID and Container ID are required.');
+                        return;
+                    }
+                    if(!(await Prometheus.database.validateUserAPIKey(api_token))){
+                        res.writeHead(401, { 'Content-Type': 'text/plain' });
+                        res.end('401 Unauthorized: Invalid API Key');
                         return;
                     }
                     const health = await Prometheus.healthCheck(processID, containerID);
