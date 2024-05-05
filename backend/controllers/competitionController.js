@@ -1427,6 +1427,52 @@ async function tierBasedPrize(user_id, prize){
 
 }
 
+/**
+ * Function to handle selecting a winner. 
+ * @author @deshnadoshi 
+ */
+async function listenForFinishedCompetitions() {
+    setInterval(async () => {
+        try {
+            const now = new Date();
+            const query = 'SELECT id FROM competitions WHERE status = "pending"';
+            const params = [now];
+            const results = await queryDatabase(query, params);
+            
+            if (results.length > 0) {
+                const competitionIDs = results.map(result => result.id);
+                console.log('Competitions finished:', competitionIDs);
+                
+                for (const id of competitionIDs) {
+                    const updateQuery = 'UPDATE competitions SET status = "complete" WHERE id = ?';
+                    const updateParams = [id];
+                    await queryDatabase(updateQuery, updateParams);
+                    
+                    const submissionQuery = 'SELECT user_id FROM submissions WHERE comp_id = ? ORDER BY score DESC LIMIT 1';
+                    const submissionParams = [id];
+                    const submissionResult = await queryDatabase(submissionQuery, submissionParams);
+                    
+                    if (submissionResult.length > 0) {
+                        const winnerUserID = submissionResult[0].user_id;
+                        const creditsQuery = 'SELECT prize FROM competitions WHERE id = ?';
+                        const creditsParams = [id];
+                        const creditsResult = await queryDatabase(creditsQuery, creditsParams);
+                        
+                        if (creditsResult.length > 0) {
+                            const credits = creditsResult[0].prize;
+                            await addCredits(winnerUserID, credits);
+                            console.log(`Credits added to user ${winnerUserID}: ${credits}`);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error listening for finished competitions:', error);
+        }
+    }, 5000);
+}
+
+
 
 // Exports
 
