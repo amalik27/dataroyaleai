@@ -56,6 +56,6 @@ Note, we need a bridge network named `swe2024_my-bridge-network` for successful 
 
 
 ### for using sql
-docker exec -it swe2024-db-1 bash
-mysql -u root -p
-use swe2024
+`docker exec -it swe2024-db-1 bash`
+`mysql -u root -p` (password root)
+`use swe2024`
