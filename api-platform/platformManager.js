@@ -719,18 +719,41 @@ class DatabaseSystem {
 
     async getAllPublishedSubmissions() {
         // Specify the columns you want to fetch in the SELECT clause
-        const query = 'SELECT submission_id, user_id FROM submissions WHERE published = TRUE';
+        const query = 'SELECT submission_id, user_id, comp_id, score FROM submissions WHERE published = TRUE AND Score IS NOT NULL';
         try {
             const results = await this.query(query);
             console.log(results);
             //Convert each RowDataPacket into object
             results.forEach((row, index) => {
-                results[index] = { submission_id: row.submission_id, user_id: row.user_id };
+                results[index] = { submission_id: row.submission_id, user_id: row.user_id, comp_id: row.comp_id,  score: row.score};
             });
             console.log(results);
             return results;
         } catch (err) {
             console.error('Failed to retrieve published submissions:', err);
+            throw err;
+        }
+    }
+
+
+    //Function to check if submission_id and api token correspond to the same user
+    async checkSubmissionOwnership(submission_id, api_token) {
+        const query = 'SELECT user_id FROM submissions WHERE submission_id = ?';
+        try {
+            const results = await this.query(query, [submission_id]);
+            if (results.length > 0) {
+                const user_id = results[0].user_id;
+                const query2 = 'SELECT id FROM users WHERE api_token = ?';
+                const results2 = await this.query(query2, [api_token]);
+                if (results2.length > 0) {
+                    return results2[0].id === user_id;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } catch (err) {
             throw err;
         }
     }
@@ -741,7 +764,7 @@ class DatabaseSystem {
             throw new Error("Invalid input types: submission_id must be an integer, and published must be a boolean.");
         }
     
-        const query = 'UPDATE submissions SET published = ? WHERE submission_id = ?';
+        const query = 'UPDATE submissions SET published = ? WHERE submission_id = ? AND score IS NOT NULL';
         try {
             const result = await this.query(query, [published, submission_id]);
             if (result.affectedRows === 0) {
@@ -755,6 +778,35 @@ class DatabaseSystem {
         }
     }
     
+    //GEt container file_path from sumission_id if it is either published or belongs to the user with this api token
+    async getContainerFilePath(submission_id, api_token) {
+        const query = 'SELECT file_path FROM submissions WHERE submission_id = ? AND (published = TRUE OR user_id = (SELECT id FROM users WHERE api_token = ?))';
+        try {
+            const results = await this.query(query, [submission_id, api_token]);
+            if (results.length > 0) {
+                return results[0].file_path;
+            } else {
+                return null;
+            }
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    //Check if user_id matches api-key
+    async checkUserOwnership(user_id, api_token) {
+        const query = 'SELECT username FROM users WHERE api_token = ?';
+        try {
+            const results = await this.query(query, [api_token]);
+            if (results.length > 0) {
+                return results[0].username === user_id;
+            } else {
+                return false;
+            }
+        } catch (err) {
+            throw err;
+        }
+    }
     
 
 }

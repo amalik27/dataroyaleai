@@ -117,7 +117,7 @@ class AthenaDaemon extends PlatformDaemon {
                     console.log(`Final score ${metrics}: ${score}`);
                     resolve({ score: score }); // Resolve the promise with the score
                 } catch (error) {
-                    reject(error); // In case of error, reject the promise
+                    resolve({ score: 0 }); // Resolve the promise with the score
                 }
             });
         });

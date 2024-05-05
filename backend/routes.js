@@ -905,6 +905,12 @@ async function processRequest(req, res){
                         res.end('401 Unauthorized: Invalid API Key');
                         return;
                     }
+                    if(!(await Prometheus.database.checkUserOwnership(message.body.processID, api_token))){
+                        res.writeHead(403, { 'Content-Type': 'text/plain' });
+                        res.end('403 Forbidden: Your ProcessID must be equal to your username. Your API key must match the one for your account.');
+                        return;
+                    }
+
                     const id = Prometheus.addMessageToQueue(message);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ messageID: id }));
@@ -969,10 +975,27 @@ async function processRequest(req, res){
                         return;
                     }
                     const { processID, body } = message;
+                    if(processID === undefined || body === undefined){
+                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.end('400 Bad Request: Process ID and Body are required.');
+                        return;
+                    }
+                    if(!(await Prometheus.database.checkUserOwnership(processID, api_token))){
+                        res.writeHead(403, { 'Content-Type': 'text/plain' });
+                        res.end('403 Forbidden: Your ProcessID must be equal to your username. Your API key must match the one for your account.');
+                        return;
+                    }
+
                     let { cpus, memory, containerID, model } = body;
+                    let file_path = await Prometheus.database.getContainerFilePath(model, api_token) 
+                    if(file_path === null){
+                        res.writeHead(404, { 'Content-Type': 'text/plain' });
+                        res.end('404 Not Found: Model not found');
+                        return;
+                    }    
                     cpus = parseFloat(cpus);
                     memory = parseFloat(memory);
-                    const container = new Container(cpus, memory, containerID, model);
+                    const container = new Container(cpus, memory, containerID, file_path);
                     console.log(container.toString());
                     Prometheus.initializeContainer(processID, container);
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -1071,6 +1094,14 @@ async function processRequest(req, res){
                     if (!Number.isInteger(submission_id) || typeof published !== 'boolean') {
                         res.writeHead(400, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ error: "Invalid submission ID or published status" }));
+                        return;
+                    }
+
+                    let isOwnedByRequester = await Prometheus.database.checkSubmissionOwnership(submission_id, api_token);
+
+                    if(!isOwnedByRequester){
+                        res.writeHead(403, { 'Content-Type': 'text/plain' });
+                        res.end('403 Forbidden: You do not have permission to update this submission');
                         return;
                     }
     
