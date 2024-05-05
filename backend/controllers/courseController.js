@@ -155,6 +155,7 @@ async function retrieveCourseMetadata() {
     }
     return courseMetadata;
 }
+
 // Function to get course details by course id
 async function getCourseDetailsById(course_id) {
     try {
@@ -162,16 +163,6 @@ async function getCourseDetailsById(course_id) {
         return courseDetails;
     } catch (error) {
         console.error('Error fetching course details:', error);
-        throw error;
-    }
-}
-//Function to mark course completed
-async function markCourseCompletion(api_token, course_id) {
-    try {
-        const sql = `UPDATE course_progress SET is_completed = true WHERE api_token = ? AND course_id = ?`;
-        await db.query(sql, [api_token, course_id]);
-    } catch (error) {
-        console.error('Error marking course completion:', error);
         throw error;
     }
 }
@@ -202,6 +193,7 @@ async function readCompletedCoursesByApiToken(api_token) {
         throw error;
     }
 }
+
 //Function for users to see their in-progress courses
 async function readInProgressCoursesByApiToken(api_token) {
     try {
@@ -228,17 +220,8 @@ async function readInProgressCoursesByApiToken(api_token) {
         throw error;
     }
 }
-//Gives total course available count
-async function getTotalCourseCount() {
-    try {
-        const sql = 'SELECT COUNT(*) AS total_courses FROM courses';
-        const result = await db.query(sql);
-        return result[0].total_courses;
-    } catch (error) {
-        console.error('Error getting total courses count:', error);
-        throw error;
-    }
-}
+
+//Gives course
 async function fetchCourses(apiToken, fetchFunc) {
     try {
         const response = await fetchFunc('http://localhost:3000/courses', {
@@ -260,9 +243,6 @@ async function fetchCourses(apiToken, fetchFunc) {
     }
 }
 
-
-
-
 module.exports = {
     readAllCoursesThatUserCanBuyOrAccessByApiToken,
     readAllCoursesOfUserByApiToken,
@@ -271,9 +251,7 @@ module.exports = {
     openCourse,
     getDefaultPage,
     getCourseDetailsById,
-    markCourseCompletion,
     readCompletedCoursesByApiToken,
     readInProgressCoursesByApiToken,
-    getTotalCourseCount,
     fetchCourses
 };
