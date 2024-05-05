@@ -341,7 +341,7 @@ async function deleteAccount(username, password) {
 
 async function updateSubscriptionsApiTokens(old_api_token, new_api_token) {
     try {
-        const sql = `UPDATE subscriptions SET api_token = ? WHERE api_token = ?`;
+        const sql = `UPDATE subscription_database SET api_token = ? WHERE api_token = ?`;
         await db.query(sql, [new_api_token, old_api_token]);
     } catch (error) {
         console.error('Error updating subscriptions:', error);
