@@ -20,6 +20,7 @@ const { Prometheus, PlatformDaemonManager, getSystemState } = require('../api-pl
 const { Athena, AthenaManager } = require('../api-platform/athenaManager.js');
 const { Container } = require('../api-platform/platformDaemon');
 var chalk = require(`chalk`);
+const {subtractCredits, addCredits} = require('../backend/controllers/creditController.js');
 
 
 
@@ -1061,7 +1062,11 @@ async function processRequest(req, res){
 
                     const data = await Prometheus.forward(processID, containerID, body);
                     console.log(data);
-                    await Prometheus.database.deductUserCredits(processID);
+                    const models = await Prometheus.database.getID(processID);
+                    JSON.stringify({id: getID, cost: 10});
+                    const gay = JSON.stringify({id: getID, cost: 10});
+                    await subtractCredits(gay);
+
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(data);
                 } catch (error) {

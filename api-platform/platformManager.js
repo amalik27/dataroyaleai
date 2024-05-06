@@ -635,7 +635,15 @@ class DatabaseSystem {
             }
         });*/
     }
-
+    async getID(username) {
+        const sql = 'SELECT id FROM users WHERE username = ?';
+        const results = await this.query(sql, [username]);
+        if (results.length > 0) {
+            return results[0].id;
+        } else {
+            throw new Error('User not found');
+        }
+    }
     async validateUserAPIKey(apiKey,user) {
         const query = 'SELECT username FROM users WHERE api_token = ?';
         try {
