@@ -10,8 +10,7 @@ const userController = require('./controllers/userController');
 const competitionController = require('./controllers/competitionController');
 const courseController = require('./controllers/courseController');
 const paymentController = require('./controllers/paymentController');
-const notificationUtils = require('./utils/notificationUtils.js')
-const data_royale_email = "DataRoyaleAI@gmail.com"
+const creditController = require('./controllers/creditController');
 
 const subscriptionController = require('./controllers/subscriptionController');
 const { parse } = require('querystring');
@@ -20,7 +19,7 @@ const { Prometheus, PlatformDaemonManager, getSystemState } = require('../api-pl
 const { Athena, AthenaManager } = require('../api-platform/athenaManager.js');
 const { Container } = require('../api-platform/platformDaemon');
 var chalk = require(`chalk`);
-const {subtractCredits, addCredits} = require('../backend/controllers/creditController.js');
+const {subtractCredits} = require('./controllers/creditController');
 
 
 
@@ -48,9 +47,9 @@ async function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const { credits_purchased, username, currency} = await JSON.parse(body);
-                //console.log(credits_purchased, username, currency)
-                if(!credits_purchased || !username || !currency) {
+                const { credits_purchased, user_id, currency } = await JSON.parse(body);
+                //console.log(credits_purchased, user_id, currency)
+                if (!credits_purchased || !user_id || !currency) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
                     return;
@@ -61,18 +60,18 @@ async function processRequest(req, res){
                     res.end(JSON.stringify({ success: false, message: 'Invalid Credit Amount' }));
                     return;
                 }
-                let payment_intent = await paymentController.createPaymentIntent(credits_purchased, username, currency);
+                let payment_intent = await paymentController.createPaymentIntent(credits_purchased, user_id, currency);
                 if (!payment_intent) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Error creating payment intent' }));
                     return;
                 }
-                //await notificationUtils.send_mail("mgrimalovsky@gmail.com ", "Data Royale Team", "mgrimalovsky@gmail.com", "Matthew Grimalovsky", "Order Submitted", "Test Notification", "<center><h1>Thank you for your purchase.</h1><br/><h3>To view your receipt, click <a href='#'>here</a></h3></center>")
-                res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'});
-                res.end(JSON.stringify({ success: true, message: payment_intent})); //store in user window or in cookies
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: payment_intent.id })); //store in user window or in cookies
             });
 
         } else {
+            res.writeHead(405, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }));
         }
 
@@ -523,56 +522,36 @@ async function processRequest(req, res){
         }
     } else if (pathname === '/payment') { //Payment Endpoint For Exchanging USD for Credits
         if (req.method === 'GET') { //get current status of payment
-            console.log("Checking status of a payment.")
+            //console.log("Checking status of a payment.")
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const {client_id, username, email} = await JSON.parse(body);
-                if(!client_id || !username || !email) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
-                    return;
-                }
+                const { client_id } = await JSON.parse(body);
                 const status = await paymentController.checkStatus(client_id);
                 if (!status) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Server error with checking status' }));
-                    return;
-                }
-                if (!notificationUtils.checkEmail(email)) { // In this particular endpoint, this email verification simply serves as further authentication
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Invalid email. Please try again.' }));
                     return;
                 }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, message: status }));
             });
         } else if (req.method === 'POST') { //actually submit the payment
-            console.log("Submitting/Confirming payment.")
+            //console.log("Submitting/Confirming payment.")
             let body = '';
             req.on('data', (chunk) => {
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                const {client_id, username, email, payment_method} = await JSON.parse(body);
-                if(!client_id || !username || !email) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Incomplete JSON' }));
-                    return;
-                }
-                if (!notificationUtils.checkEmail(email)) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Invalid email. Please try again.' }));
-                    return;
-                }
+                const { client_id, payment_method } = await JSON.parse(body);
                 const status = await paymentController.checkStatus(client_id);
                 if (!status) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Server error with checking status' }));
                     return;
-                } else if (status === "processing") { //currently in payment processing mode, prevents multiple entries
+                } else if (status === "processing") { //currently in payment processing mode
                     console.log("Can't do that!")
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Currently involved in payment process' }));
@@ -581,14 +560,13 @@ async function processRequest(req, res){
 
                 const confirm = await paymentController.confirmPaymentIntent(client_id, payment_method);
                 const status2 = await paymentController.checkStatus(client_id);
+                //console.log(status2) //should output "success or something similar"
                 if (!confirm) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Error with submitting purchase' }));
                     return;
                 }
 
-                //Success
-                notificationUtils.send_mail(data_royale_email, "Data Royale", email, username, "Order Submitted", "Testing", html=false)
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, message: confirm }));
             });
@@ -827,6 +805,9 @@ async function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
+                console.log(given_page_number);
+                console.log(api_token);
+                console.log(course_id);
                 await courseController.updateCourseProgress(given_page_number, api_token, course_id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
@@ -1051,7 +1032,14 @@ async function processRequest(req, res){
                         res.end('401 Unauthorized: Invalid API Key');
                         return;
                     }
-                    await Prometheus.database.checkUserCredits(processID);
+                    let hascredits =  await Prometheus.database.checkUserCredits(processID);
+                    if(!hascredits){
+                        res.writeHead(402, { 'Content-Type': 'text/plain' });
+                        res.end('402 Payment Required: You do not have enough credits to run this process.');
+                        return;
+                    }
+
+
                     console.log(`Forwarding request to container ${containerID} for process ${processID}.`);
                     const health = await Prometheus.healthCheck(processID, containerID);
                     if (!(health.status==="healthy")) {
@@ -1062,11 +1050,13 @@ async function processRequest(req, res){
 
                     const data = await Prometheus.forward(processID, containerID, body);
                     console.log(data);
-                    const models = await Prometheus.database.getID(processID);
-                    JSON.stringify({id: getID, cost: 10});
-                    const gay = JSON.stringify({id: getID, cost: 10});
-                    await subtractCredits(gay);
 
+                    let id = await Prometheus.database.getID(processID);
+                    JSON.stringify({id: id, cost: 10});
+                    const req = JSON.stringify({id: id, cost: 10});
+                    await subtractCredits(req);
+
+ 	
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(data);
                 } catch (error) {
