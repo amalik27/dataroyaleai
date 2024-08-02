@@ -805,9 +805,6 @@ async function processRequest(req, res){
                 body += chunk.toString();
             });
             req.on('end', async () => {
-                console.log(given_page_number);
-                console.log(api_token);
-                console.log(course_id);
                 await courseController.updateCourseProgress(given_page_number, api_token, course_id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
